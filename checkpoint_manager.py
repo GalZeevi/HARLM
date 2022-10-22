@@ -27,10 +27,10 @@ class CheckpointManager:
             pickle.dump(content, f)
 
     @staticmethod
-    def load(name, version=None):
+    def load(name, version=None):  # TODO: fix this
         if version is None:
             all_checkpoints = CheckpointManager.get_checkpoints(name)
-            all_versions = [int(f.split('_')[1]) for f in all_checkpoints]
+            all_versions = [int(f.split('.')[0].split('_')[1]) for f in all_checkpoints]
             version = max(all_versions)
         with open(f"{CheckpointManager.basePath}/{name}/checkpoint_{version}", 'w') as f:
             return pickle.load(f)
