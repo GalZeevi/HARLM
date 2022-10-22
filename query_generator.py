@@ -83,5 +83,9 @@ class QueryGenerator:
         if len(where_clause) > 0:
             where_clause_str = f'WHERE {" AND ".join(where_clause)}'
 
-        return f"SELECT {'*' if self.select_entire_row else self.index_col} " \
-               f"FROM {self.schema}.{self.table} {where_clause_str}"
+        query = f"SELECT {'*' if self.select_entire_row else self.index_col} " \
+                f"FROM {self.schema}.{self.table} {where_clause_str}"
+
+        print(f"Created query:\n{query}")
+
+        return query
