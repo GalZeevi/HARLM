@@ -16,6 +16,7 @@ class SaqpManager:
     def get_sample(self):
         sample = self.parAlgorithm.run(self.k)
         CheckpointManager.save(name='sample', content=sample)
+        return sample
 
     def get_score(self, sample):
         return 0  # TODO
