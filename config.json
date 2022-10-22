@@ -1,0 +1,16 @@
+{
+  "dbConfig": {
+    "host": "localhost",
+    "database": "chess",
+    "user": "postgres",
+    "password": "postgres",
+    "port": 5432
+  },
+  "workloadConfig": {
+    "schema": "public",
+    "table": "chess_100",
+    "index_col": "_id",
+    "batchSize": 3,
+    "similarity_threshold": 0.5
+  }
+}
