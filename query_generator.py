@@ -61,7 +61,7 @@ class QueryGenerator:
         for col in chosen_columns:
             if col in self.categorical_cols:
                 # categorical column
-                # TODO I think I should choose frequency different
+                # TODO I think I should choose frequency differently
                 frequency = random.uniform(0, 1) * len(self.categorical_vals[col])
                 values = random.sample(self.categorical_vals[col], max(int(frequency), 1))
                 values = [val.replace("'", "''") for val in values]
@@ -85,7 +85,4 @@ class QueryGenerator:
 
         query = f"SELECT {'*' if self.select_entire_row else self.index_col} " \
                 f"FROM {self.schema}.{self.table} {where_clause_str}"
-
-        print(f"Created query:\n{query}")
-
         return query

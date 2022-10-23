@@ -27,18 +27,26 @@ class WorkloadApproximator(ABC):
             for query in query_batch:
                 query_result = [res[self.index_col] for res in self.data_access.select(query)]
                 if len(query_result) > 0:
-                    result_batch.append(query_result)
+                    print(f"Processing query:\n{query}")
+                    result_batch.append({'sql': query, 'result': query_result})
 
-            for result in result_batch:
+            for sql_and_result in result_batch:
+                result = sql_and_result['result']
+                query = sql_and_result['sql']
                 sim_to_approx, twin_in_approx_index = self.get_similarity_to_approx(result,
-                                                                                    [tup[0] for tup in approx])
+                                                                                    [d['result'] for d in approx])
                 if sim_to_approx >= self.similarity_threshold:
-                    approx[twin_in_approx_index] = (union(approx[twin_in_approx_index][0], result), approx[twin_in_approx_index][1])
+                    approx[twin_in_approx_index] = \
+                        {
+                            'sql': approx[twin_in_approx_index]['sql'] + [query],
+                            'result': union(approx[twin_in_approx_index]['result'], result),
+                            'frequency': (approx[twin_in_approx_index]['frequency'] + 1)
+                        }
                 else:
-                    approx.append((result, 1))
+                    approx.append({'result': result, 'frequency': 1, 'sql': [query]})
             print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))
 
-        approx.sort(key=lambda tup: tup[1], reverse=True)
+        approx.sort(key=lambda d: d['frequency'], reverse=True)
         approx = approx if size is None else approx[:size]
         CheckpointManager.save(name='workload', content=approx)
         return approx
