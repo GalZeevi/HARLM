@@ -49,6 +49,7 @@ class LazyGreedy:
 
                 if curr[p]:
                     S.append(p)
+                    print(f'Updated S, new gain: {self.gain_func(self.population_by_idx(S))}')
                     updatedSet = True
                 else:
                     delta[p] = self.gain_func(self.population_by_idx(S + [p])) - \
@@ -63,7 +64,7 @@ class LazyGreedy:
 
 
 class PARAlgorithm:
-# TODO make sure we also look at tuples not result of a query (refrence jupyter)
+    # TODO make sure we also look at tuples not result of a query (refrence jupyter)
     def __init__(self,
                  cost_func: Callable[[list], float],
                  gain_func: Callable[[list], float],

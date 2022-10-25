@@ -9,8 +9,8 @@ class SaqpManager:
     def __init__(self, queries_results, queries_weights, k):
         workloadConfig = ConfigManager.get_config('workloadConfig')
         queryConfig = [workloadConfig['schema'], workloadConfig['table'], workloadConfig['index_col']]
-        saqpParAdapter = SaqpParAdapter(*queryConfig, queries_results, queries_weights)
-        self.parAlgorithm = PARAlgorithm(*saqpParAdapter.get_par_config())
+        self.saqpParAdapter = SaqpParAdapter(*queryConfig, queries_results, queries_weights)
+        self.parAlgorithm = PARAlgorithm(*self.saqpParAdapter.get_par_config())
         self.k = k
 
     def get_sample(self):
@@ -19,4 +19,4 @@ class SaqpManager:
         return sample
 
     def get_score(self, sample):
-        return 0  # TODO
+        return self.saqpParAdapter.get_gain_function(sample)

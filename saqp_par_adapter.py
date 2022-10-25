@@ -7,7 +7,7 @@ from data_access import DataAccess
 
 
 def _one_over(num):
-    return 1 / num if (num is None or math.isnan(num) or num == 0) else np.Infinity
+    return np.Infinity if (num is None or math.isnan(num) or num == 0) else 1 / num
 
 
 def _null_safe_subtraction(x, y):
@@ -67,11 +67,20 @@ class SaqpParAdapter:
     def _set_dist(self, t, S):  # TODO use LSH
         return min([self._dist(t, s) for s in S])
 
-    def _tuple_loss(self, t, S):
+    def _tuple_weight(self, t):
         result_sets = [set(result) for result in self.queries_results]
-        tuple_weight = sum([self.queries_weights[i] for i in range(len(self.queries_results))
-                            if t[self.index_col] in result_sets[i]])
-        return tuple_weight * self._set_dist(t, S)
+        return sum([self.queries_weights[i] for i in range(len(self.queries_results))
+                    if t[self.index_col] in result_sets[i]])
+
+    def _tuple_loss(self, t, S):
+        return self._tuple_weight(t) * self._set_dist(t, S)
+
+    def query_result_score(self, query_over_sample, ground_truth):
+        query_over_sample_score = sum([self._tuple_weight(tup)
+                                       for tup in query_over_sample])
+        ground_truth_score = sum([self._tuple_weight(tup)
+                                  for tup in ground_truth])
+        return query_over_sample_score / ground_truth_score
 
     def get_gain_function(self):
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
