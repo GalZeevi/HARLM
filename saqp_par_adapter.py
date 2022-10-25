@@ -86,10 +86,13 @@ class SaqpParAdapter:
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
         # NOTE: This means summing over tuples not queries as is done in PAR
 
-        # TODO I don't like selecting all the tuples - can we do this better? db function?
-        return lambda S: 0 if len(S) == 0 else _one_over(sum([
-            self._tuple_loss(tup, S) for tup in self.tuples
-        ]))
+        # TODO I can't really keep selecting all the tuples - can we do this better? db function?
+        return lambda S: 0 if len(S) == 0 else sum([
+            self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in self.tuples
+        ])
+        # return lambda S: 0 if len(S) == 0 else _one_over(sum([
+        #     self._tuple_loss(tup, S) for tup in self.tuples
+        # ]))
 
     def get_population(self):
         return self.tuples

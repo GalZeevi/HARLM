@@ -54,6 +54,7 @@ class LazyGreedy:
                 else:
                     delta[p] = self.gain_func(self.population_by_idx(S + [p])) - \
                                self.gain_func(self.population_by_idx(S))
+                    # print(f"Updated delta[{p}]")
                     curr[p] = True
 
             print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))
