@@ -13,7 +13,7 @@ class LazyGreedy:
 
         self.cost_func = cost_func
         self.gain_func = gain_func
-        self.population = population
+        self.population = population  # TODO change this when running on large scale examples
 
     def population_by_idx(self, idx):
         return [self.population[i] for i in idx]
