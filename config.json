@@ -10,7 +10,7 @@
     "schema": "public",
     "table": "austin_bikes_100",
     "index_col": "_id",
-    "batchSize": 1,
-    "similarity_threshold": 0.9
+    "batchSize": 30,
+    "similarity_threshold": 0.8
   }
 }
