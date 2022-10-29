@@ -12,5 +12,8 @@
     "index_col": "_id",
     "batchSize": 30,
     "similarity_threshold": 0.8
+  },
+  "testConfig": {
+    "max_test_iters": 20
   }
 }

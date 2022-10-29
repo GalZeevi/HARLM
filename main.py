@@ -5,8 +5,8 @@ from checkpoint_manager import CheckpointManager
 if __name__ == '__main__':
     workload_approximator = JaccardWorkloadApproximator()
     workload = workload_approximator.run(3)
-    saqp_manager = SaqpManager([query['result'] for query in workload], [query['frequency'] for query in workload], 5)
-    sample = saqp_manager.get_sample()
+    saqp_manager = SaqpManager([query['result'] for query in workload], [query['frequency'] for query in workload])
+    sample = saqp_manager.get_sample(5)
     print(sample)
     checkpoint = CheckpointManager.load('sample')
     print(checkpoint)

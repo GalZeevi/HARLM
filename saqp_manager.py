@@ -6,17 +6,20 @@ from checkpoint_manager import CheckpointManager
 
 class SaqpManager:
 
-    def __init__(self, queries_results, queries_weights, k):
+    def __init__(self, queries_results, queries_weights):
         workloadConfig = ConfigManager.get_config('workloadConfig')
         queryConfig = [workloadConfig['schema'], workloadConfig['table'], workloadConfig['index_col']]
         self.saqpParAdapter = SaqpParAdapter(*queryConfig, queries_results, queries_weights)
         self.parAlgorithm = PARAlgorithm(*self.saqpParAdapter.get_par_config())
-        self.k = k
 
-    def get_sample(self):
-        sample = self.parAlgorithm.run(self.k)
+    def get_sample(self, k, print_debug_logs=True):
+        sample = self.parAlgorithm.run(k, print_debug_logs)
         CheckpointManager.save(name='sample', content=sample)
         return sample
 
-    def get_score(self, sample):
-        return self.saqpParAdapter.get_gain_function()(sample)
+    @staticmethod
+    def get_test_score_func(test_queries_results, test_queries_weights):
+        workloadConfig = ConfigManager.get_config('workloadConfig')
+        queryConfig = [workloadConfig['schema'], workloadConfig['table'], workloadConfig['index_col']]
+        testSaqpParAdapter = SaqpParAdapter(*queryConfig, test_queries_results, test_queries_weights)
+        return lambda sample: testSaqpParAdapter.get_gain_function()(sample)
