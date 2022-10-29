@@ -19,4 +19,4 @@ class SaqpManager:
         return sample
 
     def get_score(self, sample):
-        return self.saqpParAdapter.get_gain_function(sample)
+        return self.saqpParAdapter.get_gain_function()(sample)

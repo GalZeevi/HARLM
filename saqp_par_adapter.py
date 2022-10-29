@@ -26,6 +26,7 @@ class SaqpParAdapter:
         self.numerical_vals = self.init_numerical_vals(self.numerical_cols)
         self.queries_results = queries_results
         self.queries_weights = queries_weights
+        # TODO I can't really keep selecting all the tuples - can we do this better? db function?
         self.tuples = self.data_access.select(f"SELECT * FROM {self.schema}.{self.table}")
 
     def init_numerical_cols(self):
@@ -75,7 +76,7 @@ class SaqpParAdapter:
     def _tuple_loss(self, t, S):
         return self._tuple_weight(t) * self._set_dist(t, S)
 
-    def query_result_score(self, query_over_sample, ground_truth):
+    def query_result_score(self, query_over_sample, ground_truth): # TODO delete this when I'm done
         query_over_sample_score = sum([self._tuple_weight(tup)
                                        for tup in query_over_sample])
         ground_truth_score = sum([self._tuple_weight(tup)
@@ -86,7 +87,6 @@ class SaqpParAdapter:
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
         # NOTE: This means summing over tuples not queries as is done in PAR
 
-        # TODO I can't really keep selecting all the tuples - can we do this better? db function?
         return lambda S: 0 if len(S) == 0 else sum([
             self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in self.tuples
         ])
