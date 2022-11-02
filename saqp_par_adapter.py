@@ -76,7 +76,7 @@ class SaqpParAdapter:
     def _tuple_loss(self, t, S):
         return self._tuple_weight(t) * self._set_dist(t, S)
 
-    def query_result_score(self, query_over_sample, ground_truth): # TODO delete this when I'm done
+    def query_result_score(self, query_over_sample, ground_truth):  # TODO delete this when I'm done
         query_over_sample_score = sum([self._tuple_weight(tup)
                                        for tup in query_over_sample])
         ground_truth_score = sum([self._tuple_weight(tup)
@@ -87,9 +87,9 @@ class SaqpParAdapter:
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
         # NOTE: This means summing over tuples not queries as is done in PAR
 
-        return lambda S: 0 if len(S) == 0 else sum([
-            self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in self.tuples
-        ])
+        return lambda S: \
+            sum([self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in self.tuples]) \
+            / sum([self._tuple_weight(t) for t in self.tuples])
         # return lambda S: 0 if len(S) == 0 else _one_over(sum([
         #     self._tuple_loss(tup, S) for tup in self.tuples
         # ]))
