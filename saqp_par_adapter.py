@@ -1,8 +1,9 @@
-from typing import Dict
-from copy import deepcopy
-import numpy as np
 import math
 from decimal import *
+from typing import Dict
+
+import numpy as np
+
 from data_access import DataAccess
 
 
