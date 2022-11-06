@@ -20,7 +20,8 @@ if __name__ == '__main__':
                        f'start_station_name VARCHAR(100), '
                        f'end_station_name VARCHAR(100), '
                        f'start_latitude DECIMAL(10,6), '
-                       f'start_longitude DECIMAL(10,6), end_latitude DECIMAL(10,6), '
+                       f'start_longitude DECIMAL(10,6), '
+                       f'end_latitude DECIMAL(10,6), '
                        f'end_longitude DECIMAL(10,6), '
                        f'PRIMARY KEY (_id))')
 
