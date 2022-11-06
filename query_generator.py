@@ -1,10 +1,13 @@
 from data_access import DataAccess
+from config_manager import ConfigManager
+from consts import DBTypes
 import random
 
 
 class QueryGenerator:
     def __init__(self, schema, table, index_col, select_entire_row=False):
         self.data_access = DataAccess()
+        self.dbType = str.lower(ConfigManager.get_config('dbConfig.type'))
         self.schema = schema
         self.table = table
         self.index_col = index_col
@@ -16,21 +19,21 @@ class QueryGenerator:
 
     def init_numerical_cols(self):
         numeric_data_types = ['smallint', 'integer', 'bigint', 'decimal', 'numeric', 'real', 'double precision',
-                              'smallserial', 'serial', 'bigserial']
+                              'smallserial', 'serial', 'bigserial', 'float']
         db_formatted_data_types = [f"\'{data_type}\'" for data_type in numeric_data_types]
-        columns = self.data_access.select(f"SELECT column_name FROM information_schema.columns " +
+        columns = self.data_access.select(f"SELECT column_name AS col FROM information_schema.columns " +
                                           f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                           f"AND data_type IN ({' , '.join(db_formatted_data_types)}) " +
                                           f"AND column_name <> '{self.index_col}'")
-        return [col_obj['column_name'] for col_obj in columns]
+        return [col_obj['col'] for col_obj in columns]
 
     def init_categorical_cols(self):
-        textual_data_types = ['character varying%%', 'varchar%%', 'text', 'char%%', 'character%%']
+        textual_data_types = ['character varying%%', 'varchar%%', '%%text', 'char%%', 'character%%']
         db_formatted_data_types = [f"\'{data_type}\'" for data_type in textual_data_types]
-        columns = self.data_access.select(f"SELECT column_name FROM information_schema.columns " +
+        columns = self.data_access.select(f"SELECT column_name AS col FROM information_schema.columns " +
                                           f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                           f"AND ({' OR '.join([f'data_type LIKE {data_type}' for data_type in db_formatted_data_types])})")
-        return [col_obj['column_name'] for col_obj in columns]
+        return [col_obj['col'] for col_obj in columns]
 
     def init_numerical_vals(self, numerical_cols):
         # build a dict mapping col -> [min, max]
@@ -43,11 +46,18 @@ class QueryGenerator:
 
     def init_categorical_vals(self, categorical_columns):
         # build a dict mapping col -> list of values
+        if DBTypes.IS_POSTGRESQL(self.dbType):
+            random_function = 'RANDOM'
+        elif DBTypes.IS_MYSQL(self.dbType):
+            random_function = 'RAND'
+        else:
+            raise Exception('Unsupported db type! supported types are "postgresql" or "mysql"')
+
         vals = {}
         for col in categorical_columns:
-            column_values = self.data_access.select(f"SELECT values.val AS val FROM (" +
+            column_values = self.data_access.select(f"SELECT distinct_values.val AS val FROM (" +
                                                     f"SELECT DISTINCT {col} AS val FROM {self.schema}.{self.table}"
-                                                    f") as values ORDER BY RANDOM() LIMIT 10000")
+                                                    f") as distinct_values ORDER BY {random_function}() LIMIT 10000")
             vals[col] = [column_value['val'] for column_value in column_values]
         return vals
 
@@ -61,7 +71,6 @@ class QueryGenerator:
         for col in chosen_columns:
             if col in self.categorical_cols:
                 # categorical column
-                # TODO I think I should choose frequency differently
                 frequency = random.uniform(0, 1) * len(self.categorical_vals[col])
                 values = random.sample(self.categorical_vals[col], max(int(frequency), 1))
                 values = [val.replace("'", "''") for val in values]

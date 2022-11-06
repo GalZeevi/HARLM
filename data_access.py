@@ -1,9 +1,10 @@
 import pandas as pd
 import sqlalchemy
 from config_manager import ConfigManager
+from consts import DBTypes
 
 
-def row2dict(row):
+def row2dict(row):  # TODO auto flatten for len(row._fields) == 1
     d = {}
     for field in row._fields:
         d[field] = row[field]
@@ -18,17 +19,37 @@ class DataAccess:
             DataAccess.connect()
 
     @staticmethod
+    def _connect_postgres(params):
+        url = 'postgresql://{}:{}@{}:{}/{}'.format(params['user'], params['password'],
+                                                   params['host'], params['port'], params['database'])
+
+        print(f'Connecting to the postgresql database...')
+        return sqlalchemy.create_engine(url, client_encoding='utf8')
+
+    @staticmethod
+    def _connect_mysql(params):
+        url = 'mysql+pymysql://{}:{}@{}/{}?charset=utf8mb4'.format(params['user'], params['password'],
+                                                                   params['host'], params['database'])
+
+        print(f'Connecting to the mysql database...')
+        return sqlalchemy.create_engine(url)
+
+    @staticmethod
     def connect():
         con = None
         try:
             params = ConfigManager.get_config('dbConfig')
+            dbType = str.lower(params['type'])
 
-            url = 'postgresql://{}:{}@{}:{}/{}'
-            url = url.format(params['user'], params['password'], params['host'],
-                             params['port'], params['database'])
+            if DBTypes.IS_POSTGRESQL(dbType):
+                con = DataAccess._connect_postgres(params)
 
-            print('Connecting to the PostgreSQL database...')
-            con = sqlalchemy.create_engine(url, client_encoding='utf8')
+            elif DBTypes.IS_MYSQL(dbType):
+                con = DataAccess._connect_mysql(params)
+
+            else:
+                raise Exception('Unsupported db type! supported types are "postgresql" or "mysql"')
+
             print(f'Connected to {params["host"]}:{params["database"]}.')
 
         except Exception as error:
@@ -41,6 +62,9 @@ class DataAccess:
         if DataAccess.conn:
             DataAccess.conn.dispose()
         print('Database connection closed.')
+
+    def update(self, query):
+        DataAccess.conn.execute(query)
 
     def select(self, query):
         answer = []

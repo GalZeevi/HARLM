@@ -1,7 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
+      <paths name="galzeevi@rack-milo-01.cs.tau.ac.il:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/specific/disk1/home/galzeevi/saqp" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="galzeevi@rack-milo-01.cs.tau.ac.il:22 password (2)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/specific/disk1/home/galzeevi/saqp" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="galzeevi@rack-milo-01.cs.tau.ac.il:22 password (3)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/specific/disk1/home/galzeevi/saqp" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="galzeevi@rack-milo-01.cs.tau.ac.il:22 password (4)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/specific/disk1/home/galzeevi/saqp" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="hila@rack-wolf-g04.cs.tau.ac.il:22 password">
         <serverdata>
           <mappings>
@@ -30,6 +58,14 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="tova-server">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/saqp" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

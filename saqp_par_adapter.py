@@ -36,11 +36,11 @@ class SaqpParAdapter:
              'decimal', 'numeric', 'real', 'double precision',
              'smallserial', 'serial', 'bigserial']
         db_formatted_data_types = [f"\'{data_type}\'" for data_type in numeric_data_types]
-        columns = self.data_access.select(f"SELECT column_name FROM information_schema.columns " +
+        columns = self.data_access.select(f"SELECT column_name AS col FROM information_schema.columns " +
                                           f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                           f"AND data_type IN ({' , '.join(db_formatted_data_types)}) " +
                                           f"AND column_name <> '{self.index_col}'")
-        return [col_obj['column_name'] for col_obj in columns]
+        return [col_obj['col'] for col_obj in columns]
 
     def init_numerical_vals(self, numerical_cols):
         # build a dict mapping col -> [min, max]
@@ -60,14 +60,18 @@ class SaqpParAdapter:
             if col == self.index_col:
                 continue
             elif col in self.numerical_cols:  # numerical column
-                dist += Decimal(abs(_null_safe_subtraction(t[col], s[col]))
-                                / (self.numerical_vals[col][1] - self.numerical_vals[col][0]))
+                if self.numerical_vals[col][1] == self.numerical_vals[col][0]:  # column is constant
+                    dist += Decimal(1)
+                else:
+                    dist += Decimal(abs(_null_safe_subtraction(t[col], s[col]))
+                                    / (self.numerical_vals[col][1] - self.numerical_vals[col][0]))
             else:
                 dist += (0 if t[col] == s[col] else 1)
         return dist / (len(t.keys()) - 1)
 
     def _set_dist(self, t, S):  # TODO use LSH
-        return min([self._dist(t, s) for s in S])
+        # if S is empty we return the maximal distance which is 1
+        return Decimal(1) if len(S) == 0 else min([self._dist(t, s) for s in S])
 
     def _tuple_weight(self, t):
         result_sets = [set(result) for result in self.queries_results]

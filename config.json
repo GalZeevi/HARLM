@@ -1,5 +1,6 @@
 {
   "dbConfig": {
+    "type": "postgresql",
     "host": "localhost",
     "database": "datasets",
     "user": "postgres",
