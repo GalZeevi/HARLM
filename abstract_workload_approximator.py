@@ -10,7 +10,7 @@ def union(list1, list2):
     return list(set(list1).union(set(list2)))
 
 
-class WorkloadApproximator(ABC):
+class WorkloadApproximator(ABC):  # TODO parallelize this
 
     def __init__(self):
         self.data_access = DataAccess()

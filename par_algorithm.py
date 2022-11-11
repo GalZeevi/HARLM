@@ -2,9 +2,11 @@ from collections.abc import Callable
 import numpy as np
 from typing import Literal
 import time
+import multiprocessing as mp
 
 
 class LazyGreedy:
+    runTypes = ['UC', 'CB']
 
     def __init__(self,
                  cost_func: Callable[[[int]], float],
@@ -19,11 +21,12 @@ class LazyGreedy:
         return [self.population[i] for i in idx]
 
     def run(self, budget: float, run_type: Literal['UC', 'CB'], print_debug_logs=True):
-        assert run_type in ['UC', 'CB'], f"Unrecognized type! Got {run_type} but should be 'UC' or 'CB'"
+        assert run_type in LazyGreedy.runTypes, f"Unrecognized type! Got {run_type} but should be 'UC' or 'CB'"
 
         S: [int] = []
         B: float = budget
         delta: [float] = [np.Inf] * len(self.population)
+        costs = [self.cost_func([elm]) for elm in self.population]
 
         isDone: bool = False
         iter_num = 0
@@ -34,27 +37,21 @@ class LazyGreedy:
             curr: [bool] = [False] * len(self.population)
             updatedSet: bool = False
             while not updatedSet:
-                deltaCopy: [float] = [*delta]
-                for i in range(len(deltaCopy)):
-                    # should disregard what is already in S or what breaks budget constraint
-                    if (i in set(S)) or (self.cost_func(self.population_by_idx(S + [i])) > B):
-                        deltaCopy[i] = np.NINF
-                    if run_type == 'CB' and deltaCopy[i] != np.NINF:
-                        deltaCopy[i] = deltaCopy[i] / self.cost_func(self.population_by_idx([i]))
-
-                if all(elm == np.NINF for elm in deltaCopy):  # no candidates are left for p
+                p = LazyGreedy.get_maximal_p([*delta], costs, S, B, run_type, mp.cpu_count() - 1)
+                if p < 0:
                     isDone = True
                     break
-                p = np.argmax(deltaCopy)
-
-                if curr[p]:
+                elif curr[p]:
                     S.append(p)
-                    print_debug_logs and print(f'Updated S, new gain: {self.gain_func(self.population_by_idx(S))}')
+                    B -= self.cost_func(self.population_by_idx([p]))
+                    print_debug_logs and print(
+                        f'Updated S, new gain: {self.gain_func(self.population_by_idx(S))}, remaining budget: {B}')
                     updatedSet = True
+                    if B == 0:
+                        isDone = True
                 else:
                     delta[p] = self.gain_func(self.population_by_idx(S + [p])) - \
                                self.gain_func(self.population_by_idx(S))
-                    # print(f"Updated delta[{p}]")
                     curr[p] = True
 
             print_debug_logs and print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))
@@ -63,9 +60,44 @@ class LazyGreedy:
         print_debug_logs and print(f"LazyGreedy with type {run_type} finished after {iter_num} iterations")
         return self.population_by_idx(S)
 
+    @staticmethod
+    def calculate_deltas(deltas, S, remaining_budget, run_type, costs, results):
+        for i in range(len(deltas)):
+            # should disregard what is already in S or what breaks budget constraint
+            if (i in set(S)) or (costs[i] > remaining_budget):
+                deltas[i] = np.NINF
+            if run_type == 'CB' and deltas[i] != np.NINF:
+                deltas[i] = deltas[i] / costs[i]
+
+        p = np.argmax(deltas)
+        deltas[p] != np.NINF and results.append(p)  # if NINF is reached then no more candidates are left
+
+    @staticmethod
+    def get_maximal_p(deltas, costs, S, B, run_type, num_workers):
+        results = mp.Manager().list()
+        tasks = np.array_split([*zip(deltas, costs)], num_workers)
+        procs = []
+
+        for task in tasks:
+            proc = mp.Process(target=LazyGreedy.calculate_deltas,
+                              args=(
+                                  [tup[0] for tup in task],
+                                  S,
+                                  B,
+                                  run_type,
+                                  [tup[1] for tup in task],
+                                  results))
+            procs.append(proc)
+            proc.start()
+
+        for proc in procs:
+            proc.join()
+
+        return -1 if len(results) == 0 else np.argmax(results)
+
 
 class PARAlgorithm:
-    # TODO make sure we also look at tuples not result of a query (refrence jupyter)
+
     def __init__(self,
                  cost_func: Callable[[list], float],
                  gain_func: Callable[[list], float],

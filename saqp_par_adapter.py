@@ -81,7 +81,7 @@ class SaqpParAdapter:
     def _tuple_loss(self, t, S):
         return self._tuple_weight(t) * self._set_dist(t, S)
 
-    def query_result_score(self, query_over_sample, ground_truth):  # TODO delete this when I'm done
+    def query_result_score(self, query_over_sample, ground_truth):
         query_over_sample_score = sum([self._tuple_weight(tup)
                                        for tup in query_over_sample])
         ground_truth_score = sum([self._tuple_weight(tup)
@@ -99,7 +99,7 @@ class SaqpParAdapter:
         #     self._tuple_loss(tup, S) for tup in self.tuples
         # ]))
 
-    def get_population(self):
+    def get_population(self):  # TODO: not wise to keep all the population in memory, change this when scaling up
         return self.tuples
 
     def get_par_config(self):
