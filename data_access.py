@@ -4,9 +4,14 @@ from config_manager import ConfigManager
 from consts import DBTypes
 
 
-def row2dict(row):  # TODO auto flatten for len(row._fields) == 1
+def row2dict(row):
     d = {}
-    for field in row._fields:
+    fields = row._fields
+
+    if len(fields) == 1:
+        return row._data[0]
+
+    for field in fields:
         d[field] = row[field]
     return d
 

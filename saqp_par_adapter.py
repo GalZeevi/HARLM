@@ -40,7 +40,7 @@ class SaqpParAdapter:
                                           f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                           f"AND data_type IN ({' , '.join(db_formatted_data_types)}) " +
                                           f"AND column_name <> '{self.index_col}'")
-        return [col_obj['col'] for col_obj in columns]
+        return columns
 
     def init_numerical_vals(self, numerical_cols):
         # build a dict mapping col -> [min, max]
@@ -48,7 +48,7 @@ class SaqpParAdapter:
         for col in numerical_cols:
             min_val = self.data_access.select_one(f'SELECT MIN({col}) AS val FROM {self.schema}.{self.table}')
             max_val = self.data_access.select_one(f'SELECT MAX({col}) AS val FROM {self.schema}.{self.table}')
-            min_max_vals[col] = [min_val['val'], max_val['val']]
+            min_max_vals[col] = [min_val, max_val]
         return min_max_vals
 
     def get_cost_function(self):

@@ -30,7 +30,8 @@ class WorkloadApproximator(ABC):
                 query_batch = self.get_batch()
 
                 for query in query_batch:
-                    query_result = [res[self.index_col] for res in self.data_access.select(query)]
+                    # Query should return only a single field - id
+                    query_result = self.data_access.select(query)
                     print(f"Processing query:\n{query}")
                     result_batch.append({'sql': query, 'result': query_result})
 

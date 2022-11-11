@@ -5,13 +5,12 @@ import random
 
 
 class QueryGenerator:
-    def __init__(self, schema, table, index_col, select_entire_row=False):
+    def __init__(self, schema, table, index_col):
         self.data_access = DataAccess()
         self.dbType = str.lower(ConfigManager.get_config('dbConfig.type'))
         self.schema = schema
         self.table = table
         self.index_col = index_col
-        self.select_entire_row = select_entire_row
         self.numerical_cols = self.init_numerical_cols()
         self.numerical_vals = self.init_numerical_vals(self.numerical_cols)
         self.categorical_cols = self.init_categorical_cols()
@@ -25,7 +24,7 @@ class QueryGenerator:
                                           f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                           f"AND data_type IN ({' , '.join(db_formatted_data_types)}) " +
                                           f"AND column_name <> '{self.index_col}'")
-        return [col_obj['col'] for col_obj in columns]
+        return columns
 
     def init_categorical_cols(self):
         textual_data_types = ['character varying%%', 'varchar%%', '%%text', 'char%%', 'character%%']
@@ -33,7 +32,7 @@ class QueryGenerator:
         columns = self.data_access.select(f"SELECT column_name AS col FROM information_schema.columns " +
                                           f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                           f"AND ({' OR '.join([f'data_type LIKE {data_type}' for data_type in db_formatted_data_types])})")
-        return [col_obj['col'] for col_obj in columns]
+        return columns
 
     def init_numerical_vals(self, numerical_cols):
         # build a dict mapping col -> [min, max]
@@ -41,7 +40,7 @@ class QueryGenerator:
         for col in numerical_cols:
             min_val = self.data_access.select_one(f'SELECT MIN({col}) AS val FROM {self.schema}.{self.table}')
             max_val = self.data_access.select_one(f'SELECT MAX({col}) AS val FROM {self.schema}.{self.table}')
-            min_max_vals[col] = [min_val['val'], max_val['val']]
+            min_max_vals[col] = [min_val, max_val]
         return min_max_vals
 
     def init_categorical_vals(self, categorical_columns):
@@ -58,7 +57,7 @@ class QueryGenerator:
             column_values = self.data_access.select(f"SELECT distinct_values.val AS val FROM (" +
                                                     f"SELECT DISTINCT {col} AS val FROM {self.schema}.{self.table}"
                                                     f") as distinct_values ORDER BY {random_function}() LIMIT 10000")
-            vals[col] = [column_value['val'] for column_value in column_values]
+            vals[col] = column_values
         return vals
 
     def get_query(self, num_of_columns):
@@ -92,6 +91,6 @@ class QueryGenerator:
         if len(where_clause) > 0:
             where_clause_str = f'WHERE {" AND ".join(where_clause)}'
 
-        query = f"SELECT {'*' if self.select_entire_row else self.index_col} " \
+        query = f"SELECT {self.index_col} " \
                 f"FROM {self.schema}.{self.table} {where_clause_str}"
         return query
