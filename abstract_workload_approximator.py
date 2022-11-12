@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from data_access import DataAccess
 from config_manager import ConfigManager
 from checkpoint_manager import CheckpointManager
+from graphs_manager import GraphsManager, MetricsCalculator
+from consts import GraphNames
 
 
 def union(list1, list2):
@@ -16,6 +18,8 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
         self.data_access = DataAccess()
         self.similarity_threshold = ConfigManager.get_config('workloadConfig.similarity_threshold')
         self.index_col = ConfigManager.get_config('workloadConfig.index_col')
+        self.metrics = MetricsCalculator()
+        self.metrics_max_iters = ConfigManager.get_config('metricsConfig.max_iters')
         self.results = []
 
     def run(self, max_iter, size=None):
@@ -55,7 +59,7 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
                     else:
                         print(f'Creating new cluster with num: {len(approx) + 1}')
                         approx.append({'result': result, 'frequency': 1, 'sql': [query]})
-
+            i < self.metrics_max_iters and self.calculate_metrics_for_iteration(i, approx)
             self.save_to_results(approx)
             print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))
 
@@ -84,3 +88,8 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
 
     def save_to_results(self, approx):
         self.results.append(copy.deepcopy(approx))
+
+    def calculate_metrics_for_iteration(self, iter_num, query_clusters):
+        GraphsManager.add_point(GraphNames.CLUSTERS, (iter_num, len(query_clusters)))
+        GraphsManager.add_point(GraphNames.DISTRIBUTIONS,
+                                (iter_num, self.metrics.calculate_distribution(query_clusters)))

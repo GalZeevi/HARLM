@@ -30,7 +30,7 @@ class SaqpParAdapter:
         # TODO I can't really keep selecting all the tuples - can we do this better? db function?
         self.tuples = self.data_access.select(f"SELECT * FROM {self.schema}.{self.table}")
 
-    def init_numerical_cols(self):
+    def init_numerical_cols(self): # TODO duplicate code, move to dataset-utils
         numeric_data_types: list[str] = \
             ['smallint', 'integer', 'bigint',
              'decimal', 'numeric', 'real', 'double precision',

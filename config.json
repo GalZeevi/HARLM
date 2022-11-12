@@ -1,14 +1,14 @@
 {
   "dbConfig": {
-    "type": "postgresql",
+    "type": "mysql",
     "host": "localhost",
     "database": "datasets",
-    "user": "postgres",
-    "password": "postgres",
-    "port": 5432
+    "user": "root",
+    "password": "root",
+    "port": 3306
   },
   "workloadConfig": {
-    "schema": "public",
+    "schema": "datasets",
     "table": "austin_bikes_100",
     "index_col": "_id",
     "batchSize": 30,
@@ -16,5 +16,8 @@
   },
   "testConfig": {
     "max_test_iters": 20
+  },
+  "metricsConfig": {
+    "max_iters": 25
   }
 }

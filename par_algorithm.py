@@ -73,7 +73,7 @@ class LazyGreedy:
         deltas[p] != np.NINF and results.append(p)  # if NINF is reached then no more candidates are left
 
     @staticmethod
-    def get_maximal_p(deltas, costs, S, B, run_type, num_workers):
+    def get_maximal_p(deltas, costs, S, B, run_type, num_workers):  # TODO use joblib
         results = mp.Manager().list()
         tasks = np.array_split([*zip(deltas, costs)], num_workers)
         procs = []
