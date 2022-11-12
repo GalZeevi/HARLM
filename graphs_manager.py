@@ -32,6 +32,13 @@ class GraphsManager:
     graphs: Dict[str, Graph] = {}
 
     @staticmethod
+    def clear(name=None):
+        if name is not None and name in GraphsManager.graphs:
+            del GraphsManager.graphs[name]
+        else:
+            GraphsManager.graphs = {}
+
+    @staticmethod
     def get_graph(name: str) -> Graph:
         return GraphsManager.graphs.get(name, Graph([]))
 

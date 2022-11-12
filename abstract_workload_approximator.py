@@ -23,6 +23,7 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
         self.results = []
 
     def run(self, max_iter, size=None):
+        GraphsManager.clear()
         approx = []
         for i in range(max_iter):
             start = time.time()
