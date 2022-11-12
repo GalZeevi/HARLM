@@ -1,6 +1,6 @@
 from collections.abc import Callable
 import numpy as np
-from typing import Literal, Dict
+from typing import Literal, Dict, Union
 import time
 
 
@@ -83,7 +83,7 @@ class LazyGreedy:
 class PARAlgorithm:
 
     def __init__(self,
-                 cost_func: float | Callable[[list], float],
+                 cost_func: Union[float, Callable[[list], float]],
                  gain_func: Callable[[list], float],
                  population: list):
         self.gain_func = gain_func
