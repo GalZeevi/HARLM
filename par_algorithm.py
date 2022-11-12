@@ -1,8 +1,7 @@
 from collections.abc import Callable
 import numpy as np
-from typing import Literal
+from typing import Literal, Dict
 import time
-import multiprocessing as mp
 
 
 class LazyGreedy:
@@ -23,10 +22,19 @@ class LazyGreedy:
     def run(self, budget: float, run_type: Literal['UC', 'CB'], print_debug_logs=True):
         assert run_type in LazyGreedy.runTypes, f"Unrecognized type! Got {run_type} but should be 'UC' or 'CB'"
 
+        print_debug_logs and print('Starting algorithm initialization')
+        start = time.time()
         S: [int] = []
+        S_gain: float = 0
         B: float = budget
-        delta: [float] = [np.Inf] * len(self.population)
-        costs = [self.cost_func([elm]) for elm in self.population]
+        model: Dict[int, Dict[str, float]] = \
+            {p: {
+                'delta': np.Inf,
+                'cost': self.cost_func([self.population[p]]),
+                'curr': False
+            } for p in range(len(self.population))}
+
+        print_debug_logs and print(f'Algorithm initialization done after: %.2f ms' % ((time.time() - start) * 1000))
 
         isDone: bool = False
         iter_num = 0
@@ -34,25 +42,36 @@ class LazyGreedy:
             start = time.time()
             print_debug_logs and print(f'============ starting iteration {iter_num + 1}   ============')
 
-            curr: [bool] = [False] * len(self.population)
+            for p in model.keys():
+                model[p]['curr'] = False
+
             updatedSet: bool = False
             while not updatedSet:
-                p = LazyGreedy.get_maximal_p([*delta], costs, S, B, run_type, mp.cpu_count() - 1)
-                if p < 0:
-                    isDone = True
-                    break
-                elif curr[p]:
+                p = max(model, key=lambda p: model[p]['delta'], default=-1)
+                if model[p]['curr']:
                     S.append(p)
+                    S_gain = self.gain_func(self.population_by_idx(S))
                     B -= self.cost_func(self.population_by_idx([p]))
-                    print_debug_logs and print(
-                        f'Updated S, new gain: {self.gain_func(self.population_by_idx(S))}, remaining budget: {B}')
-                    updatedSet = True
                     if B == 0:
                         isDone = True
+                        break
+                    del model[p]
+
+                    # remove elements that break the budget constraint
+                    for r in model.keys():
+                        if model[r]['cost'] > B:
+                            del model[r]
+
+                    print_debug_logs and print(f'Added: [{p}] to S, new gain: [{S_gain}], remaining budget: [{B}]')
+                    updatedSet = True
                 else:
-                    delta[p] = self.gain_func(self.population_by_idx(S + [p])) - \
-                               self.gain_func(self.population_by_idx(S))
-                    curr[p] = True
+                    start = time.time()
+                    model[p]['delta'] = self.gain_func(self.population_by_idx(S + [p])) - S_gain
+                    if run_type == LazyGreedy.runTypes[1]:
+                        model[p]['delta'] = model[p]['delta'] / model[p]['cost']
+                    # print_debug_logs and print(f'Calculating delta[{p}] took: %.2f ms'
+                    #                            % ((time.time() - start) * 1000))
+                    model[p]['curr'] = True
 
             print_debug_logs and print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))
             iter_num += 1
@@ -60,50 +79,20 @@ class LazyGreedy:
         print_debug_logs and print(f"LazyGreedy with type {run_type} finished after {iter_num} iterations")
         return self.population_by_idx(S)
 
-    @staticmethod
-    def calculate_deltas(deltas, S, remaining_budget, run_type, costs, results):
-        for i in range(len(deltas)):
-            # should disregard what is already in S or what breaks budget constraint
-            if (i in set(S)) or (costs[i] > remaining_budget):
-                deltas[i] = np.NINF
-            if run_type == 'CB' and deltas[i] != np.NINF:
-                deltas[i] = deltas[i] / costs[i]
-
-        p = np.argmax(deltas)
-        deltas[p] != np.NINF and results.append(p)  # if NINF is reached then no more candidates are left
-
-    @staticmethod
-    def get_maximal_p(deltas, costs, S, B, run_type, num_workers):  # TODO use joblib
-        results = mp.Manager().list()
-        tasks = np.array_split([*zip(deltas, costs)], num_workers)
-        procs = []
-
-        for task in tasks:
-            proc = mp.Process(target=LazyGreedy.calculate_deltas,
-                              args=(
-                                  [tup[0] for tup in task],
-                                  S,
-                                  B,
-                                  run_type,
-                                  [tup[1] for tup in task],
-                                  results))
-            procs.append(proc)
-            proc.start()
-
-        for proc in procs:
-            proc.join()
-
-        return -1 if len(results) == 0 else np.argmax(results)
-
 
 class PARAlgorithm:
 
     def __init__(self,
-                 cost_func: Callable[[list], float],
+                 cost_func: float | Callable[[list], float],
                  gain_func: Callable[[list], float],
                  population: list):
         self.gain_func = gain_func
-        self.lazyGreedy = LazyGreedy(cost_func, gain_func, population)
+
+        if type(cost_func) == int or type(cost_func) == float:  # fixed cost
+            self.run_only_once = True  # with fixed cost types 'UC' and 'CB' are identical
+            self.lazyGreedy = LazyGreedy(lambda S: len(S) * cost_func, gain_func, population)
+        else:
+            self.lazyGreedy = LazyGreedy(cost_func, gain_func, population)
 
     def run(self, budget: float, print_debug_logs=True):
         print(f'Start running algorithm with budget: {budget}')
@@ -111,16 +100,19 @@ class PARAlgorithm:
         print_debug_logs and print(f'Start running LazyGreedy with type UC')
         start = time.time()
         res1 = self.lazyGreedy.run(budget, 'UC', print_debug_logs)
-        ucRuntime = (time.time() - start) * 1000
-        print_debug_logs and print(f'algorithm took: %.2f ms' % ucRuntime)
+        runtime = (time.time() - start) * 1000
+        print_debug_logs and print(f'algorithm took: %.2f ms' % runtime)
 
-        print_debug_logs and print(f'Start running LazyGreedy with type CB')
-        start = time.time()
-        res2 = self.lazyGreedy.run(budget, 'CB', print_debug_logs)
-        cbRuntime = (time.time() - start) * 1000
-        print_debug_logs and print(f'algorithm took: %.2f ms' % cbRuntime)
+        res2 = []
+        if not self.run_only_once:
+            print_debug_logs and print(f'Start running LazyGreedy with type CB')
+            start = time.time()
+            res2 = self.lazyGreedy.run(budget, 'CB', print_debug_logs)
+            cbRuntime = (time.time() - start) * 1000
+            print_debug_logs and print(f'algorithm took: %.2f ms' % cbRuntime)
+            runtime += cbRuntime
 
-        print(f'PAR algorithm took: %.2f ms' % (ucRuntime + cbRuntime))
+        print(f'PAR algorithm took: %.2f ms' % runtime)
 
         if self.gain_func(res1) > self.gain_func(res2):
             return res1

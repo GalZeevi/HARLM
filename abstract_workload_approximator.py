@@ -59,6 +59,7 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
                     else:
                         print(f'Creating new cluster with num: {len(approx) + 1}')
                         approx.append({'result': result, 'frequency': 1, 'sql': [query]})
+
             i < self.metrics_max_iters and self.calculate_metrics_for_iteration(i, approx)
             self.save_to_results(approx)
             print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))
