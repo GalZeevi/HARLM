@@ -3,6 +3,8 @@ from decimal import *
 from typing import Dict
 import numpy as np
 from data_access import DataAccess
+from joblib import Parallel, delayed
+import time
 
 
 def _one_over(num):
@@ -23,7 +25,7 @@ class SaqpParAdapter:
         self.index_col = index_col
         self.numerical_cols = self.init_numerical_cols()
         self.numerical_vals = self.init_numerical_vals(self.numerical_cols)
-        self.queries_results = queries_results
+        self.queries_results = [np.array(result) for result in queries_results]
         self.queries_weights = queries_weights
         self.weights_cache = {}
         # TODO I can't really keep selecting all the tuples - can we do this better? db function?
@@ -41,7 +43,7 @@ class SaqpParAdapter:
                                           f"AND column_name <> '{self.index_col}'")
         return columns
 
-    def init_numerical_vals(self, numerical_cols): # TODO duplicate code, move to dataset-utils
+    def init_numerical_vals(self, numerical_cols):  # TODO duplicate code, move to dataset-utils
         # build a dict mapping col -> [min, max]
         min_max_vals = {}
         for col in numerical_cols:
@@ -74,12 +76,14 @@ class SaqpParAdapter:
         return Decimal(1) if len(S) == 0 else min([self._dist(t, s) for s in S])
 
     def _tuple_weight(self, t):
-        if t[self.index_col] in self.weights_cache:
+        if t[self.index_col] in self.weights_cache.keys():
             return self.weights_cache[t[self.index_col]]
 
-        result_sets = [set(result) for result in self.queries_results]
+        # membership_mask = np.array(
+        #     [np.isin(t[self.index_col], sub_array) for sub_array in self.queries_results])
+        # weight = np.sum(np.array(self.queries_weights)[membership_mask])
         weight = sum([self.queries_weights[i] for i in range(len(self.queries_results))
-                      if t[self.index_col] in result_sets[i]])
+                      if np.isin(t[self.index_col], np.array(self.queries_results[i])).item()])
 
         self.weights_cache[t[self.index_col]] = weight
         return weight
@@ -97,10 +101,26 @@ class SaqpParAdapter:
     def get_gain_function(self):
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
         # NOTE: This means summing over tuples not queries as is done in PAR
-        weights_sum = sum([self._tuple_weight(t) for t in self.tuples])
-        return lambda S: 0 if len(S) == 0 else \
-            sum([self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in self.tuples]) \
-            / weights_sum
+
+        # weights_sum = sum([self._tuple_weight(t) for t in self.tuples])
+
+        pool = Parallel(n_jobs=-2, verbose=1)
+        weights_sum = sum(pool(delayed(self._tuple_weight)(t) for t in self.tuples))
+
+        def gain_v2(S):
+            if len(S) == 0:
+                return 0
+            # gain = sum(pool(
+            #     delayed(lambda r: self._tuple_weight(r) * (1 - self._set_dist(r, S)))(t) for t in
+            #     self.tuples)) / weights_sum
+            gain = sum([self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in
+                        self.tuples]) / weights_sum
+            return gain
+
+        return gain_v2
+        # return lambda S: 0 if len(S) == 0 else \
+        #     sum([self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in self.tuples]) \
+        #     / weights_sum
         # return lambda S: 0 if len(S) == 0 else _one_over(sum([
         #     self._tuple_loss(tup, S) for tup in self.tuples
         # ]))
