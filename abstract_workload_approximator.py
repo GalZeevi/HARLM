@@ -23,6 +23,9 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
         self.results = []
 
     def run(self, max_iter, size=None):
+        table_size = self.data_access.select_one(
+            f'SELECT COUNT(1) AS size '
+            f'FROM {ConfigManager.get_config("clustersConfig.schema")}.{ConfigManager.get_config("clustersConfig.table")}')
         GraphsManager.clear()
         approx = []
         for i in range(max_iter):
@@ -38,7 +41,8 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
                     # Query should return only a single field - id
                     query_result = self.data_access.select(query)
                     print(f"Processing query:\n{query}")
-                    result_batch.append({'sql': query, 'result': query_result})
+                    if len(query_result) <= .5 * table_size:
+                        result_batch.append({'sql': query, 'result': query_result})
 
                 isThereAnyResults = \
                     not all(len(res) == 0 for res in [result_batch[i]['result'] for i in range(len(result_batch))])

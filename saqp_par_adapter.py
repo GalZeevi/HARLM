@@ -138,7 +138,10 @@ class SaqpParAdapter:
         # ]))
 
     def get_population(self):  # TODO: not wise to keep all the population in memory, change this when scaling up
-        return self.tuples
+        tuples_in_cache = [str(tupleId) for tupleId, weight in self.weights_cache.items() if weight > 0]
+        return self.data_access.select(f'SELECT * FROM {self.schema}.{self.table} '
+                                       f'WHERE {self.index_col} IN ({",".join(tuples_in_cache)})')
+        # return self.tuples
 
     def get_par_config(self):
         return [self.get_cost_function(), self.get_gain_function(), self.get_population()]
