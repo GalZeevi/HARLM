@@ -9,32 +9,39 @@ class CheckpointManager:
         os.makedirs(basePath)
 
     @staticmethod
-    def get_checkpoints(name):
-        path = f"{CheckpointManager.basePath}/{name}"
+    def get_checkpoints(sub_dir=None):
+        path = f"{CheckpointManager.basePath}{'' if sub_dir is None else '/' + sub_dir}"
         if not os.path.exists(path):
             return []
         return [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 
     @staticmethod
-    def save(name, content):
-        checkpointPath = f"{CheckpointManager.basePath}/{name}"
-        if not os.path.exists(checkpointPath):
-            os.makedirs(checkpointPath)
-        all_checkpoints = CheckpointManager.get_checkpoints(name)
-        all_versions = [int(f.split('.')[0].split('_')[1]) for f in all_checkpoints]
-        next_version = 0 if len(all_versions) == 0 else max(all_versions) + 1
-        with open(f"./{checkpointPath}/checkpoint_{next_version}.pkl", 'wb') as f:
+    def get_all_versions():
+        all_checkpoints = CheckpointManager.get_checkpoints()
+        return [int(f) for f in all_checkpoints]
+
+    @staticmethod
+    def save(name, content, append_to_last=True):
+        if not os.path.exists(CheckpointManager.basePath):
+            os.makedirs(CheckpointManager.basePath)
+        all_checkpoints = CheckpointManager.get_checkpoints()
+        all_versions = [int(f) for f in all_checkpoints]
+        if len(all_versions) == 0:
+            next_version = 1
+        elif append_to_last is None:
+            next_version = max(all_versions)
+        else:
+            next_version = max(all_versions) + 1
+        if not os.path.exists(f"./{CheckpointManager.basePath}/{next_version}"):
+            os.makedirs(f"./{CheckpointManager.basePath}/{next_version}")
+        with open(f"./{CheckpointManager.basePath}/{next_version}/{name}.pkl", 'wb') as f:
             pickle.dump(content, f)
 
     @staticmethod
     def load(name, version=None):
         if version is None:
-            all_checkpoints = CheckpointManager.get_checkpoints(name)
-            all_versions = [int(f.split('.')[0].split('_')[1]) for f in all_checkpoints]
+            all_checkpoints = CheckpointManager.get_checkpoints()
+            all_versions = [int(f) for f in all_checkpoints]
             version = max(all_versions)
-        with open(f"./{CheckpointManager.basePath}/{name}/checkpoint_{version}.pkl", 'rb') as f:
+        with open(f"./{CheckpointManager.basePath}/{version}/{name}.pkl", 'rb') as f:
             return pickle.load(f)
-
-    @staticmethod
-    def exists(name):
-        return len(CheckpointManager.get_checkpoints(name)) > 0

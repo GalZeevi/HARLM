@@ -3,8 +3,9 @@ from decimal import *
 from typing import Dict
 import numpy as np
 from data_access import DataAccess
-from joblib import Parallel, delayed
-import time
+from checkpoint_manager import CheckpointManager
+import multiprocessing as mp
+from tqdm import tqdm
 
 
 def _one_over(num):
@@ -88,6 +89,15 @@ class SaqpParAdapter:
         self.weights_cache[t[self.index_col]] = weight
         return weight
 
+    def _tuple_weight_without_cache(self, t):
+        # membership_mask = np.array(
+        #     [np.isin(t[self.index_col], sub_array) for sub_array in self.queries_results])
+        # weight = np.sum(np.array(self.queries_weights)[membership_mask])
+
+        weight = sum([self.queries_weights[i] for i in range(len(self.queries_results))
+                      if np.isin(t[self.index_col], np.array(self.queries_results[i])).item()])
+        return t[self.index_col], weight
+
     def _tuple_loss(self, t, S):
         return self._tuple_weight(t) * self._set_dist(t, S)
 
@@ -104,8 +114,8 @@ class SaqpParAdapter:
 
         # weights_sum = sum([self._tuple_weight(t) for t in self.tuples])
 
-        pool = Parallel(n_jobs=-2, verbose=1)
-        weights_sum = sum(pool(delayed(self._tuple_weight)(t) for t in self.tuples))
+        self.calculate_weights_parallel(num_workers=4, chunk_size=75)  # TODO MAGIC NUMBERS!! at least use config...
+        weights_sum = sum(self.weights_cache.values())
 
         def gain_v2(S):
             if len(S) == 0:
@@ -113,7 +123,7 @@ class SaqpParAdapter:
             # gain = sum(pool(
             #     delayed(lambda r: self._tuple_weight(r) * (1 - self._set_dist(r, S)))(t) for t in
             #     self.tuples)) / weights_sum
-            gain = sum([self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in
+            gain = sum([self.weights_cache[t[self.index_col]] * (1 - self._set_dist(t, S)) for t in
                         self.tuples]) / weights_sum
             return gain
 
@@ -130,3 +140,13 @@ class SaqpParAdapter:
 
     def get_par_config(self):
         return [self.get_cost_function(), self.get_gain_function(), self.get_population()]
+
+    def calculate_weights_parallel(self, num_workers, chunk_size):
+        weights = []
+        with mp.Pool(num_workers) as pool:
+            weights_iterator = tqdm(pool.imap(self._tuple_weight_without_cache, self.tuples, chunk_size))
+            for res in weights_iterator:
+                weights.append(res)
+        print('finished weights calculation!')
+        self.weights_cache = dict(weights)
+        CheckpointManager.save('weights', self.weights_cache)

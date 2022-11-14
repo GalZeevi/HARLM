@@ -67,7 +67,7 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
 
         approx.sort(key=lambda d: d['frequency'], reverse=True)
         approx = approx if size is None else approx[:size]
-        CheckpointManager.save(name='workload', content=approx)
+        CheckpointManager.save(name='clusters', content=approx, append_to_last=False)
         return approx
 
     @abstractmethod
