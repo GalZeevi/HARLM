@@ -61,9 +61,9 @@ class MetricsCalculator:
     @staticmethod
     def _get_random_tuples():
         dataAccess = DataAccess()
-        indexCol = ConfigManager.get_config('workloadConfig.index_col')
-        schema = ConfigManager.get_config('workloadConfig.schema')
-        table = ConfigManager.get_config('workloadConfig.table')
+        indexCol = ConfigManager.get_config('clustersConfig.index_col')
+        schema = ConfigManager.get_config('clustersConfig.schema')
+        table = ConfigManager.get_config('clustersConfig.table')
         randomStatement = 'RANDOM' if DBTypes.IS_POSTGRESQL(ConfigManager.get_config('dbConfig.type')) else 'RAND'
         return dataAccess.select(
             f"SELECT {indexCol} FROM {schema}.{table} "

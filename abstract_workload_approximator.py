@@ -16,8 +16,8 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
 
     def __init__(self):
         self.data_access = DataAccess()
-        self.similarity_threshold = ConfigManager.get_config('workloadConfig.similarity_threshold')
-        self.index_col = ConfigManager.get_config('workloadConfig.index_col')
+        self.similarity_threshold = ConfigManager.get_config('clustersConfig.similarity_threshold')
+        self.index_col = ConfigManager.get_config('clustersConfig.index_col')
         self.metrics = MetricsCalculator()
         self.metrics_max_iters = ConfigManager.get_config('metricsConfig.max_iters')
         self.results = []

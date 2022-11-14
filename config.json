@@ -7,7 +7,7 @@
     "password": "root",
     "port": 3306
   },
-  "workloadConfig": {
+  "clustersConfig": {
     "schema": "datasets",
     "table": "austin_bikes_100",
     "index_col": "_id",
@@ -19,5 +19,9 @@
   },
   "metricsConfig": {
     "max_iters": 25
+  },
+  "cpuConfig": {
+    "num_workers": 4,
+    "chunk_size": 75
   }
 }

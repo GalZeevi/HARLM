@@ -9,10 +9,10 @@ class JaccardWorkloadApproximator(WorkloadApproximator):
 
     def __init__(self):
         super().__init__()
-        workloadConfig = ConfigManager.get_config('workloadConfig')
-        queryConfig = [workloadConfig['schema'], workloadConfig['table'], workloadConfig['index_col']]
+        clustersConfig = ConfigManager.get_config('clustersConfig')
+        queryConfig = [clustersConfig['schema'], clustersConfig['table'], clustersConfig['index_col']]
         self.query_generator = QueryGenerator(*queryConfig)
-        self.batch_size = workloadConfig['batchSize']
+        self.batch_size = clustersConfig['batchSize']
 
     def get_batch(self):
         batch = []

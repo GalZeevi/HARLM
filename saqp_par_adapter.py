@@ -4,6 +4,7 @@ from typing import Dict
 import numpy as np
 from data_access import DataAccess
 from checkpoint_manager import CheckpointManager
+from config_manager import ConfigManager
 import multiprocessing as mp
 from tqdm import tqdm
 
@@ -29,6 +30,8 @@ class SaqpParAdapter:
         self.queries_results = [np.array(result) for result in queries_results]
         self.queries_weights = queries_weights
         self.weights_cache = {}
+        self.num_workers = ConfigManager.get_config('cpuConfig.num_workers')
+        self.chunk_size = ConfigManager.get_config('cpuConfig.chunk_size')
         # TODO I can't really keep selecting all the tuples - can we do this better? db function?
         self.tuples = self.data_access.select(f"SELECT * FROM {self.schema}.{self.table}")
 
@@ -113,8 +116,7 @@ class SaqpParAdapter:
         # NOTE: This means summing over tuples not queries as is done in PAR
 
         # weights_sum = sum([self._tuple_weight(t) for t in self.tuples])
-
-        self.calculate_weights_parallel(num_workers=4, chunk_size=75)  # TODO MAGIC NUMBERS!! at least use config...
+        self.calculate_weights_parallel(num_workers=self.num_workers, chunk_size=self.chunk_size)
         weights_sum = sum(self.weights_cache.values())
 
         def gain_v2(S):
@@ -149,4 +151,4 @@ class SaqpParAdapter:
                 weights.append(res)
         print('finished weights calculation!')
         self.weights_cache = dict(weights)
-        CheckpointManager.save('weights', self.weights_cache)
+        CheckpointManager.save('weights', self.weights_cache)  # TODO: make sure this is not overriden later
