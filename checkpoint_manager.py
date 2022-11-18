@@ -9,11 +9,10 @@ class CheckpointManager:
         os.makedirs(basePath)
 
     @staticmethod
-    def get_checkpoints(sub_dir=None):
-        path = f"{CheckpointManager.basePath}{'' if sub_dir is None else '/' + sub_dir}"
-        if not os.path.exists(path):
+    def get_checkpoints():
+        if not os.path.exists(CheckpointManager.basePath):
             return []
-        return [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        return [f for f in os.listdir(CheckpointManager.basePath)]
 
     @staticmethod
     def get_all_versions():
