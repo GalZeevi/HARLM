@@ -5,7 +5,7 @@ from data_access import DataAccess
 from config_manager import ConfigManager
 from checkpoint_manager import CheckpointManager
 from graphs_manager import GraphsManager, MetricsCalculator
-from consts import GraphNames
+from consts import GraphNames, CheckpointNames
 
 
 def union(list1, list2):
@@ -15,6 +15,8 @@ def union(list1, list2):
 class WorkloadApproximator(ABC):  # TODO parallelize this
 
     def __init__(self):
+        self.schema = ConfigManager.get_config("clustersConfig.schema")
+        self.table = ConfigManager.get_config("clustersConfig.table")
         self.data_access = DataAccess()
         self.similarity_threshold = ConfigManager.get_config('clustersConfig.similarity_threshold')
         self.index_col = ConfigManager.get_config('clustersConfig.index_col')
@@ -24,8 +26,7 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
 
     def run(self, max_iter, size=None):
         table_size = self.data_access.select_one(
-            f'SELECT COUNT(1) AS size '
-            f'FROM {ConfigManager.get_config("clustersConfig.schema")}.{ConfigManager.get_config("clustersConfig.table")}')
+            f'SELECT COUNT(1) AS size FROM {self.schema}.{self.table}')
         GraphsManager.clear()
         approx = []
         for i in range(max_iter):
@@ -43,6 +44,8 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
                     print(f"Processing query:\n{query}")
                     if len(query_result) <= .5 * table_size:
                         result_batch.append({'sql': query, 'result': query_result})
+                    else:
+                        print('query returned too many results!')
 
                 isThereAnyResults = \
                     not all(len(res) == 0 for res in [result_batch[i]['result'] for i in range(len(result_batch))])
@@ -71,7 +74,7 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
 
         approx.sort(key=lambda d: d['frequency'], reverse=True)
         approx = approx if size is None else approx[:size]
-        CheckpointManager.save(name='clusters', content=approx, append_to_last=False)
+        CheckpointManager.save(name=CheckpointNames.CLUSTERS, content=approx, append_to_last=False)
         return approx
 
     @abstractmethod

@@ -7,6 +7,7 @@ from checkpoint_manager import CheckpointManager
 from config_manager import ConfigManager
 import multiprocessing as mp
 from tqdm import tqdm
+from consts import CheckpointNames
 
 
 def _one_over(num):
@@ -20,7 +21,7 @@ def _null_safe_subtraction(x, y):
 
 
 class SaqpParAdapter:
-    def __init__(self, schema, table, index_col, queries_results, queries_weights):
+    def __init__(self, schema, table, index_col, queries_results, queries_weights, checkpoint_ver=None):
         self.data_access = DataAccess()
         self.schema = schema
         self.table = table
@@ -29,7 +30,8 @@ class SaqpParAdapter:
         self.numerical_vals = self.init_numerical_vals(self.numerical_cols)
         self.queries_results = [np.array(result) for result in queries_results]
         self.queries_weights = queries_weights
-        self.weights_cache = {}
+        self.weights_cache = {} if checkpoint_ver is None else CheckpointManager.load(CheckpointNames.WEIGHTS,
+                                                                                      checkpoint_ver)
         self.num_workers = ConfigManager.get_config('cpuConfig.num_workers')
         self.chunk_size = ConfigManager.get_config('cpuConfig.chunk_size')
         # TODO I can't really keep selecting all the tuples - can we do this better? db function?
@@ -115,8 +117,8 @@ class SaqpParAdapter:
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
         # NOTE: This means summing over tuples not queries as is done in PAR
 
-        # weights_sum = sum([self._tuple_weight(t) for t in self.tuples])
-        self.calculate_weights_parallel(num_workers=self.num_workers, chunk_size=self.chunk_size)
+        if len(self.weights_cache.keys()) == 0:
+            self.calculate_weights_parallel(num_workers=self.num_workers, chunk_size=self.chunk_size)
         weights_sum = sum(self.weights_cache.values())
 
         def gain_v2(S):
@@ -154,4 +156,5 @@ class SaqpParAdapter:
                 weights.append(res)
         print('finished weights calculation!')
         self.weights_cache = dict(weights)
-        CheckpointManager.save('weights', self.weights_cache)  # TODO: make sure this is not overriden later
+        CheckpointManager.save(CheckpointNames.WEIGHTS,
+                               self.weights_cache)  # TODO: make sure this is not overriden later

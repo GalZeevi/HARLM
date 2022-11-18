@@ -6,3 +6,9 @@ class DBTypes:
 class GraphNames:
     CLUSTERS = 'clusters'
     DISTRIBUTIONS = 'distributions'
+
+
+class CheckpointNames:
+    CLUSTERS = 'clusters'
+    WEIGHTS = 'weights'
+    SAMPLE = 'sample'
