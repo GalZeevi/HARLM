@@ -1,20 +1,26 @@
-from collections.abc import Callable
-import numpy as np
-from typing import Literal, Dict, Union
+import multiprocessing as mp
 import time
+from collections.abc import Callable
+from typing import Literal, Dict, Union, List
+
+from tqdm import tqdm
+
+from config_manager import ConfigManager
 
 
 class LazyGreedy:
     runTypes = ['UC', 'CB']
 
     def __init__(self,
-                 cost_func: Callable[[[int]], float],
-                 gain_func: Callable[[[int]], float],
-                 population: list):
+                 cost_func: Callable[[List], float],
+                 gain_func: Callable[[List], Union[float, List[float]]],
+                 population: List):
 
         self.cost_func = cost_func
         self.gain_func = gain_func
         self.population = population  # TODO change this when running on large scale examples
+        self.num_workers = ConfigManager.get_config('cpuConfig.num_workers')
+        self.chunk_size = ConfigManager.get_config('cpuConfig.chunk_size')
 
     def population_by_idx(self, idx):
         return [self.population[i] for i in idx]
@@ -27,28 +33,39 @@ class LazyGreedy:
         S: [int] = []
         S_gain: float = 0
         B: float = budget
+        initial_deltas = self.gain_func(self.population, True)
         model: Dict[int, Dict[str, float]] = \
             {p: {
-                'delta': np.Inf,
+                'delta': initial_deltas[p],
                 'cost': self.cost_func([self.population[p]]),
-                'curr': False
+                'curr': True
             } for p in range(len(self.population))}
 
         print_debug_logs and print(f'Algorithm initialization done after: %.2f ms' % ((time.time() - start) * 1000))
 
         isDone: bool = False
-        iter_num = 0
+        iter_num: int = 0
         while not isDone:
             start = time.time()
             print_debug_logs and print(f'============ starting iteration {iter_num + 1}   ============')
 
-            for p in model.keys():
-                model[p]['curr'] = False
+            if iter_num > 0:
+                curr_start = time.time()
+                for p in model.keys():
+                    model[p]['curr'] = False
+                print_debug_logs and print(
+                    f'Setting all p.isCurrent to False took: %.2f ms' % ((time.time() - curr_start) * 1000))
 
             updatedSet: bool = False
+            p_iter: int = 0
             while not updatedSet:
+                p_iter += 1
+                p_start = time.time()
                 p = max(model, key=lambda p: model[p]['delta'], default=-1)
+                print_debug_logs and print(
+                    f'Calculating maximal p took: %.2f ms, covered: {p_iter}' % ((time.time() - p_start) * 1000))
                 if model[p]['curr']:
+                    update_start = time.time()
                     S.append(p)
                     S_gain = self.gain_func(self.population_by_idx(S))
                     B -= self.cost_func(self.population_by_idx([p]))
@@ -62,15 +79,17 @@ class LazyGreedy:
                         if model[r]['cost'] > B:
                             del model[r]
 
-                    print_debug_logs and print(f'Added: [{p}] to S, new gain: [{S_gain}], remaining budget: [{B}]')
+                    print_debug_logs and print(f'Added: [{p}] to S, new gain: [%.4f], remaining budget: [{B}]' % S_gain)
                     updatedSet = True
+                    print_debug_logs and print(
+                        f'Finished updating S, update took: %.2f ms' % ((time.time() - update_start) * 1000))
                 else:
-                    start = time.time()
+                    delta_start = time.time()
                     model[p]['delta'] = self.gain_func(self.population_by_idx(S + [p])) - S_gain
                     if run_type == LazyGreedy.runTypes[1]:
                         model[p]['delta'] = model[p]['delta'] / model[p]['cost']
-                    # print_debug_logs and print(f'Calculating delta[{p}] took: %.2f ms'
-                    #                            % ((time.time() - start) * 1000))
+                    print_debug_logs and print(f'Calculating delta[{p}] took: %.2f ms'
+                                               % ((time.time() - delta_start) * 1000))
                     model[p]['curr'] = True
 
             print_debug_logs and print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))

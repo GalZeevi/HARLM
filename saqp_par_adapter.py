@@ -1,6 +1,6 @@
 import math
 from decimal import *
-from typing import Dict
+from typing import Dict, Union, List
 import numpy as np
 from data_access import DataAccess
 from checkpoint_manager import CheckpointManager
@@ -21,7 +21,7 @@ def _null_safe_subtraction(x, y):
 
 
 class SaqpParAdapter:
-    def __init__(self, schema, table, index_col, queries_results, queries_weights, checkpoint_ver=None):
+    def __init__(self, schema, table, index_col, queries_results, queries_weights, weights_cache=None):
         self.data_access = DataAccess()
         self.schema = schema
         self.table = table
@@ -30,12 +30,12 @@ class SaqpParAdapter:
         self.numerical_vals = self.init_numerical_vals(self.numerical_cols)
         self.queries_results = [np.array(result) for result in queries_results]
         self.queries_weights = queries_weights
-        self.weights_cache = {} if checkpoint_ver is None else CheckpointManager.load(CheckpointNames.WEIGHTS,
-                                                                                      checkpoint_ver)
         self.num_workers = ConfigManager.get_config('cpuConfig.num_workers')
         self.chunk_size = ConfigManager.get_config('cpuConfig.chunk_size')
-        # TODO I can't really keep selecting all the tuples - can we do this better? db function?
         self.tuples = self.data_access.select(f"SELECT * FROM {self.schema}.{self.table}")
+        self.weights_cache = {} if weights_cache is None else weights_cache
+        if len(self.weights_cache.keys()) == 0:  # no cache
+            self.init_weights_cache()
 
     def init_numerical_cols(self):  # TODO duplicate code, move to dataset-utils
         numeric_data_types: list[str] = \
@@ -85,23 +85,25 @@ class SaqpParAdapter:
         if t[self.index_col] in self.weights_cache.keys():
             return self.weights_cache[t[self.index_col]]
 
-        # membership_mask = np.array(
-        #     [np.isin(t[self.index_col], sub_array) for sub_array in self.queries_results])
-        # weight = np.sum(np.array(self.queries_weights)[membership_mask])
-        weight = sum([self.queries_weights[i] for i in range(len(self.queries_results))
-                      if np.isin(t[self.index_col], np.array(self.queries_results[i])).item()])
-
-        self.weights_cache[t[self.index_col]] = weight
+        t_id, weight = self._tuple_weight_without_cache(t)
+        self.weights_cache[t_id] = weight
         return weight
 
     def _tuple_weight_without_cache(self, t):
-        # membership_mask = np.array(
-        #     [np.isin(t[self.index_col], sub_array) for sub_array in self.queries_results])
-        # weight = np.sum(np.array(self.queries_weights)[membership_mask])
-
         weight = sum([self.queries_weights[i] for i in range(len(self.queries_results))
                       if np.isin(t[self.index_col], np.array(self.queries_results[i])).item()])
         return t[self.index_col], weight
+
+    def init_weights_cache(self):
+        weights = []
+        with mp.Pool(self.num_workers) as pool:
+            weights_iterator = tqdm(pool.imap(self._tuple_weight_without_cache, self.tuples, self.chunk_size))
+            for res in weights_iterator:
+                weights.append(res)
+        print('finished weights calculation!')
+        self.weights_cache = dict(weights)
+        CheckpointManager.save(CheckpointNames.WEIGHTS,
+                               self.weights_cache)  # TODO: make sure this is not overriden later
 
     def _tuple_loss(self, t, S):
         return self._tuple_weight(t) * self._set_dist(t, S)
@@ -113,48 +115,33 @@ class SaqpParAdapter:
                                   for tup in ground_truth])
         return query_over_sample_score / ground_truth_score
 
+    def gain_v1(self, S):
+        if len(S) == 0:
+            return 0.
+        return sum([self.weights_cache[t[self.index_col]] * (1 - self._set_dist(t, S)) for t in
+                    self.tuples]) / sum(self.weights_cache.values())
+
     def get_gain_function(self):
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
         # NOTE: This means summing over tuples not queries as is done in PAR
 
-        if len(self.weights_cache.keys()) == 0:
-            self.calculate_weights_parallel(num_workers=self.num_workers, chunk_size=self.chunk_size)
-        weights_sum = sum(self.weights_cache.values())
-
-        def gain_v2(S):
-            if len(S) == 0:
-                return 0
-            # gain = sum(pool(
-            #     delayed(lambda r: self._tuple_weight(r) * (1 - self._set_dist(r, S)))(t) for t in
-            #     self.tuples)) / weights_sum
-            gain = sum([self.weights_cache[t[self.index_col]] * (1 - self._set_dist(t, S)) for t in
-                        self.tuples]) / weights_sum
+        def gain_v2(S, keep_dims=False) -> Union[float, List[float]]:
+            if not keep_dims:
+                gain = self.gain_v1(S)
+            else:
+                gain = []
+                with mp.Pool(self.num_workers) as pool:
+                    gains_iterator = tqdm(pool.imap(self.gain_v1, [[s] for s in S], self.chunk_size))
+                    for res in gains_iterator:
+                        gain.append(res)
             return gain
 
         return gain_v2
-        # return lambda S: 0 if len(S) == 0 else \
-        #     sum([self._tuple_weight(t) * (1 - self._set_dist(t, S)) for t in self.tuples]) \
-        #     / weights_sum
-        # return lambda S: 0 if len(S) == 0 else _one_over(sum([
-        #     self._tuple_loss(tup, S) for tup in self.tuples
-        # ]))
 
     def get_population(self):  # TODO: not wise to keep all the population in memory, change this when scaling up
-        tuples_in_cache = [str(tupleId) for tupleId, weight in self.weights_cache.items() if weight > 0]
+        positive_tuples = [str(tupleId) for tupleId, weight in self.weights_cache.items() if weight > 0]
         return self.data_access.select(f'SELECT * FROM {self.schema}.{self.table} '
-                                       f'WHERE {self.index_col} IN ({",".join(tuples_in_cache)})')
-        # return self.tuples
+                                       f'WHERE {self.index_col} IN ({",".join(positive_tuples)})')
 
     def get_par_config(self):
         return [self.get_cost_function(), self.get_gain_function(), self.get_population()]
-
-    def calculate_weights_parallel(self, num_workers, chunk_size):
-        weights = []
-        with mp.Pool(num_workers) as pool:
-            weights_iterator = tqdm(pool.imap(self._tuple_weight_without_cache, self.tuples, chunk_size))
-            for res in weights_iterator:
-                weights.append(res)
-        print('finished weights calculation!')
-        self.weights_cache = dict(weights)
-        CheckpointManager.save(CheckpointNames.WEIGHTS,
-                               self.weights_cache)  # TODO: make sure this is not overriden later

@@ -27,10 +27,11 @@ class CheckpointManager:
         all_versions = [int(f) for f in all_checkpoints]
         if len(all_versions) == 0:
             next_version = 1
-        elif append_to_last is None:
+        elif append_to_last:
             next_version = max(all_versions)
         else:
             next_version = max(all_versions) + 1
+        print(f'Saving checkpoint {name}.pkl to: [./{CheckpointManager.basePath}/{next_version}]')
         if not os.path.exists(f"./{CheckpointManager.basePath}/{next_version}"):
             os.makedirs(f"./{CheckpointManager.basePath}/{next_version}")
         with open(f"./{CheckpointManager.basePath}/{next_version}/{name}.pkl", 'wb') as f:
@@ -42,5 +43,7 @@ class CheckpointManager:
             all_checkpoints = CheckpointManager.get_checkpoints()
             all_versions = [int(f) for f in all_checkpoints]
             version = max(all_versions)
+        if not os.path.exists(f"./{CheckpointManager.basePath}/{version}/{name}.pkl"):
+            return None
         with open(f"./{CheckpointManager.basePath}/{version}/{name}.pkl", 'rb') as f:
             return pickle.load(f)

@@ -7,10 +7,10 @@ from consts import CheckpointNames
 
 class SaqpManager:
 
-    def __init__(self, queries_results, queries_weights):
+    def __init__(self, queries_results, queries_weights, weights_cache=None):
         clustersConfig = ConfigManager.get_config('clustersConfig')
         queryConfig = [clustersConfig['schema'], clustersConfig['table'], clustersConfig['index_col']]
-        self.saqpParAdapter = SaqpParAdapter(*queryConfig, queries_results, queries_weights)
+        self.saqpParAdapter = SaqpParAdapter(*queryConfig, queries_results, queries_weights, weights_cache)
         self.parAlgorithm = PARAlgorithm(*self.saqpParAdapter.get_par_config())
 
     def get_sample(self, k, print_debug_logs=True):
