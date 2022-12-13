@@ -26,7 +26,7 @@ class WorkloadApproximator(ABC):  # TODO parallelize this
 
     def run(self, max_iter, size=None):
         table_size = self.data_access.select_one(
-            f'SELECT COUNT(1) AS size FROM {self.schema}.{self.table}')
+            f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
         GraphsManager.clear()
         approx = []
         for i in range(max_iter):

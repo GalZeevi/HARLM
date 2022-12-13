@@ -5,7 +5,7 @@ import numpy as np
 from data_access import DataAccess
 from checkpoint_manager import CheckpointManager
 from config_manager import ConfigManager
-import multiprocessing as mp
+from pathos.pools import _ProcessPool
 from tqdm import tqdm
 from consts import CheckpointNames
 
@@ -36,6 +36,8 @@ class SaqpParAdapter:
         self.weights_cache = {} if weights_cache is None else weights_cache
         if len(self.weights_cache.keys()) == 0:  # no cache
             self.init_weights_cache()
+        self.tuple_weight_threshold = ConfigManager.get_config('algorithmConfig.tupleWeightThreshold')
+        self.thresholded_tuples = self.get_thresholded_tuples()
 
     def init_numerical_cols(self):  # TODO duplicate code, move to dataset-utils
         numeric_data_types: list[str] = \
@@ -62,7 +64,7 @@ class SaqpParAdapter:
         # return lambda S: len(S)
         return 1  # unit cost
 
-    def _dist(self, t: Dict, s: Dict):
+    def _dist(self, t: Dict, s: Dict):  # TODO precompute distances
         dist = Decimal(0)
         for col in t.keys():
             if col == self.index_col:
@@ -96,7 +98,7 @@ class SaqpParAdapter:
 
     def init_weights_cache(self):
         weights = []
-        with mp.Pool(self.num_workers) as pool:
+        with _ProcessPool(self.num_workers) as pool:
             weights_iterator = tqdm(pool.imap(self._tuple_weight_without_cache, self.tuples, self.chunk_size))
             for res in weights_iterator:
                 weights.append(res)
@@ -104,9 +106,6 @@ class SaqpParAdapter:
         self.weights_cache = dict(weights)
         CheckpointManager.save(CheckpointNames.WEIGHTS,
                                self.weights_cache)  # TODO: make sure this is not overriden later
-
-    def _tuple_loss(self, t, S):
-        return self._tuple_weight(t) * self._set_dist(t, S)
 
     def query_result_score(self, query_over_sample, ground_truth):
         query_over_sample_score = sum([self._tuple_weight(tup)
@@ -119,7 +118,7 @@ class SaqpParAdapter:
         if len(S) == 0:
             return 0.
         return sum([self.weights_cache[t[self.index_col]] * (1 - self._set_dist(t, S)) for t in
-                    self.tuples]) / sum(self.weights_cache.values())
+                    self.thresholded_tuples]) / sum(self.weights_cache.values())
 
     def get_gain_function(self):
         # NOTE: I am implementing the gain function as stated in SAQP problem formulation
@@ -130,7 +129,7 @@ class SaqpParAdapter:
                 gain = self.gain_v1(S)
             else:
                 gain = []
-                with mp.Pool(self.num_workers) as pool:
+                with _ProcessPool(self.num_workers) as pool:
                     gains_iterator = tqdm(pool.imap(self.gain_v1, [[s] for s in S], self.chunk_size))
                     for res in gains_iterator:
                         gain.append(res)
@@ -138,10 +137,26 @@ class SaqpParAdapter:
 
         return gain_v2
 
-    def get_population(self):  # TODO: not wise to keep all the population in memory, change this when scaling up
-        positive_tuples = [str(tupleId) for tupleId, weight in self.weights_cache.items() if weight > 0]
+    def get_thresholded_tuples(self):
+        positive_tuples = [str(tupleId) for tupleId, weight in self.weights_cache.items() if
+                           weight > self.tuple_weight_threshold]
         return self.data_access.select(f'SELECT * FROM {self.schema}.{self.table} '
                                        f'WHERE {self.index_col} IN ({",".join(positive_tuples)})')
+
+    def get_population(self):  # TODO: not wise to keep all the population in memory, change this when scaling up
+        return self.thresholded_tuples
+
+    def get_population_ids(self):
+        return [tupleId for tupleId, weight in self.weights_cache.items() if weight > self.tuple_weight_threshold]
+
+    def get_population_by_id_func(self):
+        def population_by_id(ids):
+            if len(ids) == 0:
+                return []
+            return self.data_access.select(f'SELECT * FROM {self.schema}.{self.table} '
+                                           f'WHERE {self.index_col} IN ({",".join([str(idx) for idx in ids])})')
+
+        return population_by_id
 
     def get_par_config(self):
         return [self.get_cost_function(), self.get_gain_function(), self.get_population()]

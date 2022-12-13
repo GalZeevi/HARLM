@@ -9,19 +9,22 @@
   },
   "clustersConfig": {
     "schema": "datasets",
-    "table": "austin_bikes_100",
+    "table": "austin_bikes_1000",
     "index_col": "_id",
     "batchSize": 30,
     "similarity_threshold": 0.8
+  },
+  "algorithmConfig": {
+    "tupleWeightThreshold": 0.001
   },
   "testConfig": {
     "max_test_iters": 20
   },
   "metricsConfig": {
-    "max_iters": 25
+    "max_iters": 50
   },
   "cpuConfig": {
     "num_workers": 4,
-    "chunk_size": 75
+    "chunk_size": 100
   }
 }

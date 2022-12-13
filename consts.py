@@ -12,3 +12,5 @@ class CheckpointNames:
     CLUSTERS = 'clusters'
     WEIGHTS = 'weights'
     SAMPLE = 'sample'
+    LAZY_GREEDY_METADATA = 'lazyGreedyMetadata'
+    LAZY_GREEDY_MODEL = 'lazyGreedyModel'

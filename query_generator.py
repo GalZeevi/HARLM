@@ -43,7 +43,7 @@ class QueryGenerator:
             min_max_vals[col] = [min_val, max_val]
         return min_max_vals
 
-    def init_categorical_vals(self, categorical_columns):
+    def init_categorical_vals(self, categorical_columns, limit=None):
         # build a dict mapping col -> list of values
         if DBTypes.IS_POSTGRESQL(self.dbType):
             random_function = 'RANDOM'
@@ -56,11 +56,12 @@ class QueryGenerator:
         for col in categorical_columns:
             column_values = self.data_access.select(f"SELECT distinct_values.val AS val FROM (" +
                                                     f"SELECT DISTINCT {col} AS val FROM {self.schema}.{self.table}"
-                                                    f") as distinct_values ORDER BY {random_function}() LIMIT 10000")
+                                                    f") as distinct_values ORDER BY {random_function}() "
+                                                    f"{'' if not limit else f'LIMIT {limit}'}")
             vals[col] = column_values
         return vals
 
-    def get_query(self, num_of_columns):
+    def get_query(self, num_of_columns, select_all_columns=False):
         #  making sure no more columns than available are selected
         num_of_columns = min(num_of_columns, len(self.categorical_cols) + len(self.numerical_cols))
         chosen_columns = random.sample(self.categorical_cols + self.numerical_cols, num_of_columns)
@@ -91,6 +92,6 @@ class QueryGenerator:
         if len(where_clause) > 0:
             where_clause_str = f'WHERE {" AND ".join(where_clause)}'
 
-        query = f"SELECT {self.index_col} " \
+        query = f"SELECT {'*' if select_all_columns else self.index_col} " \
                 f"FROM {self.schema}.{self.table} {where_clause_str}"
         return query

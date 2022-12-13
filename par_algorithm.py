@@ -1,14 +1,17 @@
-import multiprocessing as mp
 import time
 from collections.abc import Callable
 from typing import Literal, Dict, Union, List
 
-from tqdm import tqdm
+import numpy as np
+from pathos.pools import _ProcessPool
+import os
 
 from config_manager import ConfigManager
+from checkpoint_manager import CheckpointManager
+from consts import CheckpointNames
 
 
-class LazyGreedy:
+class LazyGreedy:  # TODO: change everything to numpy arrays
     runTypes = ['UC', 'CB']
 
     def __init__(self,
@@ -32,71 +35,82 @@ class LazyGreedy:
         start = time.time()
         S: [int] = []
         S_gain: float = 0
-        B: float = budget
-        initial_deltas = self.gain_func(self.population, True)
+        remaining_budget: float = budget
         model: Dict[int, Dict[str, float]] = \
             {p: {
-                'delta': initial_deltas[p],
+                'delta': np.Inf,
                 'cost': self.cost_func([self.population[p]]),
-                'curr': True
+                'curr': False
             } for p in range(len(self.population))}
 
         print_debug_logs and print(f'Algorithm initialization done after: %.2f ms' % ((time.time() - start) * 1000))
 
-        isDone: bool = False
         iter_num: int = 0
-        while not isDone:
+        while remaining_budget > 0:
             start = time.time()
             print_debug_logs and print(f'============ starting iteration {iter_num + 1}   ============')
 
             if iter_num > 0:
-                curr_start = time.time()
                 for p in model.keys():
                     model[p]['curr'] = False
-                print_debug_logs and print(
-                    f'Setting all p.isCurrent to False took: %.2f ms' % ((time.time() - curr_start) * 1000))
 
-            updatedSet: bool = False
-            p_iter: int = 0
-            while not updatedSet:
-                p_iter += 1
-                p_start = time.time()
-                p = max(model, key=lambda p: model[p]['delta'], default=-1)
-                print_debug_logs and print(
-                    f'Calculating maximal p took: %.2f ms, covered: {p_iter}' % ((time.time() - p_start) * 1000))
-                if model[p]['curr']:
-                    update_start = time.time()
-                    S.append(p)
-                    S_gain = self.gain_func(self.population_by_idx(S))
-                    B -= self.cost_func(self.population_by_idx([p]))
-                    if B == 0:
-                        isDone = True
-                        break
-                    del model[p]
+            max_p_candidates = self.get_max_p_candidates(model, S, S_gain, run_type, print_debug_logs)
+            p = max(max_p_candidates, key=lambda p: model[p]['delta'], default=-1)
+            S, S_gain, remaining_budget = self.update_sample(S, remaining_budget, p)
+            CheckpointManager.save(f'{run_type}-{CheckpointNames.LAZY_GREEDY_METADATA}', [S, S_gain, remaining_budget, run_type])
 
-                    # remove elements that break the budget constraint
-                    for r in model.keys():
-                        if model[r]['cost'] > B:
-                            del model[r]
-
-                    print_debug_logs and print(f'Added: [{p}] to S, new gain: [%.4f], remaining budget: [{B}]' % S_gain)
-                    updatedSet = True
-                    print_debug_logs and print(
-                        f'Finished updating S, update took: %.2f ms' % ((time.time() - update_start) * 1000))
-                else:
-                    delta_start = time.time()
-                    model[p]['delta'] = self.gain_func(self.population_by_idx(S + [p])) - S_gain
-                    if run_type == LazyGreedy.runTypes[1]:
-                        model[p]['delta'] = model[p]['delta'] / model[p]['cost']
-                    print_debug_logs and print(f'Calculating delta[{p}] took: %.2f ms'
-                                               % ((time.time() - delta_start) * 1000))
-                    model[p]['curr'] = True
+            # remove elements that break the budget constraint or already in S
+            model = {r: model[r] for r in model.keys() if r != p and model[r]['cost'] <= remaining_budget}
+            CheckpointManager.save(f'{run_type}-{CheckpointNames.LAZY_GREEDY_MODEL}', model)
 
             print_debug_logs and print(f'iteration took: %.2f ms' % ((time.time() - start) * 1000))
             iter_num += 1
 
         print_debug_logs and print(f"LazyGreedy with type {run_type} finished after {iter_num} iterations")
         return self.population_by_idx(S)
+
+    def update_sample(self, S, remaining_budget, p):
+        S.append(p)
+        S_gain = self.gain_func(self.population_by_idx(S))
+        remaining_budget -= self.cost_func(self.population_by_idx([p]))
+        print(f'Added: [{p}] to sample, new gain: [%.4f], remaining budget: [{remaining_budget}]' % S_gain)
+        return S, S_gain, remaining_budget
+
+    def get_max_p_from_subarray(self, p_subarray, model, S, S_gain, run_type, print_debug_logs):
+        # model is assumed to be a partial of outer model
+        print_debug_logs and print(f'Process {os.getpid()} starting work on candidates array: \n'
+                                   f'{p_subarray}', flush=True)
+        max_iters = len(p_subarray) + 1
+        for i in range(max_iters):
+            p = max(model, key=lambda t: model[t]['delta'], default=-1)
+            if p < 0:
+                raise Exception(f'Unexpected Error, could not find candidate p from ${p_subarray}')
+            elif model[p]['curr']:
+                print_debug_logs and print(f'Finished working on a subarray of size: {len(p_subarray)}, p={p}',
+                                           flush=True)
+                return p, model
+            else:
+                delta_start = time.time()
+
+                model[p]['delta'] = self.gain_func(self.population_by_idx(S + [p])) - S_gain
+                if run_type == LazyGreedy.runTypes[1]:
+                    model[p]['delta'] = model[p]['delta'] / model[p]['cost']
+
+                print_debug_logs and print(f'Calculating delta[{p}] took: %.2f ms'
+                                           % ((time.time() - delta_start) * 1000), flush=True)
+                model[p]['curr'] = True
+
+    def get_max_p_candidates(self, model, S, S_gain, run_type, print_debug_logs):
+        with _ProcessPool(self.num_workers) as pool:
+            p_array = np.array([*model.keys()])
+            p_candidates = []
+            items = [(p_subarray, {p: model[p] for p in p_subarray}, S, S_gain, run_type, print_debug_logs) for
+                     p_subarray in np.array_split(p_array, self.chunk_size)]
+            result = pool.starmap(self.get_max_p_from_subarray, items)
+            for p, updated_model in result:
+                p_candidates.append(p)
+                model.update(updated_model)
+        return p_candidates
 
 
 class PARAlgorithm:
@@ -133,7 +147,7 @@ class PARAlgorithm:
 
         print(f'PAR algorithm took: %.2f ms' % runtime)
 
-        if self.gain_func(res1) > self.gain_func(res2):
+        if self.run_only_once or self.gain_func(res1) > self.gain_func(res2):
             return res1
         else:
             return res2

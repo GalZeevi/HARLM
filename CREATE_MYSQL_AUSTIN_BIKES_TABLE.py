@@ -3,9 +3,9 @@ from data_access import DataAccess
 
 CSV_NAME = 'datasets\\austin_bikes_final.csv'
 SCHEMA = 'datasets'
-TABLE = 'austin_bikes_100'
+LIMIT = 1000
+TABLE = f'austin_bikes_{LIMIT}'
 ID_COL = '_id'
-LIMIT = 300
 
 if __name__ == '__main__':
     csv_data = pd.read_csv(CSV_NAME, index_col=False, delimiter=',')
@@ -25,10 +25,9 @@ if __name__ == '__main__':
                        f'end_longitude DECIMAL(10,6), '
                        f'PRIMARY KEY (_id))')
 
-    columns = [colObj['col'] for colObj in
-               data_access.select(f"SELECT column_name AS col FROM information_schema.columns "
+    columns = data_access.select(f"SELECT column_name AS col FROM information_schema.columns "
                                   f"WHERE table_schema='{SCHEMA}' AND table_name='{TABLE}' "
-                                  f"AND column_name  <> '{ID_COL}'")]
+                                  f"AND column_name  <> '{ID_COL}'")
 
     counter = 0
     for i, row in csv_data.sample(frac=(LIMIT / len(csv_data.index))).iterrows():

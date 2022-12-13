@@ -56,7 +56,7 @@ class GraphsManager:
 
 
 class MetricsCalculator:
-    MAX_TUPLES_TO_CALCULATE = 100
+    MAX_TUPLES_TO_CALCULATE = 100000
 
     @staticmethod
     def _get_random_tuples():
