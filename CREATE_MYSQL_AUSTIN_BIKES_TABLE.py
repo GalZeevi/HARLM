@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     data_access.update(f'DROP TABLE IF EXISTS {SCHEMA}.{TABLE}')
     data_access.update(f'CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} ('
-                       f'_id INT NOT NULL AUTO_INCREMENT, '
+                       f'{ID_COL} INT NOT NULL AUTO_INCREMENT, '
                        f'bikeid VARCHAR(50), '
                        f'start_time DATETIME, '
                        f'duration_minutes INT, '
@@ -23,7 +23,7 @@ if __name__ == '__main__':
                        f'start_longitude DECIMAL(10,6), '
                        f'end_latitude DECIMAL(10,6), '
                        f'end_longitude DECIMAL(10,6), '
-                       f'PRIMARY KEY (_id))')
+                       f'PRIMARY KEY ({ID_COL}))')
 
     columns = data_access.select(f"SELECT column_name AS col FROM information_schema.columns "
                                   f"WHERE table_schema='{SCHEMA}' AND table_name='{TABLE}' "
@@ -41,3 +41,6 @@ if __name__ == '__main__':
             counter += 1
         else:
             break
+
+    #  To start from 0
+    data_access.update(f'UPDATE {SCHEMA}.{TABLE} SET {ID_COL} = {ID_COL} -1 WHERE {ID_COL} > 0')

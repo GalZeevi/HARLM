@@ -1,0 +1,29 @@
+{
+  "dbConfig": {
+    "type": "mysql",
+    "host": "localhost",
+    "database": "datasets",
+    "user": "root",
+    "password": "root",
+    "port": 3306
+  },
+  "queriesConfig": {
+    "schema": "datasets",
+    "table": "austin_bikes_1000",
+    "pivot": "_id",
+    "batchSize": 30
+  },
+  "algorithmConfig": {
+    "tupleWeightThreshold": 0.001
+  },
+  "testConfig": {
+    "max_test_iters": 20
+  },
+  "metricsConfig": {
+    "max_iters": 50
+  },
+  "cpuConfig": {
+    "num_workers": 4,
+    "chunk_size": 100
+  }
+}
