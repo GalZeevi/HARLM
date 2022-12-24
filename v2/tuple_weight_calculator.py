@@ -39,7 +39,7 @@ class TupleWeightCalculator:
 
         table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
         prev_weights = np.zeros(table_size) if start_weights is None \
-            else CheckpointManager.load(CHECKPOINT_NAME, checkpoint_version)
+            else CheckpointManager.load(CHECKPOINT_NAME, checkpoint_version, numpy=True)
         weights = prev_weights
 
         timer = Timer(name=TIMER_NAME, initial_text='============= start iteration =============')
@@ -78,7 +78,8 @@ class TupleWeightCalculator:
             timer.stop()
             CheckpointManager.save(name=CHECKPOINT_NAME,
                                    content=normalize(weights),
-                                   append_to_last=i > 0)  # TODO: check
+                                   append_to_last=i > start_iter + 1,
+                                   numpy=True)
             GraphsManager.add_point(GRAPH_NAME, (i, max(diff_to_prev, 0)))
 
         print(f'reached error threshold: {diff_to_prev}! stopping after {max_iter} iterations')
@@ -99,5 +100,5 @@ class TupleWeightCalculator:
     def handle_stop(weights):
         print_total_time()
         result = normalize(weights)
-        CheckpointManager.save(name=CHECKPOINT_NAME, content=result, append_to_last=False)
+        CheckpointManager.save(name=CHECKPOINT_NAME, content=result, numpy=True)
         return result

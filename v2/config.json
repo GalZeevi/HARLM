@@ -14,7 +14,8 @@
     "batchSize": 30
   },
   "algorithmConfig": {
-    "tupleWeightThreshold": 0.001
+    "tupleWeightThreshold": 0.001,
+    "DistanceMatrixBatchSize": 1000
   },
   "testConfig": {
     "max_test_iters": 20
