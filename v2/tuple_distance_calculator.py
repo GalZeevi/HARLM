@@ -120,6 +120,7 @@ class TupleDistanceCalculator:
                     next_id += BATCH_SIZE
 
                 timer.stop()
+                # TODO: can save memory by saving only upper triangle and saving npz?
                 first_tuple_id % 5 == 0 and CheckpointManager.save(name=CHECKPOINT_NAME,
                                                                    content=dist_matrix,
                                                                    numpy=True)

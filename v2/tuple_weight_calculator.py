@@ -10,7 +10,8 @@ from codetiming import Timer
 
 TIMER_NAME = 'weights_timer'
 GRAPH_NAME = 'weights_error'
-CHECKPOINT_NAME = 'weights'
+WEIGHTS_CHECKPOINT_NAME = 'weights'
+QUERIES_CHECKPOINT_NAME = 'queries'
 MAX = 'max'
 
 
@@ -34,18 +35,20 @@ class TupleWeightCalculator:
         self.convergence_metric = convergence_metric
         DataAccess()  # just in case it has not been initialized
 
-    def get_weights(self, max_iter, epsilon, start_iter=-1, start_weights=None, checkpoint_version=None):
+    def get_weights(self, max_iter, epsilon, start_iter=0, checkpoint_version=None):
         GraphsManager.clear()
 
         table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
-        prev_weights = np.zeros(table_size) if start_weights is None \
-            else CheckpointManager.load(CHECKPOINT_NAME, checkpoint_version, numpy=True)
+        executed_queries = [] if checkpoint_version is None else \
+            CheckpointManager.load(QUERIES_CHECKPOINT_NAME, checkpoint_version)
+        prev_weights = np.zeros(table_size) if checkpoint_version is None \
+            else CheckpointManager.load(WEIGHTS_CHECKPOINT_NAME, checkpoint_version, numpy=True)
         weights = prev_weights
 
         timer = Timer(name=TIMER_NAME, initial_text='============= start iteration =============')
         diff_to_prev = -1
 
-        for i in range(start_iter + 1, max_iter):
+        for i in range(start_iter, max_iter):
 
             timer.start()
             returned_results = 0
@@ -61,6 +64,7 @@ class TupleWeightCalculator:
                     elif len(query_result) >= .6 * table_size:
                         self.print_warn_log and print('query returned too many results! ignoring query')
                     else:
+                        executed_queries.append(query)
                         weights[query_result] += 1.
                         returned_results += 1
 
@@ -70,20 +74,20 @@ class TupleWeightCalculator:
 
                 if diff_to_prev <= epsilon:
                     print(f'reached error threshold: {epsilon}! stopping after {i + 1} iterations')
-                    return TupleWeightCalculator.handle_stop(weights)
+                    return TupleWeightCalculator.handle_stop(weights, executed_queries)
             if i > 0:
                 del prev_weights
                 gc.collect()
                 prev_weights = np.copy(weights)
             timer.stop()
-            CheckpointManager.save(name=CHECKPOINT_NAME,
+            CheckpointManager.save(name=WEIGHTS_CHECKPOINT_NAME,
                                    content=normalize(weights),
-                                   append_to_last=i > start_iter + 1,
+                                   append_to_last=i > start_iter,
                                    numpy=True)
             GraphsManager.add_point(GRAPH_NAME, (i, max(diff_to_prev, 0)))
 
         print(f'reached error threshold: {diff_to_prev}! stopping after {max_iter} iterations')
-        return TupleWeightCalculator.handle_stop(weights)
+        return TupleWeightCalculator.handle_stop(weights, executed_queries)
 
     def get_batch(self, batch_size):
         batch = []
@@ -97,8 +101,9 @@ class TupleWeightCalculator:
         return np.max(diffs) if metric == 'max' else np.average(diffs)
 
     @staticmethod
-    def handle_stop(weights):
+    def handle_stop(weights, executed_queries):
         print_total_time()
         result = normalize(weights)
-        CheckpointManager.save(name=CHECKPOINT_NAME, content=result, numpy=True)
+        CheckpointManager.save(name=WEIGHTS_CHECKPOINT_NAME, content=result, numpy=True)
+        CheckpointManager.save(name=QUERIES_CHECKPOINT_NAME, content=executed_queries)
         return result
