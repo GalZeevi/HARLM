@@ -73,10 +73,14 @@ class DataAccess:
 
     @staticmethod
     def update(query):
+        if DataAccess.conn is None:
+            DataAccess._connect()
         DataAccess.conn.execute(query)
 
     @staticmethod
     def select(query):
+        if DataAccess.conn is None:
+            DataAccess._connect()
         answer = []
         for row in DataAccess.conn.execute(query):
             answer.append(row2dict(row))
@@ -88,6 +92,8 @@ class DataAccess:
 
     @staticmethod
     def select_to_df(query):
+        if DataAccess.conn is None:
+            DataAccess._connect()
         return pd.read_sql_query(query, DataAccess.conn)
 
     @staticmethod
