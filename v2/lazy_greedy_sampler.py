@@ -75,25 +75,23 @@ class LazyGreedySampler:
         return sample, current_gain, remaining_budget
 
     def get_max_p_from_subarray(self, p_subarray, deltas, curr, sample, current_gain):
-        print(f'Process {os.getpid()} starting work on candidates array: \n'
-              f'{p_subarray}', flush=True)
+        timer = Timer(name=INNER_TIMER_NAME,
+                      initial_text=f'Process {os.getpid()} start calculating chunk of size: {len(p_subarray)}',
+                      logger=lambda s: print(s, flush=True))
+        timer.start()
         max_iters = len(p_subarray) + 1
         for i in range(max_iters):
-            timer = Timer(name=TIMER_NAME,
-                          logger=lambda s: print(s, flush=True))
             max_delta_ind = np.argmax(deltas)
             p = p_subarray[max_delta_ind]
             if p < 0:
                 raise Exception(f'Unexpected Error, could not find candidate p from ${p_subarray}')
             elif curr[max_delta_ind] > 0:
-                print(f'Finished working on a subarray of size: {p_subarray}, p={p}', flush=True)
+                print(f'Process {os.getpid()} finished calculating chunk of size: {len(p_subarray)}, p={p}', flush=True)
+                timer.stop()
                 return p, p_subarray, deltas, curr
             else:
-                timer.start()
-                print(f'process {os.getpid()} start calculating delta[{p}]')
                 deltas[max_delta_ind] = self.gain(np.append(sample, p)) - current_gain
                 curr[max_delta_ind] = 1
-                timer.stop()
 
     def get_max_p_candidates(self, deltas, curr, sample, current_gain):
         # TODO replace 0.00001 with a percentage of table size
