@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 
 
-class CheckpointManager:
+class CheckpointManager:  # TODO: add support for .npz and save_compressed
     basePath = 'checkpoints'
 
     if not os.path.exists(basePath):
@@ -19,6 +19,10 @@ class CheckpointManager:
     def get_all_versions():
         all_checkpoints = CheckpointManager.get_checkpoints()
         return [int(f) for f in all_checkpoints]
+
+    @staticmethod
+    def get_max_version():
+        return max(CheckpointManager.get_all_versions())
 
     @staticmethod
     def save(name, content, append_to_last=True, numpy=False):

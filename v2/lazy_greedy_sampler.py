@@ -100,7 +100,7 @@ class LazyGreedySampler:
         items = [(p_subarray, deltas[p_subarray], curr[p_subarray], sample, current_gain) for
                  p_subarray in np.array_split(p_array, self.chunk_size)]
 
-        with _ProcessPool(self.num_workers) as pool:
+        with _ProcessPool(self.num_workers) as pool:  # TODO reuse map
             result = pool.starmap(self.get_max_p_from_subarray, items)
             for p, p_subarray, updated_deltas, updated_curr in result:
                 p_candidates = np.append(p_candidates, p)
