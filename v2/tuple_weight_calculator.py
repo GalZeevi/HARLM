@@ -33,7 +33,6 @@ class TupleWeightCalculator:
         self.batch_size = ConfigManager.get_config('queriesConfig.batchSize')
         self.print_warn_log = print_warn
         self.convergence_metric = convergence_metric
-        DataAccess()  # just in case it has not been initialized
 
     def get_weights(self, max_iter, epsilon, start_iter=0, checkpoint_version=None):
         GraphsManager.clear()

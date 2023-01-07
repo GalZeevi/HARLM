@@ -41,7 +41,6 @@ class TupleDistanceCalculator:
         self.table = ConfigManager.get_config('queriesConfig.table')
         self.schema = ConfigManager.get_config('queriesConfig.schema')
         self.pivot = ConfigManager.get_config('queriesConfig.pivot')
-        DataAccess()
         self.numerical_cols_dict = TupleDistanceCalculator._build_numerical_cols_dict(self.table,
                                                                                       self.schema,
                                                                                       self.pivot)
@@ -121,6 +120,7 @@ class TupleDistanceCalculator:
 
                 timer.stop()
                 # TODO: can save memory by saving only upper triangle and saving npz?
+                # TODO: add thresholding to matrix
                 first_tuple_id % 5 == 0 and CheckpointManager.save(name=CHECKPOINT_NAME,
                                                                    content=dist_matrix,
                                                                    numpy=True)
