@@ -10,13 +10,14 @@ class SampleLossCalculator:
         upper_triangle = data[key]
         self.distance_matrix = squareform(upper_triangle, checks=False)
 
-    def test_query(self, sql, sample, metric=np.sum):
+    def test_query(self, sql, sample):
         # Queries should only select the pivot column
         full_result = DataAccess.select(sql)
         if len(full_result) == 0:
-            return -10
+            return -1.
         sample_result = np.intersect1d(full_result, sample)
         if len(sample_result) == 0:
-            return len(full_result)
-        distances = np.min(self.distance_matrix[full_result, :][:, sample_result], axis=1)
-        return np.round(metric(distances), 5)
+            return 1.
+        distances = np.min(self.distance_matrix[full_result, :][:, sample_result], axis=1) / len(full_result)
+        result = np.round(distances, 5)
+        return result

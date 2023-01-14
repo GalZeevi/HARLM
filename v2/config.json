@@ -17,6 +17,14 @@
     "tupleWeightThreshold": 0.001,
     "DistanceMatrixBatchSize": 1000
   },
+  "nnConfig": {
+    "numTuples": 1000,
+    "numQueries": 100,
+    "batchSize": 10,
+    "sampleSliceSize": 10,
+    "maxEpochs": 1,
+    "testSize": 0.25
+  },
   "testConfig": {
     "max_test_iters": 20
   },
@@ -24,7 +32,7 @@
     "max_iters": 50
   },
   "cpuConfig": {
-    "num_workers": 4,
+    "num_workers": 7,
     "chunk_size": 100
   }
 }
