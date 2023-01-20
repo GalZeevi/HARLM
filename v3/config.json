@@ -1,0 +1,25 @@
+{
+  "dbConfig": {
+    "type": "mysql",
+    "host": "localhost",
+    "database": "datasets",
+    "user": "root",
+    "password": "root",
+    "port": 3306
+  },
+  "queryConfig": {
+    "schema": "datasets",
+    "table": "flights_2009_2010",
+    "pivot": "_id",
+    "batchSize": 30,
+    "numToGenerate": 1000
+  },
+  "samplerConfig": {
+    "testSize": 0.3,
+    "viewSize": 50
+  },
+  "cpuConfig": {
+    "num_workers": 7,
+    "chunk_size": 100
+  }
+}
