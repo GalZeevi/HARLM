@@ -19,6 +19,14 @@ class QueryGenerator:
         self.categorical_cols = self.init_categorical_cols()
         self.categorical_vals = self.init_categorical_vals(self.categorical_cols)
 
+    def get_random_func(self):
+        if DBTypes.IS_POSTGRESQL(self.dbType):
+            return 'RANDOM'
+        elif DBTypes.IS_MYSQL(self.dbType):
+            return 'RAND'
+        else:
+            raise Exception('Unsupported db type! supported types are "postgresql" or "mysql"')
+
     def init_numerical_cols(self):
         numeric_data_types = ['smallint', 'integer', 'bigint', 'decimal', 'numeric', 'real', 'double precision',
                               'smallserial', 'serial', 'bigserial', 'float']
@@ -48,18 +56,11 @@ class QueryGenerator:
 
     def init_categorical_vals(self, categorical_columns, limit=None):
         # build a dict mapping col -> list of values
-        if DBTypes.IS_POSTGRESQL(self.dbType):
-            random_function = 'RANDOM'
-        elif DBTypes.IS_MYSQL(self.dbType):
-            random_function = 'RAND'
-        else:
-            raise Exception('Unsupported db type! supported types are "postgresql" or "mysql"')
-
         vals = {}
         for col in categorical_columns:
             column_values = DataAccess.select(f"SELECT distinct_values.val AS val FROM (" +
                                               f"SELECT DISTINCT {col} AS val FROM {self.schema}.{self.table}"
-                                              f") as distinct_values ORDER BY {random_function}() "
+                                              f") as distinct_values ORDER BY {self.get_random_func()}() "
                                               f"{'' if not limit else f'LIMIT {limit}'}")
             vals[col] = column_values
         return vals
@@ -68,6 +69,9 @@ class QueryGenerator:
         #  making sure no more columns than available are selected
         num_of_columns = min(num_of_columns, len(self.categorical_cols) + len(self.numerical_cols))
         chosen_columns = random.sample(self.categorical_cols + self.numerical_cols, num_of_columns)
+
+        table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
+        max_result_size = int(0.4 * table_size)
 
         where_clause = []
 
@@ -95,7 +99,8 @@ class QueryGenerator:
         if len(where_clause) > 0:
             where_clause_str = f'WHERE {" AND ".join(where_clause)}'
 
-        return f"SELECT {self.pivot} FROM {self.schema}.{self.table} {where_clause_str}"
+        return f"SELECT {self.pivot} FROM {self.schema}.{self.table} {where_clause_str} " \
+               f"ORDER BY {self.get_random_func()}() LIMIT {max_result_size}"
 
 
 def generate_batch():
@@ -103,28 +108,32 @@ def generate_batch():
     batch_size = ConfigManager.get_config('queryConfig.batchSize')
     pbar = tqdm(total=queries_to_generate)
     query_generator = QueryGenerator()
-    is_first_iteration = True
+    CheckpointManager.start_new_version()
 
-    queries = []
-    results = []
-
-    schema = ConfigManager.get_config('queryConfig.schema')
-    table = ConfigManager.get_config('queryConfig.table')
-    table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
-
+    first_query_id = 0
     while queries_to_generate > 0:
-        new_queries = [query_generator.get_query(randint(1, 3))
-                       for i in range(min(batch_size, queries_to_generate))]
+        queries = []
+        results = []
+        batch = [query_generator.get_query(randint(1, 3))
+                 for i in range(min(batch_size, queries_to_generate))]
 
-        for query in new_queries:
+        queries_generated = 0
+        for query in batch:
             query_result = np.array(DataAccess.select(query))
 
-            if 0 < len(query_result) <= .5 * table_size:
+            if len(query_result) > 0:
                 queries.append(query)
                 results.append(query_result)
-                queries_to_generate -= 1
+                queries_generated += 1
                 pbar.update(1)
 
-        CheckpointManager.save('queries', queries, append_to_last=not is_first_iteration, should_print=False)
-        is_first_iteration = False
-        CheckpointManager.save('results', results, append_to_last=not is_first_iteration, should_print=False)
+        queries_to_generate -= queries_generated
+        CheckpointManager.save(f'queries_{first_query_id}-{first_query_id + queries_generated}', queries,
+                               should_print=False)
+        CheckpointManager.save(f'results_{first_query_id}-{first_query_id + queries_generated}', results,
+                               should_print=False)
+        first_query_id += queries_generated
+
+
+if __name__ == '__main__':
+    generate_batch()

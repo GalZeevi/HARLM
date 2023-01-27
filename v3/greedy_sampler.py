@@ -23,14 +23,14 @@ def prepare_weights_for_sample():
     return weights
 
 
-def get_sample(k):
+def get_sample(k, dist=False):
     weights = CheckpointManager.load('greedy_sampler_weights', numpy=True)
     if weights is None:
         weights = prepare_weights_for_sample()
 
     sample = np.argpartition(weights, -k)[-k:]
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
-    score = get_score(sample, view_size)
+    score = get_score(sample, view_size, dist)
 
     CheckpointManager.save(f'{k}-{view_size}-greedy_sample', [sample, score])
     return sample, score

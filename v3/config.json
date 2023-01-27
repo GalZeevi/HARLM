@@ -15,7 +15,7 @@
     "numToGenerate": 1000
   },
   "samplerConfig": {
-    "testSize": 0.3,
+    "testSize": 0.1,
     "viewSize": 50
   },
   "cpuConfig": {

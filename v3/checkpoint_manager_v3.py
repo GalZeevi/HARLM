@@ -67,3 +67,8 @@ class CheckpointManager:  # TODO: add support for .npz and save_compressed
                 return pickle.load(f)
         else:
             return np.load(f"{file_path}/{name}.{suffix}")
+
+    @staticmethod
+    def start_new_version():
+        max_version = CheckpointManager.get_max_version()
+        os.mkdir(f"./{CheckpointManager.basePath}/{max_version + 1}")
