@@ -1,11 +1,12 @@
-from data_access_v3 import DataAccess
-from config_manager_v3 import ConfigManager
-from db_types import DBTypes
 import random
-from tqdm import tqdm
 from random import randint
+
 import numpy as np
+from tqdm import tqdm
+
 from checkpoint_manager_v3 import CheckpointManager
+from config_manager_v3 import ConfigManager
+from data_access_v3 import DBTypes, DataAccess
 
 
 class QueryGenerator:
@@ -70,15 +71,16 @@ class QueryGenerator:
         num_of_columns = min(num_of_columns, len(self.categorical_cols) + len(self.numerical_cols))
         chosen_columns = random.sample(self.categorical_cols + self.numerical_cols, num_of_columns)
 
-        table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
-        max_result_size = int(0.4 * table_size)
+        # table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
+        view_size = ConfigManager.get_config('samplerConfig.viewSize')
+        max_result_size = int(100 * view_size)
 
         where_clause = []
 
         for col in chosen_columns:
             if col in self.categorical_cols:
                 # categorical column
-                frequency = random.uniform(0, 1) * len(self.categorical_vals[col])
+                frequency = random.uniform(0, 0.3) * len(self.categorical_vals[col])
                 values = random.sample(self.categorical_vals[col], max(int(frequency), 1))
                 values = [val.replace("'", "''") for val in values]
                 db_formatted_values = " , ".join([f"\'{value}\'" for value in values])

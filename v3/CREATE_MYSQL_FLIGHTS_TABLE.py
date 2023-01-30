@@ -1,7 +1,8 @@
 import pandas as pd
-from data_access_v3 import DataAccess
 from numpy import Inf
 from tqdm import tqdm
+
+from data_access_v3 import DataAccess
 
 FROM_YEAR = 2009
 TO_YEAR = 2010

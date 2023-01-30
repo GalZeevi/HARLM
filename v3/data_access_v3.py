@@ -1,8 +1,12 @@
 import pandas as pd
 import sqlalchemy
-from config_manager_v3 import ConfigManager
-from db_types import DBTypes
 
+from config_manager_v3 import ConfigManager
+
+
+class DBTypes:
+    IS_POSTGRESQL = lambda db_type: str.lower(db_type) == 'postgres' or str.lower(db_type) == 'postgresql'
+    IS_MYSQL = lambda db_type: str.lower(db_type) == 'mysql' or str.lower(db_type) == 'pymysql'
 
 def row2dict(row):
     d = {}

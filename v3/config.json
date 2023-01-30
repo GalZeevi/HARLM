@@ -15,11 +15,19 @@
     "numToGenerate": 1000
   },
   "samplerConfig": {
-    "testSize": 0.1,
+    "TODO": "change samplerConfig to metricConfig",
+    "testSize": 100,
     "viewSize": 50
   },
   "cpuConfig": {
     "num_workers": 7,
     "chunk_size": 100
+  },
+  "nnConfig": {
+    "numTuples": 1000,
+    "numQueries": 100,
+    "batchSize": 10,
+    "numTestTuples": 100,
+    "maxEpochs": 1
   }
 }

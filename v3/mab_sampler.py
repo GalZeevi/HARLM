@@ -1,11 +1,11 @@
 # library imports
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
-from config_manager_v3 import ConfigManager
-from score_calculator import get_score
-from data_access_v3 import DataAccess
+
 from checkpoint_manager_v3 import CheckpointManager
+from config_manager_v3 import ConfigManager
+from data_access_v3 import DataAccess
+from score_calculator import get_score
 
 
 class MabSampler:
@@ -15,36 +15,32 @@ class MabSampler:
 
     # SETTINGS #
     steps = 400
-    epsilon = 0.5
-
-    # END - SETTINGS #
+    initial_exploration_steps = 0.2
+    epsilon = 0.3
 
     @staticmethod
     def run(num_rows: int,
             k: int,
             evaluate_score_function,
-            max_iter: int = steps):
+            max_iter: int = steps,
+            epsilon: float = epsilon):
 
         # make sure we have steps to run
         if max_iter < 1:
             raise Exception("Error at MultiArmBanditSummary.run: the max_iter argument must be larger than 1")
 
         # init random population
-        num_bandits = num_rows  # + dataset.shape[1]
+        num_bandits = num_rows
         choices = []
         wins = np.zeros(num_bandits)
         pulls = np.zeros(num_bandits)
         for n in tqdm(range(max_iter)):
-            if np.random.uniform(size=1) < MabSampler.epsilon:
+            if n >= int(MabSampler.initial_exploration_steps * max_iter) \
+                    and np.random.uniform(size=1) < epsilon:
                 choice = np.argmax(wins / (pulls + 0.1))
             else:
                 choice = np.random.choice(list(set(range(len(wins))) - {np.argmax(wins / (pulls + 0.1))}))
             choices.append(choice)
-            # payout = evaluate_score_function(dataset,
-            #                                  dataset.iloc[choice, :] if choice < dataset.shape[0] else dataset.iloc[:,
-            #                                                                                            choice -
-            #                                                                                            dataset.shape[
-            #                                                                                                0]])
 
             payout = evaluate_score_function(choice)
             wins[choice] += payout
@@ -60,8 +56,6 @@ class MabSampler:
             if next_index < num_bandits and len(best_rows) < k:
                 best_rows.append(next_index)
                 added_count += 1
-            # wins = np.delete(wins, next_index)
-            # pulls = np.delete(pulls, next_index)
             wins[next_index] = np.NINF
             pulls[next_index] = 1000.
             pbar.update(1)
@@ -69,14 +63,13 @@ class MabSampler:
         return best_rows, evaluate_score_function(best_rows)
 
 
-def get_sample(k, dist=False):
+def get_sample(k, dist=False, max_iter=MabSampler.steps, epsilon=MabSampler.epsilon):
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     schema = ConfigManager.get_config('queryConfig.schema')
     table = ConfigManager.get_config('queryConfig.table')
     table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
-    evaluation_score_func = lambda s: get_score(s, view_size, dist)
 
-    sample, score = MabSampler.run(table_size, k, evaluation_score_func)
-    CheckpointManager.save(f'{k}-{view_size}-mab_sample', [sample, score])
+    sample, score = MabSampler.run(table_size, k, lambda s: get_score(s, dist), max_iter, epsilon)
+    CheckpointManager.save(f'{k}-{view_size}-{max_iter}_{epsilon}_mab_sample', [sample, score])
 
     return sample, score

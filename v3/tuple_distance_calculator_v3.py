@@ -22,7 +22,6 @@ class TupleDistanceCalculator:
 
     def __init__(self):
         self.num_workers = ConfigManager.get_config('cpuConfig.num_workers')
-        self.chunksize = ConfigManager.get_config('cpuConfig.chunk_size')
         self.table = ConfigManager.get_config('queryConfig.table')
         self.schema = ConfigManager.get_config('queryConfig.schema')
         self.pivot = ConfigManager.get_config('queryConfig.pivot')
