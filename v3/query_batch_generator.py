@@ -108,9 +108,9 @@ class QueryGenerator:
 def generate_batch():
     queries_to_generate = ConfigManager.get_config('queryConfig.numToGenerate')
     batch_size = ConfigManager.get_config('queryConfig.batchSize')
+    CheckpointManager.start_new_version()
     pbar = tqdm(total=queries_to_generate)
     query_generator = QueryGenerator()
-    CheckpointManager.start_new_version()
 
     first_query_id = 0
     while queries_to_generate > 0:
