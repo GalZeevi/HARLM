@@ -29,22 +29,28 @@ class MabSampler:
         if max_iter < 1:
             raise Exception("Error at MultiArmBanditSummary.run: the max_iter argument must be larger than 1")
 
-        # init random population
-        num_bandits = num_rows
-        choices = []
-        wins = np.zeros(num_bandits)
-        pulls = np.zeros(num_bandits)
-        for n in tqdm(range(max_iter)):
-            if n >= int(MabSampler.initial_exploration_steps * max_iter) \
-                    and np.random.uniform(size=1) < epsilon:
-                choice = np.argmax(wins / (pulls + 0.1))
-            else:
-                choice = np.random.choice(list(set(range(len(wins))) - {np.argmax(wins / (pulls + 0.1))}))
-            choices.append(choice)
+        wins_pulls = CheckpointManager.load(f'{max_iter}_{epsilon}_mab_wins_pulls', numpy=True)
 
-            payout = evaluate_score_function(choice)
-            wins[choice] += payout
-            pulls[choice] += 1
+        if wins_pulls is None:
+            # init random population
+            choices = []
+            wins = np.zeros(num_rows)
+            pulls = np.zeros(num_rows)
+            for n in tqdm(range(max_iter)):
+                if n >= int(MabSampler.initial_exploration_steps * max_iter) \
+                        and np.random.uniform(size=1) < epsilon:
+                    choice = np.argmax(wins / (pulls + 0.1))
+                else:
+                    choice = np.random.choice(list(set(range(len(wins))) - {np.argmax(wins / (pulls + 0.1))}))
+                choices.append(choice)
+
+                payout = evaluate_score_function(choice)
+                wins[choice] += payout
+                pulls[choice] += 1
+            CheckpointManager.save(f'{max_iter}_{epsilon}_mab_wins_pulls', np.array([wins, pulls]), numpy=True)
+
+        wins = wins_pulls[0]
+        pulls = wins_pulls[1]
 
         # get best
         best_rows = []
@@ -53,7 +59,7 @@ class MabSampler:
 
         while added_count < k:
             next_index = np.argmax(wins / (pulls + 0.1))
-            if next_index < num_bandits and len(best_rows) < k:
+            if next_index < num_rows and len(best_rows) < k:
                 best_rows.append(next_index)
                 added_count += 1
             wins[next_index] = np.NINF

@@ -169,13 +169,18 @@ class NNSampler:
                                                                   f"WHERE table_schema='{self.schema}' "
                                                                   f"AND table_name='{self.table}'")).index(self.pivot)
 
+        self.checkpoint_path = checkpoint_path
         self.network = RelationalNetwork(checkpoint_path=checkpoint_path)
         self.trainer = pl.Trainer(max_epochs=self.max_epochs)
         self.fitted = False or (checkpoint_path is not None)
 
     def fit(self):
+        if self.checkpoint_path is not None:
+            return
+
         train_ids, test_ids = self.get_train_test_tuple_ids()
-        CheckpointManager.save(f'nn_sample_train_test_tuples', [train_ids, test_ids])
+        CheckpointManager.save(f'{self.num_tuples}_{self.num_queries}_nn_sample_train_test_tuples',
+                               [train_ids, test_ids])
 
         train_results = get_train_queries()
         train_dataset = RelationalDataset(train_results[:self.num_queries], train_ids)
@@ -291,18 +296,19 @@ class NNSampler:
 
 def get_sample(k, dist=False, nn_sampler=None):
     if nn_sampler is None:
-        sample = NNSampler().fit().get_sample(k)
-    else:
-        sample = nn_sampler.get_sample(k)
+        nn_sampler = NNSampler().fit()
+
+    sample = nn_sampler.get_sample(k)
 
     score = get_score(sample, dist)
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
-    CheckpointManager.save(f'{k}-{view_size}-nn_sample', [sample, score])
+    CheckpointManager.save(f'{k}-{view_size}-{nn_sampler.num_tuples}_{nn_sampler.num_queries}_nn_sample',
+                           [sample, score])
     return sample, score
 
 
 if __name__ == '__main__':
-    # checkpoint_path = 'lightning_logs/version_0/checkpoints/epoch=0-step=9000.ckpt'
+    checkpoint_path = 'lightning_logs/version_3/checkpoints/epoch=0-step=99800.ckpt'
     nnsampler = NNSampler().fit()
 
     k_list = [10_000, 50_000, 100_000, 150_000, 200_000]
