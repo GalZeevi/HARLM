@@ -37,6 +37,8 @@ class MabSampler:
             wins = np.zeros(num_rows)
             pulls = np.zeros(num_rows)
             for n in tqdm(range(max_iter)):
+                if n > 0 and n % 1000 == 0:
+                    CheckpointManager.save(f'{n}_{epsilon}_mab_wins_pulls', np.array([wins, pulls]), numpy=True)
                 if n >= int(MabSampler.initial_exploration_steps * max_iter) \
                         and np.random.uniform(size=1) < epsilon:
                     choice = np.argmax(wins / (pulls + 0.1))
