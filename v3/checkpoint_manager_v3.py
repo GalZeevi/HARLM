@@ -73,3 +73,7 @@ class CheckpointManager:  # TODO: add support for .npz and save_compressed
     def start_new_version():
         max_version = CheckpointManager.get_max_version()
         os.mkdir(f"./{CheckpointManager.basePath}/{max_version + 1}")
+
+    @staticmethod
+    def get_checkpoint_path(version):
+        return f'{CheckpointManager.basePath}/{version}'
