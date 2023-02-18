@@ -25,8 +25,9 @@
   },
   "nnConfig": {
     "numTuples": 1000,
-    "numQueries": 100,
-    "batchSize": 10,
+    "numFrames": 10,
+    "numQueries": 10,
+    "batchSize": 1,
     "numTestTuples": 100,
     "maxEpochs": 1
   }
