@@ -27,9 +27,7 @@ def start():
         saved_results += len(batch)
 
 
-def shuffle_queries():
-    version = 8
-    steps = [0, 18, 35]
+def shuffle_queries(version=8, steps=(0, 18, 35)):
     queries = np.concatenate((CheckpointManager.load(f'queries_{steps[0]}-{steps[1]}', version),
                               CheckpointManager.load(f'queries_{steps[1]}-{steps[2]}', version)))
     results = CheckpointManager.load(f'results_{steps[0]}-{steps[1]}', version) + \
