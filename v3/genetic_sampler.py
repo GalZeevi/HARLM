@@ -258,7 +258,7 @@ class GeneticSampler:
         best_score = 9999  # TODO: can be done better
         best_rows = []
 
-        checkpoint_population = CheckpointManager.load(f'{max_iter}_genetic_sample_population')
+        checkpoint_population = CheckpointManager.load(f'{k}_{max_iter}_genetic_sample_population')
         # init random population
         if checkpoint_population is None:
             gene_population = SummaryGenePopulation.random_population(row_count=num_rows,
