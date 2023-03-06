@@ -117,7 +117,7 @@ def generate_batch():
         queries = []
         results = []
         batch = [query_generator.get_query(randint(1, 3))
-                 for i in range(min(batch_size, queries_to_generate))]
+                 for _ in range(min(batch_size, queries_to_generate))]
 
         queries_generated = 0
         for query in batch:

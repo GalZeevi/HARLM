@@ -1,7 +1,7 @@
 from data_access_v3 import DataAccess
 from config_manager_v3 import ConfigManager
 from checkpoint_manager_v3 import CheckpointManager
-from score_calculator import get_score
+from score_calculator import get_score, get_score2
 import numpy as np
 from tqdm import tqdm
 from train_test_utils import get_train_queries
@@ -29,7 +29,7 @@ def get_sample(k, dist=False):
 
     sample = np.argpartition(weights, -k)[-k:]
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
-    score = get_score(sample, dist)
+    score = get_score2(sample, mode='test')
 
     CheckpointManager.save(f'{k}-{view_size}-top_queried_sample', [sample, score])
     return sample, score
@@ -37,6 +37,7 @@ def get_sample(k, dist=False):
 
 if __name__ == '__main__':
     # prepare_weights_for_sample()
-    k_list = [10 * 10**3, 50 * 10**3, 100 * 10**3, 200 * 10**3, 250 * 10**3]
-    for k in tqdm(k_list):
-        get_sample(k)
+    print(get_sample(100)[1])
+    # k_list = [10 * 10**3, 50 * 10**3, 100 * 10**3, 200 * 10**3, 250 * 10**3]
+    # for k in tqdm(k_list):
+    #     get_sample(k)

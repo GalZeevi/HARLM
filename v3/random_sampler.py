@@ -4,10 +4,10 @@ from pathos.pools import _ProcessPool
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
-from score_calculator import get_score
+from score_calculator import get_score, get_score2
 from tqdm import tqdm
 
-num_of_trials = 20
+num_of_trials = 50
 
 
 def get_sample(k, dist=False):
@@ -20,7 +20,7 @@ def get_sample(k, dist=False):
 
     def __random_sample_task(trial_id):
         trial_sample = np.random.choice(table_size, k, replace=False)
-        return trial_id, get_score(trial_sample, dist)
+        return trial_id, get_score2(trial_sample, mode='test')
 
     with _ProcessPool(num_of_trials) as pool:
         for i, score in pool.map(__random_sample_task, [*range(num_of_trials)]):
@@ -37,4 +37,4 @@ if __name__ == '__main__':
     # k_list = [10 * 10**3, 50 * 10**3, 100 * 10**3, 200 * 10**3, 250 * 10**3]
     # for k in tqdm(k_list):
     #     get_sample(k)
-    get_sample(3000)
+    print(get_sample(100)[1])
