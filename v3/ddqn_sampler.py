@@ -25,26 +25,51 @@ The Q-Network has as input a state s and outputs the state-action values q(s,a_1
 
 
 class QNetwork(nn.Module):
-    def __init__(self, action_dim, state_dim, hidden_dim):
+    def __init__(self, action_dim, state_shape, hidden_dim, embed=True):
         super(QNetwork, self).__init__()
-        self.categorical_dims = Preprocess.get_categorical_columns_sorted_idx()
-        self.numerical_dims = [i for i in range(len(Preprocess.get_all_columns(with_pivot=False))) if i not in self.categorical_dims]
-        self.embedding_layers = nn.ModuleList(
-            [nn.Embedding(768, 50, device=device) for _ in self.categorical_dims])  # TODO calculate embedding sizes
-        self.fc_1 = nn.Linear(state_dim, hidden_dim, dtype=torch.float32, device=device)
+
+        self.embed = embed
+        if self.embed:
+            self.embedding_dims_and_names = []
+            self.embedding_dims = []
+            self.numerical_dims = []
+            self.embedding_layers = []
+            inp_dim = self.init_embedding(state_shape)
+        else:
+            inp_dim = state_shape[0] * state_shape[1]
+        self.fc_1 = nn.Linear(inp_dim, hidden_dim, dtype=torch.float32, device=device)
         self.fc_2 = nn.Linear(hidden_dim, hidden_dim, dtype=torch.float32, device=device)
         self.fc_3 = nn.Linear(hidden_dim, action_dim, dtype=torch.float32, device=device)
+
+    def init_embedding(self, state_shape):
+        encodings = Preprocess.get_encodings()
+        self.embedding_dims_and_names = [(i, col_name) for i, col_name in
+                                         Preprocess.get_categorical_columns_sorted()
+                                         if len(encodings[col_name]) > 2]
+        self.embedding_dims = [i for i, col_name in self.embedding_dims_and_names if encodings]
+        self.numerical_dims = [i for i in range(len(Preprocess.get_all_columns(with_pivot=False)))
+                               if i not in self.embedding_dims]
+        col_and_lens = {col_name: len(d.keys()) for col_name, d in encodings.items() if len(d.keys()) > 2}
+        embed_sizes = {col: (col_len, min(50, (col_len + 1) // 2)) for col, col_len in col_and_lens.items()}
+        self.embedding_layers = nn.ModuleList([
+            nn.Embedding(embed_sizes[col_name][0], embed_sizes[col_name][1], device=device)
+            for _, col_name in self.embedding_dims_and_names
+        ])
+        inp_dim = state_shape[0] * ((state_shape[1] - len(self.embedding_dims)) +
+                                    sum([size for (length, size) in embed_sizes.values()]))
+        return inp_dim
 
     def forward(self, inp):
         if len(inp.size()) < 3:
             inp = inp.unsqueeze(0)
 
-        inp_cat = inp[:, :, self.categorical_dims].long()
-        inp_cat_embed = [self.embedding_layers[i](inp_cat[:, :, i]) for i, _ in enumerate(self.categorical_dims)]
-        inp_cat_embed = torch.cat(inp_cat_embed, -1)
+        if self.embed:
+            inp_cat = inp[:, :, self.embedding_dims].long()
+            inp_cat_embed = [self.embedding_layers[i](inp_cat[:, :, i]) for i, _ in enumerate(self.embedding_dims)]
+            inp_cat_embed = torch.cat(inp_cat_embed, -1)
 
-        inp_num = inp[:, :, self.numerical_dims]
-        inp_concat = torch.cat([inp_cat_embed, inp_num], -1)
+            inp_num = inp[:, :, self.numerical_dims]
+            inp = torch.cat([inp_cat_embed, inp_num], -1)
 
         x1 = torch.flatten(inp, start_dim=1)
         x1 = F.leaky_relu(self.fc_1(x1))
@@ -161,7 +186,7 @@ def update_parameters(current_model, target_model):
 
 HIDDEN_DIM = 64
 NUM_EPISODES = 3000
-HORIZON = 1000
+HORIZON = 1001
 
 
 def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=64,
@@ -194,9 +219,9 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
     # torch.manual_seed(seed)
     # env.seed(seed)
 
-    Q_1 = QNetwork(action_dim=env.num_actions, state_dim=env.state_shape[0] * env.state_shape[1],
+    Q_1 = QNetwork(action_dim=env.num_actions, state_shape=env.state_shape,
                    hidden_dim=hidden_dim).to(device)
-    Q_2 = QNetwork(action_dim=env.num_actions, state_dim=env.state_shape[0] * env.state_shape[1],
+    Q_2 = QNetwork(action_dim=env.num_actions, state_shape=env.state_shape,
                    hidden_dim=hidden_dim).to(device)
     # transfer parameters from Q_1 to Q_2
     update_parameters(Q_1, Q_2)
@@ -224,8 +249,6 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
         state = env.reset()
         memory.states.append(state)
 
-        # done = False
-        # i = 0
         for i in range(int(horizon) + 1):
             action = Q_2.select_action(env, state, eps)
             state, reward, done = env.step(action)
@@ -269,7 +292,7 @@ def get_sample(k=100, num_episodes=NUM_EPISODES, horizon=HORIZON):
             f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
 
     env = SaqpEnv(k, max_iters=-1)
-    ddqn = QNetwork(action_dim=env.num_actions, state_dim=env.state_shape[0] * env.state_shape[1],
+    ddqn = QNetwork(action_dim=env.num_actions, state_shape=env.state_shape,
                     hidden_dim=HIDDEN_DIM).to(device)
     ddqn.load_state_dict(checkpoint['model_state_dict'])
     ddqn.eval()

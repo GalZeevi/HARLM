@@ -47,7 +47,7 @@ class Preprocess:
         return sorted(columns)
 
     @staticmethod
-    def get_categorical_columns_sorted_idx():
+    def get_categorical_columns_sorted():
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
@@ -62,10 +62,13 @@ class Preprocess:
                                              f"AND column_name <> '{pivot}'")
 
         all_columns = Preprocess.get_all_columns()
-        return [pair[0] for pair in enumerate(all_columns) if pair[1] in categorical_cols]
+        return [pair for pair in enumerate(all_columns) if pair[1] in categorical_cols]
 
     @staticmethod
     def get_encodings():
+        if len(Preprocess._encodings.keys()) > 0:
+            return Preprocess._encodings
+
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
@@ -425,6 +428,6 @@ def get_scores(n_trials):
 
 if __name__ == '__main__':
     k = 100
-    trials = 20
+    trials = 25
     get_scores(trials)
     # train(k)
