@@ -15,7 +15,7 @@ def get_score(sample, dist=False):  # TODO replace dist with metric
         else get_dist_score_for_test_queries(sample, test_results)
 
 
-def get_score2(sample, queries='train', view_size=ConfigManager.get_config('samplerConfig.viewSize'), func='sum'):
+def get_score2(sample, queries='train', view_size=ConfigManager.get_config('samplerConfig.viewSize'), func='avg'):
     if isinstance(queries, str):
         results = get_test_queries() if queries == 'test' else get_train_queries()
     elif isinstance(queries, list):
