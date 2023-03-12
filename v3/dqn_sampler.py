@@ -15,7 +15,9 @@ from sklearn.utils import shuffle
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 from score_calculator import get_score2
+from train_test_utils import get_train_queries
 from checkpoint_manager_v3 import CheckpointManager
+from top_queried_sampler import prepare_sample
 
 
 def threshold_positive(value, threshold):
@@ -25,8 +27,12 @@ def threshold_positive(value, threshold):
         return value
 
 
+NULL_VALUE = '<NULL>'
+
+
 class Preprocess:
     _encodings = dict()
+    _max_values = dict()
     _columns = list()
 
     @staticmethod
@@ -82,26 +88,50 @@ class Preprocess:
                                                 f"AND data_type NOT IN ({' , '.join(db_formatted_data_types)}) " +
                                                 f"AND column_name <> '{pivot}'")
         return {col: Preprocess.create_encoding_dict(
-            DataAccess.select(f'SELECT DISTINCT {col} as val FROM {schema}.{table}'))
+            DataAccess.select(f'SELECT DISTINCT COALESCE({col}, \'{NULL_VALUE}\') as val FROM {schema}.{table}'))
             for col in categorical_columns}
 
     @staticmethod
+    def get_max_values():
+        if len(Preprocess._max_values.keys()) > 0:
+            return Preprocess._max_values
+
+        schema = ConfigManager.get_config('queryConfig.schema')
+        table = ConfigManager.get_config('queryConfig.table')
+        pivot = ConfigManager.get_config('queryConfig.pivot')
+        numeric_data_types = \
+            ['smallint', 'integer', 'bigint',
+             'decimal', 'numeric', 'real', 'double precision',
+             'smallserial', 'serial', 'bigserial', 'int']
+        db_formatted_data_types = [f"\'{data_type}\'" for data_type in numeric_data_types]
+        numerical_columns = DataAccess.select(f"SELECT column_name AS col FROM information_schema.columns " +
+                                              f"WHERE table_schema='{schema}' AND table_name='{table}' " +
+                                              f"AND data_type IN ({' , '.join(db_formatted_data_types)}) " +
+                                              f"AND column_name <> '{pivot}'")
+        return {col: DataAccess.select_one(f'SELECT COALESCE(MAX({col}), 0) as val FROM {schema}.{table}')
+                for col in numerical_columns}
+
+    @staticmethod
     def encode_column(tuples, col_num_when_sorted):
-        if len(Preprocess._encodings.keys()) == 0 or len(Preprocess._columns) == 0:
+        if len(Preprocess._encodings.keys()) == 0 or len(Preprocess._columns) == 0 or \
+           len(Preprocess._max_values.keys()) == 0:
             Preprocess._encodings = Preprocess.get_encodings()
             Preprocess._columns = Preprocess.get_all_columns()
+            Preprocess._max_values = Preprocess.get_max_values()
 
         col_name = sorted(Preprocess._columns)[col_num_when_sorted]
-        if col_name not in Preprocess._encodings:  # numerical column
-            return tuples
-
-        mapping = Preprocess._encodings[col_name]
         col = tuples[:, col_num_when_sorted]
-        reduced_mapping = {k: v for k, v in mapping.items() if k in col}  # in order to not search the entire thing
+        if col_name in Preprocess._max_values:  # numerical column
+            col[np.where(col == None)] = Preprocess._max_values[col_name] + 1  # Handle null-values for numeric columns
+            return tuples
+        elif col_name in Preprocess._encodings:
+            col[np.where(col == None)] = NULL_VALUE  # Handle null-values for categorical columns
+            mapping = Preprocess._encodings[col_name]
+            reduced_mapping = {k: v for k, v in mapping.items() if k in col}  # in order to not search the entire thing
 
-        for key in reduced_mapping.keys():
-            col[np.where(col == key)] = reduced_mapping[key]
-        tuples[:, col_num_when_sorted] = col
+            for key in reduced_mapping.keys():
+                col[np.where(col == key)] = reduced_mapping[key]
+            tuples[:, col_num_when_sorted] = col
 
         return tuples
 
@@ -125,7 +155,7 @@ class Preprocess:
         return np.delete(a, pivot_col_location_in_columns, 1)
 
 
-MAX_ITERS = 1001
+MAX_ITERS = 1005
 
 
 class SaqpEnv:
@@ -140,6 +170,9 @@ class SaqpEnv:
         num_cols_not_pivot = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
                                                    f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                                    f"AND column_name <> '{self.pivot}'")
+        validation_size = 10 if ConfigManager.get_config('samplerConfig.validationSize') is None else \
+            ConfigManager.get_config('samplerConfig.validationSize')
+        self.train_set, self.validation_set = get_train_queries(validation_size=validation_size)
         self.state_shape = (k + 1, num_cols_not_pivot)
         self.step_count = 0
         self.max_iters = max_iters
@@ -152,22 +185,24 @@ class SaqpEnv:
 
     def reset(self):
         self.step_count = 0
-        if self.max_iters <= 0 or (self.k + 1 + self.max_iters + 1) >= self.table_size:
-            self.random_indices = np.arange(self.table_size)
+        # starting_idx = np.random.choice(prepare_sample(min(int(1.6 * self.k), self.table_size)), size=self.k, replace=False)
+        starting_idx = np.random.choice(self.table_size, size=self.k, replace=False)
+        all_tuple_idx = np.arange(self.table_size)
+        other_idx = all_tuple_idx[~np.isin(all_tuple_idx, starting_idx)]
+        if self.max_iters <= 0 or (self.k + self.max_iters + 2) >= self.table_size:
+            self.random_indices = other_idx
             np.random.shuffle(self.random_indices)
         else:
-            self.random_indices = np.random.choice(self.table_size,
-                                                   size=self.k + 1 + self.max_iters + 1,
+            self.random_indices = np.random.choice(other_idx,
+                                                   size=self.max_iters + 2,
                                                    replace=False)
-        indices = self.random_indices[:self.k + 1]
+        indices = np.concatenate((starting_idx, [other_idx[0]]))
         db_format_indices = [str(idx) for idx in indices]
         tuples = DataAccess.select(
             f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot} IN ({",".join(db_format_indices)})')
         self.best_k = tuples[:self.k]
         self.best_k_numpy = Preprocess.tuples2numpy(self.best_k)
-        self.best_k, self.best_k_numpy = shuffle(self.best_k,
-                                                 self.best_k_numpy)  # TODO: probably useless here since we just reset
-        self.current_score = get_score2([tup[self.pivot] for tup in self.best_k])
+        self.current_score = get_score2([tup[self.pivot] for tup in self.best_k], queries=self.train_set)
         self.next_tuple = tuples[-1]
         self.next_tuple_numpy = Preprocess.tuples2numpy([self.next_tuple])
         return np.concatenate((self.best_k_numpy, self.next_tuple_numpy))
@@ -195,7 +230,7 @@ class SaqpEnv:
         if tuple_num_to_replace < self.k:  # Agent decided to make a replacement
             self.best_k[tuple_num_to_replace] = self.next_tuple
             self.best_k_numpy[tuple_num_to_replace] = Preprocess.tuples2numpy([self.next_tuple])
-            self.current_score = get_score2([tup[self.pivot] for tup in self.best_k])
+            self.current_score = get_score2([tup[self.pivot] for tup in self.best_k], queries=self.train_set)
         self.step_count += 1
         reward = self.current_score - old_score  # Calculate reward
         # reshuffle the best_k so the agent does not take positions into account
@@ -203,10 +238,10 @@ class SaqpEnv:
                                                  self.best_k_numpy)
 
         # Prepare next step
-        if self.k + 1 + self.step_count < len(self.random_indices):
-            next_tuple_idx = self.random_indices[self.k + 1 + self.step_count]
+        if self.step_count < len(self.random_indices):
+            next_tuple_ind = self.random_indices[self.step_count]
             self.next_tuple = DataAccess.select_one(f'SELECT * FROM {self.schema}.{self.table} '
-                                                    f'WHERE {self.pivot}={next_tuple_idx}')
+                                                    f'WHERE {self.pivot}={next_tuple_ind}')
             self.next_tuple_numpy = Preprocess.tuples2numpy([self.next_tuple])
             return np.concatenate((self.best_k_numpy, self.next_tuple_numpy)), \
                    reward, \
@@ -241,7 +276,7 @@ class DQN(nn.Module):
 
 # Parameters
 total_episodes = 3000
-batch_size = 25
+batch_size = 64
 learning_rate = 0.01
 gamma = 0.99
 
@@ -400,14 +435,14 @@ def get_sample(k):
 
     sample = env.best_k
     pivot = ConfigManager.get_config('queryConfig.pivot')
-    score = get_score2([tup[pivot] for tup in sample], mode='test')
+    score = get_score2([tup[pivot] for tup in sample], queries='test')
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     CheckpointManager.save(f'{k}-{view_size}-{k}_{total_episodes}_{MAX_ITERS}_dqn_sample',
                            [sample, score])
     return sample, score
 
 
-def get_scores(n_trials):
+def get_scores(n_trials=10, k=100):
     min_score = 10.
     max_score = -10.
     avg_score = 0.
@@ -429,5 +464,5 @@ def get_scores(n_trials):
 if __name__ == '__main__':
     k = 100
     trials = 25
-    get_scores(trials)
-    # train(k)
+    train(k)
+    # get_scores(trials)

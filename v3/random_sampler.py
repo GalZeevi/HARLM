@@ -20,7 +20,7 @@ def get_sample(k, dist=False):
 
     def __random_sample_task(trial_id):
         trial_sample = np.random.choice(table_size, k, replace=False)
-        return trial_id, get_score2(trial_sample, mode='test')
+        return trial_id, get_score2(trial_sample, queries='test')
 
     with _ProcessPool(num_of_trials) as pool:
         for i, score in pool.map(__random_sample_task, [*range(num_of_trials)]):

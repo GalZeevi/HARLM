@@ -15,8 +15,8 @@
     "numToGenerate": 20
   },
   "samplerConfig": {
-    "TODO": "change samplerConfig to metricConfig",
     "testSize": 10,
+    "validationSize": 5,
     "viewSize": 50
   },
   "cpuConfig": {

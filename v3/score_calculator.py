@@ -9,21 +9,32 @@ from train_test_utils import get_test_queries, get_train_queries
 # tupleDistanceCalculator = TupleDistanceCalculator()
 
 
-# TODO replace dist with metric
-
-def get_score(sample, dist=False):
+def get_score(sample, dist=False):  # TODO replace dist with metric
     test_results = get_test_queries()
     return get_score_for_test_queries(sample, test_results) if dist is False \
         else get_dist_score_for_test_queries(sample, test_results)
 
 
-def get_score2(sample, mode='train', view_size=ConfigManager.get_config('samplerConfig.viewSize')):
+def get_score2(sample, queries='train', view_size=ConfigManager.get_config('samplerConfig.viewSize'), func='sum'):
+    if isinstance(queries, str):
+        results = get_test_queries() if queries == 'test' else get_train_queries()
+    elif isinstance(queries, list):
+        results = queries
+    else:
+        raise Exception('queries should be either a string from ["train", "test"] or a list of results!')
+
     view_size = 500 if view_size is None else view_size
-    results = get_test_queries() if mode == 'test' else get_train_queries()
     target_view_sizes = np.array([min(view_size, len(result)) for result in results])
     sample_result_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
     attained_result_fraction = np.divide(sample_result_sizes, target_view_sizes)
-    score = np.average(np.minimum(attained_result_fraction, 1.))
+    score = np.minimum(attained_result_fraction, 1.)
+
+    if func == 'avg':
+        score = np.average(score)
+    elif func == 'sum':
+        score = np.sum(score)
+    else:
+        raise Exception('func should be a string from ["avg", "sum"]!')
     return score
 
 

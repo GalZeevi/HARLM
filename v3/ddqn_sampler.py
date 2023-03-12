@@ -123,7 +123,7 @@ class Memory:
 
         # TODO this can be improved
         states_numpy = np.array(self.states)
-        states = torch.Tensor(np.array(states_numpy))[idx].to(device)
+        states = torch.Tensor(states_numpy)[idx].to(device)
         actions = torch.LongTensor(self.action)[idx].to(device)
         next_states = torch.Tensor(states_numpy)[1 + np.array(idx)].to(device)
         rewards = torch.Tensor(self.rewards)[idx].to(device)
@@ -186,10 +186,10 @@ def update_parameters(current_model, target_model):
 
 HIDDEN_DIM = 64
 NUM_EPISODES = 3000
-HORIZON = 1001
+HORIZON = 1005
 
 
-def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=64,
+def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=128,
           update_repeats=50, num_episodes=NUM_EPISODES, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100,
           measure_step=50, measure_repeats=20, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
     """
@@ -250,7 +250,7 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
         memory.states.append(state)
 
         for i in range(int(horizon) + 1):
-            action = Q_2.select_action(env, state, eps)
+            action = Q_2.select_action(env, state, eps)  # TODO should it be Q2 that selects the action?
             state, reward, done = env.step(action)
 
             # render the environment
@@ -284,47 +284,61 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
     return Q_1, performance
 
 
-def get_sample(k=100, num_episodes=NUM_EPISODES, horizon=HORIZON):
+def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON):
     checkpoint = torch.load(f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
     if checkpoint is None:
         train(k=k, num_episodes=num_episodes, horizon=horizon)
         checkpoint = torch.load(
             f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
 
+    pivot = ConfigManager.get_config('queryConfig.pivot')
+    view_size = ConfigManager.get_config('samplerConfig.viewSize')
+
     env = SaqpEnv(k, max_iters=-1)
+    validation_set = env.validation_set
+    best_validation_score = -1
+    best_sample = None
+
+    # Prepare the model for inference
     ddqn = QNetwork(action_dim=env.num_actions, state_shape=env.state_shape,
                     hidden_dim=HIDDEN_DIM).to(device)
     ddqn.load_state_dict(checkpoint['model_state_dict'])
     ddqn.eval()
 
-    state = env.reset()  # Resets the env and returns a random initial state
-    state = torch.Tensor(state).to(device)
-    env.render()  # Visualize for human
-
-    # pbar = tqdm()
-    done = False
-    while not done:
-        with torch.no_grad():
-            values = ddqn(state)
-        action = np.argmax(values.cpu().numpy())
-
-        # Get the next_state, reward, and are we done
-        tuple_num_to_replace = action.item()
-        next_state, reward, done = env.step(tuple_num_to_replace)
+    for _ in trange(n_trials):
+        state = env.reset()  # Resets the env and returns a random initial state
+        state = torch.Tensor(state).to(device)
         env.render()  # Visualize for human
 
-        # Move to next state
-        state = next_state
-        state = torch.Tensor(state).to(device)
-        # pbar.update(1)
+        # Infer
+        done = False
+        while not done:
+            with torch.no_grad():
+                values = ddqn(state)
+            action = np.argmax(values.cpu().numpy())
 
-    sample = env.best_k
-    pivot = ConfigManager.get_config('queryConfig.pivot')
-    score = get_score2([tup[pivot] for tup in sample], mode='test')
-    view_size = ConfigManager.get_config('samplerConfig.viewSize')
+            # Get the next_state, reward, and are we done
+            tuple_num_to_replace = action.item()
+            next_state, reward, done = env.step(tuple_num_to_replace)
+            env.render()  # Visualize for human
+
+            # Move to next state
+            state = torch.Tensor(next_state).to(device)
+
+        curr_sample = [tup[pivot] for tup in env.best_k]
+        curr_validation_score = get_score2(curr_sample, queries=validation_set)
+        tqdm.write(f'current validation score: {curr_validation_score}, '
+                   f'current test score: {get_score2(curr_sample, queries="test")}')
+        if curr_validation_score > best_validation_score:
+            best_validation_score = curr_validation_score
+            best_sample = curr_sample
+
+    print(f'best score on validation set: {best_validation_score}')
+    test_score = get_score2(best_sample, queries='test')
+    print(f'score on test set: {test_score}')
     CheckpointManager.save(f'{k}-{view_size}-{k}_{num_episodes}_{horizon}_ddqn_sample',
-                           [sample, score])
-    return sample, score
+                           [best_sample, test_score, best_validation_score])
+    return best_sample, test_score
 
 
 def get_scores(n_trials, k):
