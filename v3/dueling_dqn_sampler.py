@@ -115,11 +115,13 @@ class QNetwork(nn.Module):
 LR = 5e-4  # learning rate
 BUFFER_SIZE = int(1e5)  # replay buffer size N
 BATCH_SIZE = 64  # minibatch size
-UPDATE_EVERY = 4  # how often to update the network
+UPDATE_EVERY = 24  # how often to update the network
 GAMMA = 0.99  # Discount factor
 TAU = 1e-3  # for soft update of target parameters
-HORIZON = 1010
+HORIZON = 1015
 NUM_EPISODES = 3000
+K = 100
+# TODO try to change to UPDATE_EVERY param
 
 # Setup Gpu
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -301,11 +303,12 @@ class Agent:
             target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
 
 
-def train(k=100, horizon=HORIZON, num_episodes=NUM_EPISODES):
+def train(k=K, horizon=HORIZON, num_episodes=NUM_EPISODES):
     env = SaqpEnv(k, max_iters=horizon)
     eps = 1.
     last_100_ep_rewards = []
     loss = -66.
+    eps_losses_rewards = []
     # env.seed(0)
 
     agent = Agent(state_size=env.state_shape[0] * env.state_shape[1], action_size=k + 1, k=k, seed=0)
@@ -323,8 +326,9 @@ def train(k=100, horizon=HORIZON, num_episodes=NUM_EPISODES):
             if eps > 0.01:
                 eps -= 1.1e-6
             if done:
-                # print(f'episode reward sum: {ep_reward}')
+                print(f'episode reward sum: {ep_reward}')
                 break
+
 
         if len(last_100_ep_rewards) == 100:
             last_100_ep_rewards = last_100_ep_rewards[1:]
@@ -334,8 +338,11 @@ def train(k=100, horizon=HORIZON, num_episodes=NUM_EPISODES):
             print(f'Episode: {episode}/{num_episodes}, Epsilon: {eps:.3f}, '
                   f'Loss: {agent.losses[-1]:.4f}, Return: {np.mean(last_100_ep_rewards):.8f}')
 
+            eps_losses_rewards.append((episode, agent.losses[-1], ep_reward))
+            CheckpointManager.save(f'{k}_{num_episodes}_{horizon}_dueling_dqn_graph', eps_losses_rewards)
 
-def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON):
+
+def get_sample(k=K, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON):
     checkpoint = torch.load(f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_dueling_dqn.pt')
     if checkpoint is None:
         train(k=k, num_episodes=num_episodes, horizon=horizon)

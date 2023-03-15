@@ -11,12 +11,12 @@
     "schema": "datasets",
     "table": "flights_2009_2010",
     "pivot": "_id",
-    "batchSize": 10,
-    "numToGenerate": 20
+    "batchSize": 60,
+    "numToGenerate": 60
   },
   "samplerConfig": {
     "testSize": 10,
-    "validationSize": 5,
+    "validationSize": 10,
     "viewSize": 50
   },
   "cpuConfig": {

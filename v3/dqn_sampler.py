@@ -87,8 +87,11 @@ class Preprocess:
                                                 f"WHERE table_schema='{schema}' AND table_name='{table}' " +
                                                 f"AND data_type NOT IN ({' , '.join(db_formatted_data_types)}) " +
                                                 f"AND column_name <> '{pivot}'")
+        # TODO: fix support in null fields - currently it converts everything to str
+        # TODO: --> can convert time to number or string
         return {col: Preprocess.create_encoding_dict(
-            DataAccess.select(f'SELECT DISTINCT COALESCE({col}, \'{NULL_VALUE}\') as val FROM {schema}.{table}'))
+            # DataAccess.select(f'SELECT DISTINCT COALESCE({col}, \'{NULL_VALUE}\') as val FROM {schema}.{table}'))
+            DataAccess.select(f'SELECT DISTINCT {col} as val FROM {schema}.{table} ORDER BY val'))
             for col in categorical_columns}
 
     @staticmethod
@@ -182,21 +185,29 @@ class SaqpEnv:
         self.current_score = 0.
         self.next_tuple = None
         self.next_tuple_numpy = None
+        self.num_queried_tuples_to_include = None if max_iters < 0 else max_iters // 2
 
     def reset(self):
         self.step_count = 0
-        # starting_idx = np.random.choice(prepare_sample(min(int(1.6 * self.k), self.table_size)), size=self.k, replace=False)
-        starting_idx = np.random.choice(self.table_size, size=self.k, replace=False)
+        queried_tuples_idx = prepare_sample(min(int(4 * self.k), self.table_size))
+        starting_idx = np.random.choice(queried_tuples_idx, size=self.k, replace=False)
+        # starting_idx = np.random.choice(self.table_size, size=self.k, replace=False)
         all_tuple_idx = np.arange(self.table_size)
         other_idx = all_tuple_idx[~np.isin(all_tuple_idx, starting_idx)]
         if self.max_iters <= 0 or (self.k + self.max_iters + 2) >= self.table_size:
             self.random_indices = other_idx
-            np.random.shuffle(self.random_indices)
         else:
-            self.random_indices = np.random.choice(other_idx,
-                                                   size=self.max_iters + 2,
+            other_queried_tuples_idx = queried_tuples_idx[~np.isin(queried_tuples_idx, starting_idx)]
+            other_queried_tuples_idx = other_queried_tuples_idx[:int(self.num_queried_tuples_to_include)]
+            idx_left_to_choose_from = other_idx[~np.isin(other_idx, other_queried_tuples_idx)]
+            self.random_indices = np.random.choice(idx_left_to_choose_from,
+                                                   size=max(0, self.max_iters + 2 - len(other_queried_tuples_idx)),
                                                    replace=False)
-        indices = np.concatenate((starting_idx, [other_idx[0]]))
+            self.random_indices = np.concatenate((self.random_indices, other_queried_tuples_idx))
+            self.num_queried_tuples_to_include *= 0.99965
+
+        np.random.shuffle(self.random_indices)
+        indices = np.concatenate((starting_idx, [self.random_indices[0]]))
         db_format_indices = [str(idx) for idx in indices]
         tuples = DataAccess.select(
             f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot} IN ({",".join(db_format_indices)})')
@@ -311,6 +322,7 @@ def train(k=100):
     action_pool = []
     reward_pool = []
     steps = 0
+    last_100_ep_rewards = []
 
     for episode_num in tqdm(range(total_episodes)):
 
@@ -318,6 +330,7 @@ def train(k=100):
         state = torch.from_numpy(state).float()
         state = Variable(state)
         env.render()  # Visualize for human
+        ep_reward = 0.
 
         for t in count():  # Run until done
 
@@ -330,6 +343,7 @@ def train(k=100):
             tuple_num_to_replace = tuple_num_to_replace.item()
             next_state, reward, done = env.step(tuple_num_to_replace)
             env.render()  # Visualize for human
+            ep_reward += reward
 
             # To mark boundaries between episodes
             if done:
@@ -350,6 +364,10 @@ def train(k=100):
                 episode_durations.append(t + 1)
                 # plot_durations()
                 break
+
+        if len(last_100_ep_rewards) == 100:
+            last_100_ep_rewards = last_100_ep_rewards[1:]
+        last_100_ep_rewards.append(ep_reward)
 
         # Update policy
         if episode_num > 0 and episode_num % batch_size == 0:  # update every batch_size episodes
@@ -384,6 +402,8 @@ def train(k=100):
                 # If reward is 0 or very small then the gradients zero out
                 loss = -m.log_prob(tuple_num_to_replace) * reward  # Negative score function x reward
                 loss.backward()
+                print(f'Episode: {episode_num}/{total_episodes}, Loss: {loss.item():.4f}, '
+                      f'Return: {np.mean(last_100_ep_rewards):.8f}')
 
             optimizer.step()
 
