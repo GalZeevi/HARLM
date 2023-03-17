@@ -26,10 +26,10 @@ def prepare_weights_for_sample(verbose=True):
 
 def prepare_sample(k):
     weights = CheckpointManager.load('top_queried_sampler_weights', numpy=True)
-    if None is None:
+    if weights is None:
         weights = prepare_weights_for_sample()
 
-    print(np.sort(weights)[::-1][:k])
+    # print(np.sort(weights)[::-1][:k])
 
     return np.argpartition(weights, -k)[-k:]
 
