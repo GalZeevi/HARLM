@@ -230,7 +230,7 @@ class SaqpEnv:
     def get_states_tuples2(self):
         available_idx = np.arange(self.table_size)
         weights = prepare_weights_for_sample(False)
-        weights[np.where(weights < 0.4 * len(self.train_set))] = 0
+        weights[np.where(weights < 0.1 * len(self.train_set))] = 0
         max_seed_size = int(0.8 * self.k)
         # init_state_idx = np.where(weights >= 0.3 * len(self.train_set))[0][:max_seed_size].tolist()
         init_state_idx = np.argpartition(weights, -max_seed_size)[-max_seed_size:].tolist()
