@@ -25,6 +25,7 @@ def get_permutation(n):
     permuted = np.random.permutation(original)
     return lambda i: permuted[i]
 
+
 def threshold_positive(value, threshold):
     if 0 <= value < threshold:
         return 0
@@ -163,7 +164,7 @@ class Preprocess:
         return np.delete(a, pivot_col_location_in_columns, 1)
 
 
-MAX_ITERS = 1005
+MAX_ITERS = 1010
 
 
 class SaqpEnv:
@@ -298,24 +299,76 @@ class SaqpEnv:
                    reward, \
                    True
 
+    def sample(self):
+        return [tup[self.pivot] for tup in self.best_k]
+
+
+class SaqpEnv2:
+
+    def __init__(self, k):
+        self.k = k
+        self.schema = ConfigManager.get_config('queryConfig.schema')
+        self.table = ConfigManager.get_config('queryConfig.table')
+        self.pivot = ConfigManager.get_config('queryConfig.pivot')
+        self.table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
+        num_cols_not_pivot = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
+                                                   f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
+                                                   f"AND column_name <> '{self.pivot}'")
+        validation_size = ConfigManager.get_config('samplerConfig.validationSize')
+        validation_size = 10 if validation_size is None else validation_size
+        self.train_set, self.validation_set = get_train_queries(validation_size=validation_size)
+        self.num_actions = self.table_size
+        self.state_shape = (k, num_cols_not_pivot)
+        self.step_count = 0
+        self.selected_tuples = []
+        self.selected_tuples_numpy = np.array([])
+        self.current_score = 0.
+
+    def reset(self):
+        self.step_count = 0
+        self.selected_tuples = []
+        self.selected_tuples_numpy = np.zeros(self.state_shape)
+        return self.selected_tuples_numpy
+
+    def render(self):
+        pass
+
+    def step(self, action):
+        # update state
+        if action not in [tup[self.pivot] for tup in self.selected_tuples]:  # new tuple
+            selected_tuple = DataAccess.select_one(f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={action}')
+            self.selected_tuples.append(selected_tuple)
+            self.selected_tuples_numpy[self.step_count] = Preprocess.tuples2numpy([selected_tuple])[0]
+            self.step_count += 1
+
+        # calculate reward
+        new_score = get_score2([tup[self.pivot] for tup in self.selected_tuples])
+        # reward = (new_score - self.current_score) * len(self.train_set)
+        reward = new_score
+        self.current_score = new_score
+
+        done = (self.step_count == self.k)
+
+        return self.selected_tuples_numpy, reward, done
+
+    def sample(self):
+        return [tup[self.pivot] for tup in self.selected_tuples]
+
 
 class DQN(nn.Module):
-    def __init__(self, k):
+    def __init__(self, k, state_shape, num_actions):
         super(DQN, self).__init__()
-        schema = ConfigManager.get_config('queryConfig.schema')
-        table = ConfigManager.get_config('queryConfig.table')
-        pivot = ConfigManager.get_config('queryConfig.pivot')
-        num_cols_not_pivot = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
-                                                   f"WHERE table_schema='{schema}' AND table_name='{table}' " +
-                                                   f"AND column_name <> '{pivot}'")
         self.k = k
-        indim2 = (k + 1) * num_cols_not_pivot
-        outdim2 = int((k + 1) * num_cols_not_pivot / sqrt(k + 1))
-        self.fc2 = nn.Linear(indim2, outdim2, dtype=torch.float32)
-        self.fc3 = nn.Linear(outdim2, k + 1, dtype=torch.float32)  # Prob of whom to throw out
+        input_dim = state_shape[0] * state_shape[1]
+        hidden_dim = 64
+        self.fc2 = nn.Linear(input_dim, hidden_dim, dtype=torch.float32)
+        self.fc3 = nn.Linear(hidden_dim, num_actions, dtype=torch.float32)  # Prob of whom to throw out
 
-    def forward(self, x):
-        x = torch.flatten(x)
+    def forward(self, inp):
+        if len(inp.size()) < 3:
+            inp = inp.unsqueeze(0)
+
+        x = torch.flatten(inp, start_dim=1)
         x = F.relu(self.fc2(x))
         x = torch.sigmoid(self.fc3(x))
         return x
@@ -323,7 +376,7 @@ class DQN(nn.Module):
 
 # Parameters
 total_episodes = 3000
-batch_size = 64
+batch_size = 32
 learning_rate = 0.01
 gamma = 0.99
 
@@ -349,8 +402,9 @@ def train(k=100):
 
         plt.pause(0.001)  # pause a bit so that plots are updated
 
-    env = SaqpEnv(k)
-    dqn = DQN(k)
+    # env = SaqpEnv(k)
+    env = SaqpEnv2(k)
+    dqn = DQN(k, env.state_shape, env.num_actions)
     optimizer = torch.optim.RMSprop(dqn.parameters(), lr=learning_rate)
 
     # Batch History
@@ -426,7 +480,7 @@ def train(k=100):
             # Gradient Descent
             optimizer.zero_grad()
 
-            loss = 1.
+            ep_loss = 0.
 
             for i in range(steps):
                 state = state_pool[i]
@@ -438,8 +492,9 @@ def train(k=100):
                 # If reward is 0 or very small then the gradients zero out
                 loss = -m.log_prob(tuple_num_to_replace) * reward  # Negative score function x reward
                 loss.backward()
-                print(f'Episode: {episode_num}/{total_episodes}, Loss: {loss.item():.4f}, '
-                      f'Return: {np.mean(last_100_ep_rewards):.8f}')
+                ep_loss += loss.item()
+            print(f'Episode: {episode_num}/{total_episodes}, Loss: {ep_loss / steps:.4f}, '
+                  f'Return: {np.mean(last_100_ep_rewards):.8f}')
 
             optimizer.step()
 
@@ -452,7 +507,7 @@ def train(k=100):
                 'epoch': episode_num / batch_size,
                 'model_state_dict': dqn.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                'loss': loss,
+                'loss': ep_loss,
             }, f'{CheckpointManager.get_checkpoint_path()}/{k}_{total_episodes}_{MAX_ITERS}_dqn.pt')
 
 
@@ -463,14 +518,15 @@ def get_sample(k):
         checkpoint = torch.load(
             f'{CheckpointManager.get_checkpoint_path()}/{k}_{total_episodes}_{MAX_ITERS}_dqn.pt')
 
-    model = DQN(k)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
-
-    env = SaqpEnv(k, max_iters=-1)
+    # env = SaqpEnv(k, max_iters=-1)
+    env = SaqpEnv2(k)
     state = env.reset()  # Resets the env and returns a random initial state
     state = torch.from_numpy(state).float()
     env.render()  # Visualize for human
+
+    model = DQN(k, env.state_shape, env.num_actions)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
 
     pbar = tqdm()
     done = False
@@ -489,12 +545,10 @@ def get_sample(k):
         state = torch.from_numpy(state).float()
         pbar.update(1)
 
-    sample = env.best_k
-    pivot = ConfigManager.get_config('queryConfig.pivot')
-    score = get_score2([tup[pivot] for tup in sample], queries='test')
+    sample = env.sample()
+    score = get_score2(sample, queries='test')
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
-    CheckpointManager.save(f'{k}-{view_size}-{k}_{total_episodes}_{MAX_ITERS}_dqn_sample',
-                           [sample, score])
+    CheckpointManager.save(f'{k}-{view_size}-{k}_{total_episodes}_{MAX_ITERS}_dqn_sample', [sample, score])
     return sample, score
 
 
@@ -520,5 +574,5 @@ def get_scores(n_trials=10, k=100):
 if __name__ == '__main__':
     k = 100
     trials = 25
-    train(k)
-    # get_scores(trials)
+    # train(k)
+    get_scores(trials)
