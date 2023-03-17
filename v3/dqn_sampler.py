@@ -231,7 +231,7 @@ class SaqpEnv:
         available_idx = np.arange(self.table_size)
         weights = prepare_weights_for_sample(False)
         weights[np.where(weights < 0.1 * len(self.train_set))] = 0
-        max_seed_size = int(0.8 * self.k)
+        max_seed_size = int(0.7 * self.k)
         # init_state_idx = np.where(weights >= 0.3 * len(self.train_set))[0][:max_seed_size].tolist()
         init_state_idx = np.argpartition(weights, -max_seed_size)[-max_seed_size:].tolist()
         self.forbidden_actions = np.arange(len(init_state_idx))
@@ -272,7 +272,7 @@ class SaqpEnv:
             self.best_k_numpy[tuple_num_to_replace] = Preprocess.tuples2numpy([self.next_tuple])
             self.current_score = get_score2([tup[self.pivot] for tup in self.best_k], queries=self.train_set)
         self.step_count += 1
-        reward = self.current_score - old_score  # Calculate reward
+        reward = (self.current_score - old_score) * len(self.train_set)  # Calculate reward
 
         # reshuffle the best_k so the agent does not take positions into account
         perm = get_permutation(self.k)

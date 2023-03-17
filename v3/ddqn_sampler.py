@@ -160,6 +160,8 @@ def update(batch_size, current, target, optim, memory, gamma):
     loss.backward()
     optim.step()
 
+    return loss.item()
+
 
 def evaluate(Qmodel, k, eps, repeats):
     """
@@ -188,6 +190,9 @@ def update_parameters(current_model, target_model):
 HIDDEN_DIM = 64
 NUM_EPISODES = 3000
 HORIZON = 1010
+
+rewards_graph = []
+losses_graph = []
 
 
 def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=128,
@@ -244,14 +249,16 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
             performance.append([episode, evaluate(Q_1, k, eps, measure_repeats)])
             print("Episode: ", episode)
             print("rewards: ", performance[-1][1])
-            print("lr: ", scheduler.get_lr())
+            # print("lr: ", scheduler.get_lr())
             print("eps: ", eps)
+            rewards_graph.append((episode, performance[-1][1]))
+            CheckpointManager.save(f'{k}_{num_episodes}_{horizon}_ddqn_rewards', rewards_graph)
 
         state = env.reset()
         memory.states.append(state)
 
         for i in range(int(horizon) + 1):
-            action = Q_2.select_action(env, state, eps)  # TODO should it be Q2 that selects the action?
+            action = Q_1.select_action(env, state, eps)
             state, reward, done = env.step(action)
 
             # render the environment
@@ -264,8 +271,15 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
                 break
 
         if episode >= min_episodes and episode % update_step == 0:
+            ep_loss = 0.
             for _ in range(update_repeats):
-                update(batch_size, Q_1, Q_2, optimizer, memory, gamma)
+                ep_loss += update(batch_size, Q_1, Q_2, optimizer, memory, gamma)
+            print("Episode: ", episode)
+            print("loss: ", ep_loss)
+            # print("lr: ", scheduler.get_lr())
+            print("eps: ", eps)
+            losses_graph.append((episode, ep_loss / update_repeats))
+            CheckpointManager.save(f'{k}_{num_episodes}_{horizon}_ddqn_losses', losses_graph)
 
             # transfer new parameter from Q_1 to Q_2
             update_parameters(Q_1, Q_2)
@@ -359,8 +373,6 @@ def get_scores(n_trials, k):
 
 if __name__ == '__main__':
     k = 100
-    trials = 20
 
     train(k=k)
     # get_sample()
-    # get_scores(trials, k=k)
