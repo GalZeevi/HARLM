@@ -17,8 +17,13 @@ from data_access_v3 import DataAccess
 from score_calculator import get_score2
 from train_test_utils import get_train_queries
 from checkpoint_manager_v3 import CheckpointManager
-from top_queried_sampler import prepare_sample
+from top_queried_sampler import prepare_sample, prepare_weights_for_sample
 
+
+def get_permutation(n):
+    original = np.arange(n)
+    permuted = np.random.permutation(original)
+    return lambda i: permuted[i]
 
 def threshold_positive(value, threshold):
     if 0 <= value < threshold:
@@ -117,7 +122,7 @@ class Preprocess:
     @staticmethod
     def encode_column(tuples, col_num_when_sorted):
         if len(Preprocess._encodings.keys()) == 0 or len(Preprocess._columns) == 0 or \
-           len(Preprocess._max_values.keys()) == 0:
+                len(Preprocess._max_values.keys()) == 0:
             Preprocess._encodings = Preprocess.get_encodings()
             Preprocess._columns = Preprocess.get_all_columns()
             Preprocess._max_values = Preprocess.get_max_values()
@@ -179,35 +184,20 @@ class SaqpEnv:
         self.state_shape = (k + 1, num_cols_not_pivot)
         self.step_count = 0
         self.max_iters = max_iters
-        self.random_indices = []
+        self.states_tuples_idx = []
         self.best_k = None
         self.best_k_numpy = None
         self.current_score = 0.
         self.next_tuple = None
         self.next_tuple_numpy = None
         self.num_queried_tuples_to_include = None if max_iters < 0 else max_iters // 2
+        self.forbidden_actions = np.array([])
 
     def reset(self):
         self.step_count = 0
-        queried_tuples_idx = prepare_sample(min(int(4 * self.k), self.table_size))
-        starting_idx = np.random.choice(queried_tuples_idx, size=self.k, replace=False)
-        # starting_idx = np.random.choice(self.table_size, size=self.k, replace=False)
-        all_tuple_idx = np.arange(self.table_size)
-        other_idx = all_tuple_idx[~np.isin(all_tuple_idx, starting_idx)]
-        if self.max_iters <= 0 or (self.k + self.max_iters + 2) >= self.table_size:
-            self.random_indices = other_idx
-        else:
-            other_queried_tuples_idx = queried_tuples_idx[~np.isin(queried_tuples_idx, starting_idx)]
-            other_queried_tuples_idx = other_queried_tuples_idx[:int(self.num_queried_tuples_to_include)]
-            idx_left_to_choose_from = other_idx[~np.isin(other_idx, other_queried_tuples_idx)]
-            self.random_indices = np.random.choice(idx_left_to_choose_from,
-                                                   size=max(0, self.max_iters + 2 - len(other_queried_tuples_idx)),
-                                                   replace=False)
-            self.random_indices = np.concatenate((self.random_indices, other_queried_tuples_idx))
-            self.num_queried_tuples_to_include *= 0.99965
-
-        np.random.shuffle(self.random_indices)
-        indices = np.concatenate((starting_idx, [self.random_indices[0]]))
+        first_state_idx, self.states_tuples_idx = self.get_states_tuples2()
+        np.random.shuffle(self.states_tuples_idx)
+        indices = np.concatenate((first_state_idx, [self.states_tuples_idx[0]]))
         db_format_indices = [str(idx) for idx in indices]
         tuples = DataAccess.select(
             f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot} IN ({",".join(db_format_indices)})')
@@ -217,6 +207,45 @@ class SaqpEnv:
         self.next_tuple = tuples[-1]
         self.next_tuple_numpy = Preprocess.tuples2numpy([self.next_tuple])
         return np.concatenate((self.best_k_numpy, self.next_tuple_numpy))
+
+    def get_states_tuples(self):
+        queried_tuples_idx = prepare_sample(min(int(4 * self.k), self.table_size))
+        starting_idx = np.random.choice(queried_tuples_idx, size=self.k, replace=False)
+        # starting_idx = np.random.choice(self.table_size, size=self.k, replace=False)
+        all_tuple_idx = np.arange(self.table_size)
+        other_idx = all_tuple_idx[~np.isin(all_tuple_idx, starting_idx)]
+        if self.max_iters <= 0 or (self.k + self.max_iters + 2) >= self.table_size:
+            random_indices = other_idx
+        else:
+            other_queried_tuples_idx = queried_tuples_idx[~np.isin(queried_tuples_idx, starting_idx)]
+            other_queried_tuples_idx = other_queried_tuples_idx[:int(self.num_queried_tuples_to_include)]
+            self.num_queried_tuples_to_include *= 0.99965
+            idx_left_to_choose_from = other_idx[~np.isin(other_idx, other_queried_tuples_idx)]
+            random_indices = np.random.choice(idx_left_to_choose_from,
+                                              size=max(0, self.max_iters + 2 - len(other_queried_tuples_idx)),
+                                              replace=False)
+            random_indices = np.concatenate((random_indices, other_queried_tuples_idx))
+        return starting_idx, random_indices
+
+    def get_states_tuples2(self):
+        available_idx = np.arange(self.table_size)
+        weights = prepare_weights_for_sample(False)
+        weights[np.where(weights < 0.4 * len(self.train_set))] = 0
+        max_seed_size = int(0.8 * self.k)
+        # init_state_idx = np.where(weights >= 0.3 * len(self.train_set))[0][:max_seed_size].tolist()
+        init_state_idx = np.argpartition(weights, -max_seed_size)[-max_seed_size:].tolist()
+        self.forbidden_actions = np.arange(len(init_state_idx))
+        available_idx = np.setdiff1d(available_idx, init_state_idx)
+
+        init_state_idx += np.random.choice(available_idx, size=self.k - len(init_state_idx), replace=False).tolist()
+        available_idx = np.setdiff1d(available_idx, init_state_idx)
+
+        if self.max_iters <= 0 or (self.k + self.max_iters + 2) >= self.table_size:
+            other_states_idx = available_idx
+        else:
+            other_states_idx = np.random.choice(available_idx, size=self.max_iters + 2, replace=False)
+
+        return init_state_idx, other_states_idx
 
     def render(self, mode='NONE'):
         if mode == 'FULL':
@@ -244,13 +273,20 @@ class SaqpEnv:
             self.current_score = get_score2([tup[self.pivot] for tup in self.best_k], queries=self.train_set)
         self.step_count += 1
         reward = self.current_score - old_score  # Calculate reward
+
         # reshuffle the best_k so the agent does not take positions into account
-        self.best_k, self.best_k_numpy = shuffle(self.best_k,
-                                                 self.best_k_numpy)
+        perm = get_permutation(self.k)
+        permuted_best_k = [*self.best_k]
+        for i in range(self.k):
+            permuted_best_k[perm(i)] = self.best_k[i]
+        for i, a in enumerate(self.forbidden_actions):
+            self.forbidden_actions[i] = perm(a)
+        self.best_k = permuted_best_k
+        self.best_k_numpy = Preprocess.tuples2numpy(self.best_k)
 
         # Prepare next step
-        if self.step_count < len(self.random_indices):
-            next_tuple_ind = self.random_indices[self.step_count]
+        if self.step_count < len(self.states_tuples_idx):
+            next_tuple_ind = self.states_tuples_idx[self.step_count]
             self.next_tuple = DataAccess.select_one(f'SELECT * FROM {self.schema}.{self.table} '
                                                     f'WHERE {self.pivot}={next_tuple_ind}')
             self.next_tuple_numpy = Preprocess.tuples2numpy([self.next_tuple])

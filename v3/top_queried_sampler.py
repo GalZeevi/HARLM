@@ -7,7 +7,7 @@ from tqdm import tqdm
 from train_test_utils import get_train_queries
 
 
-def prepare_weights_for_sample():
+def prepare_weights_for_sample(verbose=True):
     schema = ConfigManager.get_config('queryConfig.schema')
     table = ConfigManager.get_config('queryConfig.table')
     table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
@@ -15,10 +15,10 @@ def prepare_weights_for_sample():
     weights = np.zeros(table_size)
     train_results = get_train_queries()
 
-    for query_result in tqdm(train_results):
+    for query_result in (tqdm(train_results) if verbose else train_results):
         weights[query_result] += 1.
 
-    CheckpointManager.save('top_queried_sampler_weights', weights, numpy=True)
+    verbose and CheckpointManager.save('top_queried_sampler_weights', weights, numpy=True)
     return weights
 
 

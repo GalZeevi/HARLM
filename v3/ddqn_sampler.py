@@ -86,8 +86,13 @@ class QNetwork(nn.Module):
         # select a random action wih probability eps
         if random.random() <= eps:
             action = np.random.randint(0, env.num_actions)
+            while np.isin([action], env.forbidden_actions)[0]:
+                action = np.random.randint(0, env.num_actions)
         else:
-            action = np.argmax(values.cpu().numpy())
+            actions_values = values.cpu().numpy()
+            if len(env.forbidden_actions) > 0:
+                actions_values[:, env.forbidden_actions] = np.NINF
+            action = np.argmax(actions_values)
 
         return action
 
@@ -156,7 +161,7 @@ def update(batch_size, current, target, optim, memory, gamma):
     optim.step()
 
 
-def evaluate(Qmodel, k, repeats):
+def evaluate(Qmodel, k, eps, repeats):
     """
     Runs a greedy policy with respect to the current Q-Network for "repeats" many episodes. Returns the average
     episode reward.
@@ -164,18 +169,14 @@ def evaluate(Qmodel, k, repeats):
     env = SaqpEnv(k, max_iters=-1)
     Qmodel.eval()
     perform = 0.
-    for _ in trange(repeats):
+    for _ in range(repeats):
         state = env.reset()
         done = False
-        # pbar = tqdm()
         while not done:
             state = torch.Tensor(state).to(device)
-            with torch.no_grad():
-                values = Qmodel(state.unsqueeze(0))  # TODO check
-            action = np.argmax(values.cpu().numpy())
+            action = Qmodel.select_action(env, state, eps)
             state, reward, done = env.step(action)
             perform += reward
-            # pbar.update(1)
     Qmodel.train()
     return perform / repeats
 
@@ -186,12 +187,12 @@ def update_parameters(current_model, target_model):
 
 HIDDEN_DIM = 64
 NUM_EPISODES = 3000
-HORIZON = 1005
+HORIZON = 1010
 
 
 def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=128,
           update_repeats=50, num_episodes=NUM_EPISODES, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100,
-          measure_step=50, measure_repeats=20, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
+          measure_step=25, measure_repeats=10, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
     """
     :param gamma: reward discount factor
     :param lr: learning rate for the Q-Network
@@ -239,8 +240,8 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
     for episode in trange(num_episodes):
         # print(f'start episode: {episode}')
         # display the performance
-        if 0 < episode % measure_step == 0:  # TODO does this ever run?
-            performance.append([episode, evaluate(Q_1, k, measure_repeats)])
+        if episode > 0 and episode % measure_step == 0:
+            performance.append([episode, evaluate(Q_1, k, eps, measure_repeats)])
             print("Episode: ", episode)
             print("rewards: ", performance[-1][1])
             print("lr: ", scheduler.get_lr())
@@ -313,13 +314,9 @@ def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON):
         # Infer
         done = False
         while not done:
-            with torch.no_grad():
-                values = ddqn(state)
-            action = np.argmax(values.cpu().numpy())
-
             # Get the next_state, reward, and are we done
-            tuple_num_to_replace = action.item()
-            next_state, reward, done = env.step(tuple_num_to_replace)
+            action = ddqn.select_action(env, state, 0.01)
+            next_state, reward, done = env.step(action)
             env.render()  # Visualize for human
 
             # Move to next state
@@ -365,4 +362,5 @@ if __name__ == '__main__':
     trials = 20
 
     train(k=k)
+    # get_sample()
     # get_scores(trials, k=k)
