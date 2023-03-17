@@ -47,7 +47,7 @@ def get_train_queries(checkpoint_version=None, validation_size=0):
 
     random.shuffle(results)
     if validation_size > 0:
-        return results[:validation_size], results[:validation_size]  # return train_set, validation_set
+        return results[validation_size:], results[:validation_size]  # return train_set, validation_set
     return results  # return train_set
 
 
