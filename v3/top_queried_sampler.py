@@ -13,7 +13,9 @@ def prepare_weights_for_sample(verbose=True):
     table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
 
     weights = np.zeros(table_size)
-    train_results = get_train_queries()
+    validation_size = 10 if ConfigManager.get_config('samplerConfig.validationSize') is None else \
+        ConfigManager.get_config('samplerConfig.validationSize')
+    train_results, _ = get_train_queries(checkpoint_version=10, validation_size=validation_size)
 
     for query_result in (tqdm(train_results) if verbose else train_results):
         weights[query_result] += 1.
@@ -24,10 +26,10 @@ def prepare_weights_for_sample(verbose=True):
 
 def prepare_sample(k):
     weights = CheckpointManager.load('top_queried_sampler_weights', numpy=True)
-    if weights is None:
+    if None is None:
         weights = prepare_weights_for_sample()
 
-    # print(np.sort(weights)[::-1][:k])
+    print(np.sort(weights)[::-1][:k])
 
     return np.argpartition(weights, -k)[-k:]
 
