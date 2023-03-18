@@ -32,7 +32,7 @@ def main():
 DDQN = f'{k}_{30000}_{1020}_ddqn'
 
 
-def plot_loss():
+def plot_losses():
     ep_losses = CheckpointManager.load(f'{DDQN}_losses', CHECKPOINT_VER)
     episodes = [pair[0] for pair in ep_losses]
     losses = [pair[1] for pair in ep_losses]
@@ -57,4 +57,4 @@ def plot_rewards():
 
 
 if __name__ == '__main__':
-    plot_loss()
+    plot_rewards()

@@ -1,5 +1,4 @@
 from itertools import count
-from math import sqrt
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +17,7 @@ from score_calculator import get_score2
 from train_test_utils import get_train_queries
 from checkpoint_manager_v3 import CheckpointManager
 from top_queried_sampler import prepare_sample, prepare_weights_for_sample
+from gym import Env
 
 
 def get_permutation(n):
@@ -164,7 +164,7 @@ class Preprocess:
         return np.delete(a, pivot_col_location_in_columns, 1)
 
 
-MAX_ITERS = 1010
+MAX_ITERS = 1020
 
 
 class SaqpEnv:
@@ -303,9 +303,10 @@ class SaqpEnv:
         return [tup[self.pivot] for tup in self.best_k]
 
 
-class SaqpEnv2:
+class SaqpEnv2(Env):
 
     def __init__(self, k):
+        super(Env, self).__init__()
         self.k = k
         self.schema = ConfigManager.get_config('queryConfig.schema')
         self.table = ConfigManager.get_config('queryConfig.table')
@@ -324,19 +325,23 @@ class SaqpEnv2:
         self.selected_tuples_numpy = np.array([])
         self.current_score = 0.
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         self.step_count = 0
         self.selected_tuples = []
         self.selected_tuples_numpy = np.zeros(self.state_shape)
         return self.selected_tuples_numpy
 
-    def render(self):
+    def render(self, mode='human'):
+        pass
+
+    def close(self):
         pass
 
     def step(self, action):
         # update state
         if action not in [tup[self.pivot] for tup in self.selected_tuples]:  # new tuple
-            selected_tuple = DataAccess.select_one(f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={action}')
+            selected_tuple = DataAccess.select_one(
+                f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={action}')
             self.selected_tuples.append(selected_tuple)
             self.selected_tuples_numpy[self.step_count] = Preprocess.tuples2numpy([selected_tuple])[0]
             self.step_count += 1
@@ -375,7 +380,7 @@ class DQN(nn.Module):
 
 
 # Parameters
-total_episodes = 3000
+total_episodes = 30_000
 batch_size = 32
 learning_rate = 0.01
 gamma = 0.99

@@ -1,4 +1,4 @@
-from dqn_sampler import SaqpEnv
+from dqn_sampler import SaqpEnv, SaqpEnv2
 import torch
 import numpy as np
 from torch import nn
@@ -22,6 +22,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 """
 The Q-Network has as input a state s and outputs the state-action values q(s,a_1), ..., q(s,a_n) for all n actions.
 """
+
+ENV_VER = 2
 
 
 class QNetwork(nn.Module):
@@ -86,11 +88,12 @@ class QNetwork(nn.Module):
         # select a random action wih probability eps
         if random.random() <= eps:
             action = np.random.randint(0, env.num_actions)
-            while np.isin([action], env.forbidden_actions)[0]:
-                action = np.random.randint(0, env.num_actions)
+            if hasattr(env, 'forbidden_actions'):
+                while np.isin([action], env.forbidden_actions)[0]:
+                    action = np.random.randint(0, env.num_actions)
         else:
             actions_values = values.cpu().numpy()
-            if len(env.forbidden_actions) > 0:
+            if hasattr(env, 'forbidden_actions') and len(env.forbidden_actions) > 0:
                 actions_values[:, env.forbidden_actions] = np.NINF
             action = np.argmax(actions_values)
 
@@ -168,7 +171,11 @@ def evaluate(Qmodel, k, eps, repeats):
     Runs a greedy policy with respect to the current Q-Network for "repeats" many episodes. Returns the average
     episode reward.
     """
-    env = SaqpEnv(k, max_iters=-1)
+
+    if ENV_VER == 1:
+        env = SaqpEnv(k, max_iters=-1)
+    else:
+        env = SaqpEnv2(k)
     Qmodel.eval()
     perform = 0.
     for _ in range(repeats):
@@ -188,14 +195,14 @@ def update_parameters(current_model, target_model):
 
 
 HIDDEN_DIM = 64
-NUM_EPISODES = 3000
-HORIZON = 1010
+NUM_EPISODES = 30_000
+HORIZON = 1020
 
 rewards_graph = []
 losses_graph = []
 
 
-def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=0.01, update_step=10, batch_size=128,
+def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.9999, eps_min=0.01, update_step=10, batch_size=128,
           update_repeats=50, num_episodes=NUM_EPISODES, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100,
           measure_step=25, measure_repeats=10, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
     """
@@ -221,9 +228,10 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
     :param k: sample size
     :return: the trained Q-Network and the measured performances
     """
-    env = SaqpEnv(k, max_iters=horizon)
-    # torch.manual_seed(seed)
-    # env.seed(seed)
+    if ENV_VER == 1:
+        env = SaqpEnv(k, max_iters=horizon)
+    else:
+        env = SaqpEnv2(k)
 
     Q_1 = QNetwork(action_dim=env.num_actions, state_shape=env.state_shape,
                    hidden_dim=hidden_dim).to(device)
@@ -243,7 +251,6 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
     performance = []
 
     for episode in trange(num_episodes):
-        # print(f'start episode: {episode}')
         # display the performance
         if episode > 0 and episode % measure_step == 0:
             performance.append([episode, evaluate(Q_1, k, eps, measure_repeats)])
@@ -299,17 +306,19 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.995, eps_min=
     return Q_1, performance
 
 
-def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON):
+def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON, verbose=True):
     checkpoint = torch.load(f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
     if checkpoint is None:
         train(k=k, num_episodes=num_episodes, horizon=horizon)
         checkpoint = torch.load(
             f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
 
-    pivot = ConfigManager.get_config('queryConfig.pivot')
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
 
-    env = SaqpEnv(k, max_iters=-1)
+    if ENV_VER == 1:
+        env = SaqpEnv(k, max_iters=-1)
+    else:
+        env = SaqpEnv2(k)
     validation_set = env.validation_set
     best_validation_score = -1
     best_sample = None
@@ -336,7 +345,7 @@ def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON):
             # Move to next state
             state = torch.Tensor(next_state).to(device)
 
-        curr_sample = [tup[pivot] for tup in env.best_k]
+        curr_sample = env.sample()
         curr_validation_score = get_score2(curr_sample, queries=validation_set)
         tqdm.write(f'current validation score: {curr_validation_score}, '
                    f'current test score: {get_score2(curr_sample, queries="test")}')
@@ -344,28 +353,29 @@ def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON):
             best_validation_score = curr_validation_score
             best_sample = curr_sample
 
-    print(f'best score on validation set: {best_validation_score}')
+    verbose and print(f'best score on validation set: {best_validation_score}')
     test_score = get_score2(best_sample, queries='test')
-    print(f'score on test set: {test_score}')
-    CheckpointManager.save(f'{k}-{view_size}-{k}_{num_episodes}_{horizon}_ddqn_sample',
-                           [best_sample, test_score, best_validation_score])
+    verbose and print(f'score on test set: {test_score}')
+    verbose and CheckpointManager.save(f'{k}-{view_size}-{k}_{num_episodes}_{horizon}_ddqn_sample',
+                                       [best_sample, test_score, best_validation_score])
     return best_sample, test_score
 
 
-def get_scores(n_trials, k):
+def get_scores(k, n_trials=10):
     min_score = 10.
     max_score = -10.
     avg_score = 0.
+    all_scores = []
     for _ in trange(n_trials):
-        sample, new_score = get_sample(k)
+        sample, new_score = get_sample(k=k, verbose=False)
+        all_scores.append(new_score)
         print(f'current: {new_score}')
         avg_score += new_score
         min_score = min(min_score, new_score)
         max_score = max(max_score, new_score)
     avg_score /= n_trials
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
-    CheckpointManager.save(f'{k}-{view_size}-{k}_{NUM_EPISODES}_{HORIZON}_ddqn_scores',
-                           [avg_score, min_score, max_score])
+    CheckpointManager.save(f'{k}-{view_size}-{k}_{NUM_EPISODES}_{HORIZON}_ddqn_scores', all_scores)
     print(f'avg: {avg_score}')
     print(f'min: {min_score}')
     print(f'max: {max_score}')
@@ -374,5 +384,5 @@ def get_scores(n_trials, k):
 if __name__ == '__main__':
     k = 100
 
-    train(k=k)
-    # get_sample()
+    # train(k=k)
+    get_scores(k=k)
