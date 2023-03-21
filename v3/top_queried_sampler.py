@@ -15,7 +15,7 @@ def prepare_weights_for_sample(verbose=True):
     weights = np.zeros(table_size)
     validation_size = 10 if ConfigManager.get_config('samplerConfig.validationSize') is None else \
         ConfigManager.get_config('samplerConfig.validationSize')
-    train_results, _ = get_train_queries(checkpoint_version=10, validation_size=validation_size)
+    train_results, _ = get_train_queries(validation_size=validation_size)
 
     for query_result in (tqdm(train_results) if verbose else train_results):
         weights[query_result] += 1.
