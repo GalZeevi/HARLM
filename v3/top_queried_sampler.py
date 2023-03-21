@@ -34,7 +34,7 @@ def prepare_sample(k):
     return np.argpartition(weights, -k)[-k:]
 
 
-def get_sample(k, dist=False):
+def get_sample(k):
     sample = prepare_sample(k)
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     score = get_score2(sample, queries='test')

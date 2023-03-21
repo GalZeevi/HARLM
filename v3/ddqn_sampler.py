@@ -329,7 +329,7 @@ def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON, v
     ddqn.load_state_dict(checkpoint['model_state_dict'])
     ddqn.eval()
 
-    for _ in trange(n_trials):
+    for _ in (trange(n_trials) if verbose is True else range(n_trials)):
         state = env.reset()  # Resets the env and returns a random initial state
         state = torch.Tensor(state).to(device)
         env.render()  # Visualize for human
@@ -347,8 +347,9 @@ def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON, v
 
         curr_sample = env.sample()
         curr_validation_score = get_score2(curr_sample, queries=validation_set)
-        tqdm.write(f'current validation score: {curr_validation_score}, '
-                   f'current test score: {get_score2(curr_sample, queries="test")}')
+        verbose and tqdm.write(f'current train score: {get_score2(curr_sample, queries="train")}, '
+                               f'current validation score: {curr_validation_score}, '
+                               f'current test score: {get_score2(curr_sample, queries="test")}')
         if curr_validation_score > best_validation_score:
             best_validation_score = curr_validation_score
             best_sample = curr_sample
@@ -361,13 +362,13 @@ def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON, v
     return best_sample, test_score
 
 
-def get_scores(k, n_trials=10):
+def get_scores(k, n_trials=100):
     min_score = 10.
     max_score = -10.
     avg_score = 0.
     all_scores = []
     for _ in trange(n_trials):
-        sample, new_score = get_sample(k=k, verbose=False)
+        sample, new_score = get_sample(k=k, verbose=False, n_trials=1)
         all_scores.append(new_score)
         print(f'current: {new_score}')
         avg_score += new_score

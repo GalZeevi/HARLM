@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
+from top_queried_sampler import get_sample
 import numpy as np
 
 CHECKPOINT_VER = 11
@@ -53,6 +54,33 @@ def plot_rewards():
     plt.xlabel("episodes")
     plt.ylabel("reward")
     plt.title(f"ver{RL_ENV_VER} {DDQN} rewards by episode")
+    plt.show()
+
+
+def plot_ddqn_scores():
+    all_scores = np.array(CheckpointManager.load(f'{k}-{view_size}-{DDQN}_scores', CHECKPOINT_VER))
+    mean = np.mean(all_scores)
+    std = np.std(all_scores)
+    top_q_score = get_sample(k)[1]
+    num_above_top_q = len(all_scores[np.where(all_scores > top_q_score)])
+    plt.bar([1, 2], [mean, top_q_score], yerr=[std, 0], align='center', alpha=0.5, capsize=10)
+    my_xticks = ['ddqn', 'top_queried']
+    plt.xticks([1, 2], my_xticks)
+    plt.title(f"ver{RL_ENV_VER} ddqn vs. top_queried mean and std after 9000 episodes")
+    plt.show()
+
+
+def plot_ddqn_scores2():
+    all_scores = np.array(CheckpointManager.load(f'{k}-{view_size}-{DDQN}_scores', CHECKPOINT_VER))
+    mean = np.mean(all_scores)
+    std = np.std(all_scores)
+    top_q_score = get_sample(k)[1]
+    num_above_top_q = len(all_scores[np.where(all_scores > top_q_score)])
+    plt.bar([*range(len(all_scores))][:len(all_scores) - num_above_top_q],
+            sorted(all_scores)[:len(all_scores) - num_above_top_q])
+    plt.bar([*range(len(all_scores))][len(all_scores) - num_above_top_q:],
+            sorted(all_scores)[len(all_scores) - num_above_top_q:])
+    plt.title(f"ver{RL_ENV_VER} distribution of 100 ddqn samples after 9000 episodes")
     plt.show()
 
 

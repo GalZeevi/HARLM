@@ -9,7 +9,6 @@ from tabulate import tabulate
 from torch.autograd import Variable
 from torch.distributions import Categorical
 from tqdm import tqdm, trange
-from sklearn.utils import shuffle
 
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
@@ -40,6 +39,15 @@ class Preprocess:
     _encodings = dict()
     _max_values = dict()
     _columns = list()
+
+    @staticmethod
+    def __init():
+        if len(Preprocess._encodings.keys()) == 0 or \
+                len(Preprocess._columns) == 0 or \
+                len(Preprocess._max_values.keys()) == 0:
+            Preprocess._encodings = Preprocess.get_encodings()
+            Preprocess._columns = Preprocess.get_all_columns()
+            Preprocess._max_values = Preprocess.get_max_values()
 
     @staticmethod
     def create_encoding_dict(string_values):
@@ -78,9 +86,6 @@ class Preprocess:
 
     @staticmethod
     def get_encodings():
-        if len(Preprocess._encodings.keys()) > 0:
-            return Preprocess._encodings
-
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
@@ -93,18 +98,15 @@ class Preprocess:
                                                 f"WHERE table_schema='{schema}' AND table_name='{table}' " +
                                                 f"AND data_type NOT IN ({' , '.join(db_formatted_data_types)}) " +
                                                 f"AND column_name <> '{pivot}'")
-        # TODO: fix support in null fields - currently it converts everything to str
-        # TODO: --> can convert time to number or string
-        return {col: Preprocess.create_encoding_dict(
-            # DataAccess.select(f'SELECT DISTINCT COALESCE({col}, \'{NULL_VALUE}\') as val FROM {schema}.{table}'))
-            DataAccess.select(f'SELECT DISTINCT {col} as val FROM {schema}.{table} ORDER BY val'))
-            for col in categorical_columns}
+        encodings = dict()
+        for col in categorical_columns:
+            uniq_values = DataAccess.select(f'SELECT DISTINCT {col} as val FROM {schema}.{table} ORDER BY val')
+            uniq_values = [NULL_VALUE if v is None else v for v in uniq_values]
+            encodings[col] = Preprocess.create_encoding_dict(uniq_values)
+        return encodings
 
     @staticmethod
     def get_max_values():
-        if len(Preprocess._max_values.keys()) > 0:
-            return Preprocess._max_values
-
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
@@ -122,21 +124,12 @@ class Preprocess:
 
     @staticmethod
     def encode_column(tuples, col_num_when_sorted):
-        if len(Preprocess._encodings.keys()) == 0 or len(Preprocess._columns) == 0 or \
-                len(Preprocess._max_values.keys()) == 0:
-            Preprocess._encodings = Preprocess.get_encodings()
-            Preprocess._columns = Preprocess.get_all_columns()
-            Preprocess._max_values = Preprocess.get_max_values()
-
         col_name = sorted(Preprocess._columns)[col_num_when_sorted]
         col = tuples[:, col_num_when_sorted]
-        if col_name in Preprocess._max_values:  # numerical column
-            col[np.where(col == None)] = Preprocess._max_values[col_name] + 1  # Handle null-values for numeric columns
-            return tuples
-        elif col_name in Preprocess._encodings:
-            col[np.where(col == None)] = NULL_VALUE  # Handle null-values for categorical columns
+        if col_name in Preprocess._encodings:  # Categorical column
             mapping = Preprocess._encodings[col_name]
-            reduced_mapping = {k: v for k, v in mapping.items() if k in col}  # in order to not search the entire thing
+            # in order to not search the entire thing
+            reduced_mapping = {key: val for key, val in mapping.items() if key in col}
 
             for key in reduced_mapping.keys():
                 col[np.where(col == key)] = reduced_mapping[key]
@@ -145,11 +138,21 @@ class Preprocess:
         return tuples
 
     @staticmethod
-    def tuples2numpy(tuples_list):
-        if len(Preprocess._encodings.keys()) == 0 or len(Preprocess._columns) == 0:
-            Preprocess._encodings = Preprocess.get_encodings()
-            Preprocess._columns = Preprocess.get_all_columns()
+    def replace_none(tup):
+        for col, value in tup.items():
+            if value is None:
+                if col in Preprocess._encodings:
+                    tup[col] = NULL_VALUE
+                elif col in Preprocess._max_values:
+                    tup[col] = Preprocess._max_values[col] + 1
+                else:
+                    raise Exception(f'Column {col} not recognized as either numerical or categorical')
+        return tup
 
+    @staticmethod
+    def tuples2numpy(tuples_list):
+        Preprocess.__init()
+        tuples_list = [Preprocess.replace_none(tup) for tup in tuples_list]
         tuples_sorted_by_cols = [sorted([*tup.items()], key=lambda pair: pair[0]) for tup in tuples_list]
         tuples_values_sorted_by_cols = [[col_and_value[1] for col_and_value in tup] for tup in tuples_sorted_by_cols]
         tuples_as_numpy_not_encoded = np.array(tuples_values_sorted_by_cols)
@@ -347,7 +350,7 @@ class SaqpEnv2(Env):
             self.step_count += 1
 
         # calculate reward
-        new_score = get_score2([tup[self.pivot] for tup in self.selected_tuples])
+        new_score = get_score2(self.sample())
         # reward = (new_score - self.current_score) * len(self.train_set)
         reward = new_score
         self.current_score = new_score
