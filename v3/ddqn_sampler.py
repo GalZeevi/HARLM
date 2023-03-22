@@ -48,7 +48,7 @@ class QNetwork(nn.Module):
         self.embedding_dims_and_names = [(i, col_name) for i, col_name in
                                          Preprocess.get_categorical_columns_sorted()
                                          if len(encodings[col_name]) > 2]
-        self.embedding_dims = [i for i, col_name in self.embedding_dims_and_names if encodings]
+        self.embedding_dims = [i for i, col_name in self.embedding_dims_and_names]
         self.numerical_dims = [i for i in range(len(Preprocess.get_all_columns(with_pivot=False)))
                                if i not in self.embedding_dims]
         col_and_lens = {col_name: len(d.keys()) for col_name, d in encodings.items() if len(d.keys()) > 2}
@@ -196,7 +196,7 @@ def update_parameters(current_model, target_model):
 
 HIDDEN_DIM = 64
 NUM_EPISODES = 30_000
-HORIZON = 1020
+HORIZON = 1222
 
 rewards_graph = []
 losses_graph = []
@@ -385,5 +385,5 @@ def get_scores(k, n_trials=100):
 if __name__ == '__main__':
     k = 100
 
-    # train(k=k)
-    get_scores(k=k)
+    train(k=k)
+    # get_scores(k=k)

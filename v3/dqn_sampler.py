@@ -81,7 +81,7 @@ class Preprocess:
                                              f"AND data_type NOT IN ({' , '.join(db_formatted_data_types)}) " +
                                              f"AND column_name <> '{pivot}'")
 
-        all_columns = Preprocess.get_all_columns()
+        all_columns = Preprocess.get_all_columns(with_pivot=False)
         return [pair for pair in enumerate(all_columns) if pair[1] in categorical_cols]
 
     @staticmethod
@@ -342,7 +342,7 @@ class SaqpEnv2(Env):
 
     def step(self, action):
         # update state
-        if action not in [tup[self.pivot] for tup in self.selected_tuples]:  # new tuple
+        if action not in self.sample():  # new tuple
             selected_tuple = DataAccess.select_one(
                 f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={action}')
             self.selected_tuples.append(selected_tuple)
@@ -351,8 +351,8 @@ class SaqpEnv2(Env):
 
         # calculate reward
         new_score = get_score2(self.sample())
-        # reward = (new_score - self.current_score) * len(self.train_set)
-        reward = new_score
+        reward = (new_score - self.current_score) * 100
+        # reward = new_score
         self.current_score = new_score
 
         done = (self.step_count == self.k)
