@@ -11,7 +11,7 @@ from torch.distributions import Categorical
 from tqdm import tqdm, trange
 
 from config_manager_v3 import ConfigManager
-from data_access_v3 import DataAccess
+from data_access_v3 import DataAccess, DBTypes
 from score_calculator import get_score2
 from train_test_utils import get_train_queries
 from checkpoint_manager_v3 import CheckpointManager
@@ -36,18 +36,26 @@ NULL_VALUE = '<NULL>'
 
 
 class Preprocess:
-    _encodings = dict()
-    _max_values = dict()
-    _columns = list()
+    _encodings = None
+    _max_values = None
+    _columns = None
 
     @staticmethod
-    def __init():
-        if len(Preprocess._encodings.keys()) == 0 or \
-                len(Preprocess._columns) == 0 or \
-                len(Preprocess._max_values.keys()) == 0:
-            Preprocess._encodings = Preprocess.get_encodings()
-            Preprocess._columns = Preprocess.get_all_columns()
-            Preprocess._max_values = Preprocess.get_max_values()
+    def init(use_cache=True):
+        if Preprocess._encodings is None or Preprocess._columns is None or Preprocess._max_values is None:
+            schema = ConfigManager.get_config('queryConfig.schema')
+            table = ConfigManager.get_config('queryConfig.table')
+
+            if use_cache and CheckpointManager.load(f'{schema}.{table}_preprocessing') is not None:
+                Preprocess._encodings, Preprocess._max_values, Preprocess._columns = \
+                    CheckpointManager.load(f'{schema}.{table}_preprocessing')
+                return
+
+            Preprocess.get_encodings()
+            Preprocess.get_all_columns()
+            Preprocess.get_max_values()
+            CheckpointManager.save(f'{schema}.{table}_preprocessing',
+                                   (Preprocess._encodings, Preprocess._max_values, Preprocess._columns))
 
     @staticmethod
     def create_encoding_dict(string_values):
@@ -56,15 +64,22 @@ class Preprocess:
 
     @staticmethod
     def get_all_columns(with_pivot=True):
+        if Preprocess._columns is not None:
+            return Preprocess._columns[with_pivot]
+
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         columns = DataAccess.select(f"SELECT column_name AS col FROM information_schema.columns " +
                                     f"WHERE table_schema='{schema}' AND table_name='{table}'")
-        if not with_pivot:
-            pivot = ConfigManager.get_config('queryConfig.pivot')
-            columns.remove(pivot)
+        columns = sorted(columns)
 
-        return sorted(columns)
+        columns_without_pivot = [*columns]
+        pivot = ConfigManager.get_config('queryConfig.pivot')
+        columns_without_pivot.remove(pivot)
+        columns_without_pivot = sorted(columns_without_pivot)
+
+        Preprocess._columns = {True: columns, False: columns_without_pivot}
+        return Preprocess._columns[with_pivot]
 
     @staticmethod
     def get_categorical_columns_sorted():
@@ -86,9 +101,13 @@ class Preprocess:
 
     @staticmethod
     def get_encodings():
+        if Preprocess._encodings is not None:
+            return Preprocess._encodings
+
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
+        db_type = ConfigManager.get_config('dbConfig.type')
         numeric_data_types = \
             ['smallint', 'integer', 'bigint',
              'decimal', 'numeric', 'real', 'double precision',
@@ -99,14 +118,28 @@ class Preprocess:
                                                 f"AND data_type NOT IN ({' , '.join(db_formatted_data_types)}) " +
                                                 f"AND column_name <> '{pivot}'")
         encodings = dict()
-        for col in categorical_columns:
-            uniq_values = DataAccess.select(f'SELECT DISTINCT {col} as val FROM {schema}.{table} ORDER BY val')
+        for col in tqdm(categorical_columns):
+            tqdm.write(f'start creating encoding for column: {col}')
+            if DBTypes.IS_MYSQL(db_type):
+                uniq_values = DataAccess.select(
+                    f'SELECT DISTINCT BINARY {col} as val FROM {schema}.{table} ORDER BY val')
+                uniq_values = [b.decode() for b in uniq_values]
+            elif DBTypes.IS_POSTGRESQL(db_type):
+                uniq_values = DataAccess.select(
+                    f'SELECT DISTINCT {col} as val FROM {schema}.{table} ORDER BY val')
+            else:
+                raise Exception('Unsupported db type! supported types are "postgresql" or "mysql"')
             uniq_values = [NULL_VALUE if v is None else v for v in uniq_values]
             encodings[col] = Preprocess.create_encoding_dict(uniq_values)
+
+        Preprocess._encodings = encodings
         return encodings
 
     @staticmethod
     def get_max_values():
+        if Preprocess._max_values is not None:
+            return Preprocess._max_values
+
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
@@ -119,15 +152,24 @@ class Preprocess:
                                               f"WHERE table_schema='{schema}' AND table_name='{table}' " +
                                               f"AND data_type IN ({' , '.join(db_formatted_data_types)}) " +
                                               f"AND column_name <> '{pivot}'")
-        return {col: DataAccess.select_one(f'SELECT COALESCE(MAX({col}), 0) as val FROM {schema}.{table}')
-                for col in numerical_columns}
+
+        max_values = dict()
+        for col in tqdm(numerical_columns):
+            tqdm.write(f'start calculating max value for column: {col}')
+            max_val = DataAccess.select_one(f'SELECT COALESCE(MAX({col}), 0) as val FROM {schema}.{table}')
+            max_values[col] = max_val
+
+        Preprocess._max_values = max_values
+        return max_values
 
     @staticmethod
     def encode_column(tuples, col_num_when_sorted):
-        col_name = sorted(Preprocess._columns)[col_num_when_sorted]
+        col_name = sorted(Preprocess.get_all_columns())[col_num_when_sorted]
         col = tuples[:, col_num_when_sorted]
-        if col_name in Preprocess._encodings:  # Categorical column
-            mapping = Preprocess._encodings[col_name]
+        encodings = Preprocess.get_encodings()
+        if col_name in encodings:  # Categorical column
+            # col = np.char.lower(col)  # Convert to lowercase, since for us categories are case-insensitive
+            mapping = encodings[col_name]
             # in order to not search the entire thing
             reduced_mapping = {key: val for key, val in mapping.items() if key in col}
 
@@ -139,31 +181,36 @@ class Preprocess:
 
     @staticmethod
     def replace_none(tup):
+        encodings = Preprocess.get_encodings()
+        max_values = Preprocess.get_max_values()
         for col, value in tup.items():
             if value is None:
-                if col in Preprocess._encodings:
+                if col in encodings:
                     tup[col] = NULL_VALUE
-                elif col in Preprocess._max_values:
-                    tup[col] = Preprocess._max_values[col] + 1
+                elif col in max_values:
+                    tup[col] = max_values[col] + 1
                 else:
                     raise Exception(f'Column {col} not recognized as either numerical or categorical')
         return tup
 
     @staticmethod
     def tuples2numpy(tuples_list):
-        Preprocess.__init()
+        Preprocess.init()
         tuples_list = [Preprocess.replace_none(tup) for tup in tuples_list]
         tuples_sorted_by_cols = [sorted([*tup.items()], key=lambda pair: pair[0]) for tup in tuples_list]
         tuples_values_sorted_by_cols = [[col_and_value[1] for col_and_value in tup] for tup in tuples_sorted_by_cols]
         tuples_as_numpy_not_encoded = np.array(tuples_values_sorted_by_cols)
         encoded_tuples = np.apply_over_axes(Preprocess.encode_column, tuples_as_numpy_not_encoded,
                                             range(tuples_as_numpy_not_encoded.shape[1]))
-        return Preprocess.remove_pivot_from_numpy(encoded_tuples).astype(float)
+        try:
+            return Preprocess.remove_pivot_from_numpy(encoded_tuples).astype(float)
+        except:
+            raise Exception(f'problem with tuples:[{tuples_list}]')
 
     @staticmethod
     def remove_pivot_from_numpy(a):
         pivot = ConfigManager.get_config('queryConfig.pivot')
-        pivot_col_location_in_columns = Preprocess._columns.index(pivot)
+        pivot_col_location_in_columns = Preprocess.get_all_columns().index(pivot)
         return np.delete(a, pivot_col_location_in_columns, 1)
 
 

@@ -44,6 +44,7 @@ class QNetwork(nn.Module):
         self.fc_3 = nn.Linear(hidden_dim, action_dim, dtype=torch.float32, device=device)
 
     def init_embedding(self, state_shape):
+        Preprocess.init()
         encodings = Preprocess.get_encodings()
         self.embedding_dims_and_names = [(i, col_name) for i, col_name in
                                          Preprocess.get_categorical_columns_sorted()
@@ -264,6 +265,7 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.9999, eps_min
         state = env.reset()
         memory.states.append(state)
 
+        pbar = tqdm(total=horizon if ENV_VER == 1 else k)
         for i in range(int(horizon) + 1):
             action = Q_1.select_action(env, state, eps)
             state, reward, done = env.step(action)
@@ -276,6 +278,8 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.9999, eps_min
 
             if done:
                 break
+
+            pbar.update()
 
         if episode >= min_episodes and episode % update_step == 0:
             ep_loss = 0.
