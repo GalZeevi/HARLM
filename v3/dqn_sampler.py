@@ -123,6 +123,7 @@ class Preprocess:
             if DBTypes.IS_MYSQL(db_type):
                 uniq_values = DataAccess.select(
                     f'SELECT DISTINCT BINARY {col} as val FROM {schema}.{table} ORDER BY val')
+                uniq_values = [NULL_VALUE.encode() if b is None else b for b in uniq_values]
                 uniq_values = [b.decode() for b in uniq_values]
             elif DBTypes.IS_POSTGRESQL(db_type):
                 uniq_values = DataAccess.select(
