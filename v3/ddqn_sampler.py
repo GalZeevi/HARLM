@@ -1,17 +1,18 @@
-from dqn_sampler import SaqpEnv, SaqpEnv2
-import torch
-import numpy as np
-from torch import nn
-import random
-import torch.nn.functional as F
 import collections
-from torch.optim.lr_scheduler import StepLR
-from checkpoint_manager_v3 import CheckpointManager
-from tqdm import tqdm, trange
-from score_calculator import get_score2
-from dqn_sampler import Preprocess
+import random
 
+import numpy as np
+import torch
+import torch.nn.functional as F
+from torch import nn
+from torch.optim.lr_scheduler import StepLR
+from tqdm import tqdm, trange
+
+from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
+from dqn_sampler import Preprocess
+from dqn_sampler import SaqpEnv, SaqpEnv2
+from score_calculator import get_score2
 
 """
 Implementation of Double DQN for environments with discrete action space.

@@ -32,7 +32,7 @@ def threshold_positive(value, threshold):
         return value
 
 
-NULL_VALUE = '<NULL>'
+NULL_VALUE = 'NIL'
 
 
 class Preprocess:
@@ -399,13 +399,19 @@ class SaqpEnv2(Env):
 
         # calculate reward
         new_score = get_score2(self.sample())
-        reward = (new_score - self.current_score) * 100
+        reward = (new_score - self.current_score) * 100  # TODO: smooth this - push over top-queried higher
         # reward = new_score
         self.current_score = new_score
 
         done = (self.step_count == self.k)
 
         return self.selected_tuples_numpy, reward, done
+
+    def get_state(self, numpy=True):
+        if numpy:
+            return self.selected_tuples_numpy
+        else:
+            return self.selected_tuples
 
     def sample(self):
         return [tup[self.pivot] for tup in self.selected_tuples]

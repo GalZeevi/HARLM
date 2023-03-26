@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from top_queried_sampler import get_sample
-import numpy as np
 
 CHECKPOINT_VER = 11
 RL_ENV_VER = 2
