@@ -16,7 +16,7 @@ def row2dict(row):
         return row._data[0]
 
     for field in fields:
-        d[field] = row[field]
+        d[field] = row._mapping[field]
     return d
 
 
@@ -33,7 +33,7 @@ class DataAccess:
                                                    params['host'], params['port'], params['database'])
 
         print(f'Connecting to the postgresql database...')
-        return sqlalchemy.create_engine(url, client_encoding='utf8')
+        return sqlalchemy.create_engine(url, client_encoding='utf8').connect()
 
     @staticmethod
     def _connect_mysql(params):
@@ -41,7 +41,7 @@ class DataAccess:
                                                                    params['host'], params['database'])
 
         print(f'Connecting to the mysql database...')
-        return sqlalchemy.create_engine(url)
+        return sqlalchemy.create_engine(url).connect()
 
     @staticmethod
     def _connect():
@@ -79,14 +79,14 @@ class DataAccess:
     def update(query):
         if DataAccess.conn is None:
             DataAccess._connect()
-        DataAccess.conn.execute(query)
+        DataAccess.conn.execute(sqlalchemy.text(query))
 
     @staticmethod
     def select(query):
         if DataAccess.conn is None:
             DataAccess._connect()
         answer = []
-        for row in DataAccess.conn.execute(query):
+        for row in DataAccess.conn.execute(sqlalchemy.text(query)):
             answer.append(row2dict(row))
         return answer
 
