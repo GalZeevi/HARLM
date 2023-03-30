@@ -15,7 +15,7 @@ from data_access_v3 import DataAccess, DBTypes
 from score_calculator import get_score2
 from train_test_utils import get_train_queries
 from checkpoint_manager_v3 import CheckpointManager
-from top_queried_sampler import prepare_sample, prepare_weights_for_sample
+from top_queried_sampler import prepare_sample, prepare_weights_for_sample, get_sample as get_top_q_sample
 from gym import Env
 
 
@@ -354,6 +354,13 @@ class SaqpEnv:
         return [tup[self.pivot] for tup in self.best_k]
 
 
+def smooth(p, x):
+    if x > 1.5 * p:
+        return 1.
+    elif x < 0.3 * p:
+        return 0.
+
+
 class SaqpEnv2(Env):
 
     def __init__(self, k):
@@ -369,12 +376,19 @@ class SaqpEnv2(Env):
         validation_size = ConfigManager.get_config('samplerConfig.validationSize')
         validation_size = 10 if validation_size is None else validation_size
         self.train_set, self.validation_set = get_train_queries(validation_size=validation_size)
-        self.num_actions = self.table_size
+        # self.num_actions = self.table_size
+        # self.actions = np.arange(self.num_actions)
+        self.actions = self._get_actions()
+        self.num_actions = len(self.actions)
         self.state_shape = (k, num_cols_not_pivot)
         self.step_count = 0
         self.selected_tuples = []
         self.selected_tuples_numpy = np.array([])
         self.current_score = 0.
+        self.top_q_score = get_top_q_sample(k, False)[1]
+
+    def _get_actions(self):
+        return prepare_sample(100 * self.k, False)
 
     def reset(self, seed=None, options=None):
         self.step_count = 0
@@ -399,7 +413,7 @@ class SaqpEnv2(Env):
 
         # calculate reward
         new_score = get_score2(self.sample())
-        reward = (new_score - self.current_score) * 100  # TODO: smooth this - push over top-queried higher
+        reward = smooth(self.top_q_score, new_score - self.current_score) * len(self.train_set)
         # reward = new_score
         self.current_score = new_score
 

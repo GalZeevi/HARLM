@@ -24,22 +24,22 @@ def prepare_weights_for_sample(verbose=True):
     return weights
 
 
-def prepare_sample(k):
+def prepare_sample(k, verbose=True):
     weights = CheckpointManager.load('top_queried_sampler_weights', numpy=True)
     if weights is None:
-        weights = prepare_weights_for_sample()
+        weights = prepare_weights_for_sample(verbose)
 
     # print(np.sort(weights)[::-1][:k])
 
     return np.argpartition(weights, -k)[-k:]
 
 
-def get_sample(k):
-    sample = prepare_sample(k)
+def get_sample(k, verbose=True):
+    sample = prepare_sample(k, verbose)
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     score = get_score2(sample, queries='test')
 
-    CheckpointManager.save(f'{k}-{view_size}-top_queried_sample', [sample, score])
+    verbose and CheckpointManager.save(f'{k}-{view_size}-top_queried_sample', [sample, score])
     return sample, score
 
 

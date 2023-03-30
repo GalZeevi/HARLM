@@ -18,7 +18,17 @@ from score_calculator import get_score2
 Implementation of Double DQN for environments with discrete action space.
 """
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda" if use_cuda else "cpu")
+device_ids = [*range(torch.cuda.device_count())] if torch.cuda.is_available() else []
+
+
+def parallel_model(model):
+    if use_cuda:
+        return nn.DataParallel(model)
+    else:
+        return model
+
 
 """
 The Q-Network has as input a state s and outputs the state-action values q(s,a_1), ..., q(s,a_n) for all n actions.
@@ -40,9 +50,9 @@ class QNetwork(nn.Module):
             inp_dim = self.init_embedding(state_shape)
         else:
             inp_dim = state_shape[0] * state_shape[1]
-        self.fc_1 = nn.Linear(inp_dim, hidden_dim, dtype=torch.float32, device=device)
-        self.fc_2 = nn.Linear(hidden_dim, hidden_dim, dtype=torch.float32, device=device)
-        self.fc_3 = nn.Linear(hidden_dim, action_dim, dtype=torch.float32, device=device)
+        self.fc_1 = parallel_model(nn.Linear(inp_dim, hidden_dim, dtype=torch.float32, device=device))
+        self.fc_2 = parallel_model(nn.Linear(hidden_dim, hidden_dim, dtype=torch.float32, device=device))
+        self.fc_3 = parallel_model(nn.Linear(hidden_dim, action_dim, dtype=torch.float32, device=device))
 
     def init_embedding(self, state_shape):
         Preprocess.init()
@@ -56,7 +66,7 @@ class QNetwork(nn.Module):
         col_and_lens = {col_name: len(d.keys()) for col_name, d in encodings.items() if len(d.keys()) > 2}
         embed_sizes = {col: (col_len, min(50, (col_len + 1) // 2)) for col, col_len in col_and_lens.items()}
         self.embedding_layers = nn.ModuleList([
-            nn.Embedding(embed_sizes[col_name][0], embed_sizes[col_name][1], device=device)
+            parallel_model(nn.Embedding(embed_sizes[col_name][0], embed_sizes[col_name][1], device=device))
             for _, col_name in self.embedding_dims_and_names
         ])
         inp_dim = state_shape[0] * ((state_shape[1] - len(self.embedding_dims)) +
@@ -97,7 +107,7 @@ class QNetwork(nn.Module):
             actions_values = values.cpu().numpy()
             if hasattr(env, 'forbidden_actions') and len(env.forbidden_actions) > 0:
                 actions_values[:, env.forbidden_actions] = np.NINF
-            action = np.argmax(actions_values)
+            action = env.actions[np.argmax(actions_values)]
 
         return action
 
@@ -197,14 +207,14 @@ def update_parameters(current_model, target_model):
 
 
 HIDDEN_DIM = 64
-NUM_EPISODES = 30_000
+NUM_EPISODES = 3000
 HORIZON = 1222
 
 rewards_graph = []
 losses_graph = []
 
 
-def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.9999, eps_min=0.01, update_step=10, batch_size=128,
+def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=0.01, update_step=10, batch_size=128,
           update_repeats=50, num_episodes=NUM_EPISODES, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100,
           measure_step=25, measure_repeats=10, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
     """
@@ -266,7 +276,6 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.9999, eps_min
         state = env.reset()
         memory.states.append(state)
 
-        pbar = tqdm(total=horizon if ENV_VER == 1 else k)
         for i in range(int(horizon) + 1):
             action = Q_1.select_action(env, state, eps)
             state, reward, done = env.step(action)
@@ -280,11 +289,10 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.9999, eps_min
             if done:
                 break
 
-            pbar.update()
-
         if episode >= min_episodes and episode % update_step == 0:
             ep_loss = 0.
-            for _ in range(update_repeats):
+            for r in range(update_repeats):
+                tqdm.write(f'Starting update step, repeat: {r}')
                 ep_loss += update(batch_size, Q_1, Q_2, optimizer, memory, gamma)
             print("Episode: ", episode)
             print("loss: ", ep_loss)
@@ -301,8 +309,11 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.9999, eps_min
 
             # save model
             torch.save({
-                'model_state_dict': Q_1.state_dict(),
+                'q1_state_dict': Q_1.state_dict(),
+                'q2_state_dict': Q_2.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                'epsilon': eps,
+                'episode': episode
             }, f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
 
         # update learning rate and eps
@@ -331,7 +342,7 @@ def get_sample(k=100, n_trials=10, num_episodes=NUM_EPISODES, horizon=HORIZON, v
     # Prepare the model for inference
     ddqn = QNetwork(action_dim=env.num_actions, state_shape=env.state_shape,
                     hidden_dim=HIDDEN_DIM).to(device)
-    ddqn.load_state_dict(checkpoint['model_state_dict'])
+    ddqn.load_state_dict(checkpoint['q1_state_dict'])
     ddqn.eval()
 
     for _ in (trange(n_trials) if verbose is True else range(n_trials)):
@@ -388,7 +399,7 @@ def get_scores(k, n_trials=100):
 
 
 if __name__ == '__main__':
-    k = 100
+    k = 1000
 
     train(k=k)
     # get_scores(k=k)
