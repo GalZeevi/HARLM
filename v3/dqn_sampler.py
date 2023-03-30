@@ -25,13 +25,6 @@ def get_permutation(n):
     return lambda i: permuted[i]
 
 
-def threshold_positive(value, threshold):
-    if 0 <= value < threshold:
-        return 0
-    else:
-        return value
-
-
 NULL_VALUE = 'NIL'
 
 
@@ -113,18 +106,27 @@ class Preprocess:
              'decimal', 'numeric', 'real', 'double precision',
              'smallserial', 'serial', 'bigserial', 'int']
         db_formatted_data_types = [f"\'{data_type}\'" for data_type in numeric_data_types]
-        categorical_columns = DataAccess.select(f"SELECT column_name AS col FROM information_schema.columns " +
-                                                f"WHERE table_schema='{schema}' AND table_name='{table}' " +
-                                                f"AND data_type NOT IN ({' , '.join(db_formatted_data_types)}) " +
-                                                f"AND column_name <> '{pivot}'")
+        categorical_columns = DataAccess.select(
+            f"SELECT column_name AS col, data_type AS type FROM information_schema.columns " +
+            f"WHERE table_schema='{schema}' AND table_name='{table}' " +
+            f"AND data_type NOT IN ({' , '.join(db_formatted_data_types)}) " +
+            f"AND column_name <> '{pivot}'")
         encodings = dict()
-        for col in tqdm(categorical_columns):
+        for col, data_type in tqdm([list(d.values()) for d in categorical_columns]):
+            data_type = data_type.lower()
             tqdm.write(f'start creating encoding for column: {col}')
             if DBTypes.IS_MYSQL(db_type):
-                uniq_values = DataAccess.select(
-                    f'SELECT DISTINCT BINARY {col} as val FROM {schema}.{table} ORDER BY val')
-                uniq_values = [NULL_VALUE.encode() if b is None else b for b in uniq_values]
-                uniq_values = [b.decode() for b in uniq_values]
+                if data_type in ['date', 'datetime', 'timestamp']:
+                    uniq_values = DataAccess.select(
+                        f'SELECT DISTINCT {col} as val FROM {schema}.{table} ORDER BY val')
+                    uniq_values = [NULL_VALUE if b is None else b for b in uniq_values]
+                elif data_type in ['varchar', 'char', 'text', 'binary', 'varbinary']:
+                    uniq_values = DataAccess.select(
+                        f'SELECT DISTINCT BINARY {col} as val FROM {schema}.{table} ORDER BY val')
+                    uniq_values = [NULL_VALUE.encode() if b is None else b for b in uniq_values]
+                    uniq_values = [b.decode() for b in uniq_values]
+                else:
+                    raise Exception(f'Unsupported column type! column: {col}, type: {data_type}')
             elif DBTypes.IS_POSTGRESQL(db_type):
                 uniq_values = DataAccess.select(
                     f'SELECT DISTINCT {col} as val FROM {schema}.{table} ORDER BY val')
@@ -355,10 +357,12 @@ class SaqpEnv:
 
 
 def smooth(p, x):
-    if x > 1.5 * p:
+    if x > 2 * p:
         return 1.
-    elif x < 0.3 * p:
+    elif 0 <= x < 0.25 * p:
         return 0.
+    else:
+        return x
 
 
 class SaqpEnv2(Env):
@@ -388,7 +392,8 @@ class SaqpEnv2(Env):
         self.top_q_score = get_top_q_sample(k, False)[1]
 
     def _get_actions(self):
-        return prepare_sample(100 * self.k, False)
+        action_size = 100 * self.k  # TODO change to 100 on server, 2 locally
+        return prepare_sample(action_size, False)
 
     def reset(self, seed=None, options=None):
         self.step_count = 0
@@ -404,16 +409,17 @@ class SaqpEnv2(Env):
 
     def step(self, action):
         # update state
-        if action not in self.sample():  # new tuple
+        tuple_num = self.actions[action]
+        if tuple_num not in self.sample():  # new tuple
             selected_tuple = DataAccess.select_one(
-                f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={action}')
+                f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={tuple_num}')
             self.selected_tuples.append(selected_tuple)
             self.selected_tuples_numpy[self.step_count] = Preprocess.tuples2numpy([selected_tuple])[0]
             self.step_count += 1
 
         # calculate reward
         new_score = get_score2(self.sample())
-        reward = smooth(self.top_q_score, new_score - self.current_score) * len(self.train_set)
+        reward = smooth(self.top_q_score / self.k, new_score - self.current_score) * len(self.train_set)
         # reward = new_score
         self.current_score = new_score
 

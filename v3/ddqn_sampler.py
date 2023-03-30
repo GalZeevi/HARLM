@@ -107,7 +107,7 @@ class QNetwork(nn.Module):
             actions_values = values.cpu().numpy()
             if hasattr(env, 'forbidden_actions') and len(env.forbidden_actions) > 0:
                 actions_values[:, env.forbidden_actions] = np.NINF
-            action = env.actions[np.argmax(actions_values)]
+            action = np.argmax(actions_values)
 
         return action
 
@@ -190,7 +190,8 @@ def evaluate(Qmodel, k, eps, repeats):
         env = SaqpEnv2(k)
     Qmodel.eval()
     perform = 0.
-    for _ in range(repeats):
+    for r in range(repeats):
+        tqdm.write(f'Starting measure step, repeat num: {r + 1}/{repeats}')
         state = env.reset()
         done = False
         while not done:
@@ -215,7 +216,7 @@ losses_graph = []
 
 
 def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=0.01, update_step=10, batch_size=128,
-          update_repeats=50, num_episodes=NUM_EPISODES, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100,
+          update_repeats=25, num_episodes=NUM_EPISODES, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100,
           measure_step=25, measure_repeats=10, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
     """
     :param gamma: reward discount factor
@@ -268,7 +269,6 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=
             performance.append([episode, evaluate(Q_1, k, eps, measure_repeats)])
             print("Episode: ", episode)
             print("rewards: ", performance[-1][1])
-            # print("lr: ", scheduler.get_lr())
             print("eps: ", eps)
             rewards_graph.append((episode, performance[-1][1]))
             CheckpointManager.save(f'{k}_{num_episodes}_{horizon}_ddqn_rewards', rewards_graph)
@@ -292,11 +292,10 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=
         if episode >= min_episodes and episode % update_step == 0:
             ep_loss = 0.
             for r in range(update_repeats):
-                tqdm.write(f'Starting update step, repeat: {r}')
+                tqdm.write(f'Starting update step, repeat num: {r + 1}/{update_repeats}')
                 ep_loss += update(batch_size, Q_1, Q_2, optimizer, memory, gamma)
             print("Episode: ", episode)
             print("loss: ", ep_loss)
-            # print("lr: ", scheduler.get_lr())
             print("eps: ", eps)
             losses_graph.append((episode, ep_loss / update_repeats))
             CheckpointManager.save(f'{k}_{num_episodes}_{horizon}_ddqn_losses', losses_graph)
@@ -307,14 +306,14 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=
             optimizer.step()
             scheduler.step()
 
-            # save model
-            torch.save({
-                'q1_state_dict': Q_1.state_dict(),
-                'q2_state_dict': Q_2.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'epsilon': eps,
-                'episode': episode
-            }, f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
+        # save model
+        torch.save({
+            'q1_state_dict': Q_1.state_dict(),
+            'q2_state_dict': Q_2.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'epsilon': eps,
+            'episode': episode
+        }, f'{CheckpointManager.get_checkpoint_path()}/{k}_{num_episodes}_{horizon}_ddqn.pt')
 
         # update learning rate and eps
         eps = max(eps * eps_decay, eps_min)
@@ -399,7 +398,7 @@ def get_scores(k, n_trials=100):
 
 
 if __name__ == '__main__':
-    k = 1000
+    k = 1000  # TODO change to 1000 on server, 500 locally
 
     train(k=k)
     # get_scores(k=k)
