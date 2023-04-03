@@ -419,7 +419,10 @@ class SaqpEnv2(Env):
 
         # calculate reward
         new_score = get_score2(self.sample())
-        reward = smooth(self.top_q_score / self.k, new_score - self.current_score) * len(self.train_set)
+        # TODO try with and without smoothing
+        # TODO try with and without subtracting self.current_score
+        # TODO try with and without multiplying by len(train_set)
+        reward = smooth(self.top_q_score / self.k, new_score - self.current_score)
         # reward = new_score
         self.current_score = new_score
 

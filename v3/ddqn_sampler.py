@@ -1,5 +1,6 @@
 import collections
 import random
+import time
 
 import numpy as np
 import torch
@@ -35,6 +36,28 @@ The Q-Network has as input a state s and outputs the state-action values q(s,a_1
 """
 
 ENV_VER = 2
+
+
+class Timer:
+    _start_time = None
+    _name = None
+
+    @staticmethod
+    def start(name=None):
+        Timer._start_time = time.time()
+        Timer._name = name
+
+    @staticmethod
+    def stop():
+        end = time.time()
+        print(
+            f'Execution{"" if Timer._name is None else f" of {Timer._name}"} took: {round(end - Timer._start_time, 4)} sec')
+        Timer.reset()
+
+    @staticmethod
+    def reset():
+        Timer._start_time = None
+        Timer._name = None
 
 
 class QNetwork(nn.Module):
@@ -191,7 +214,7 @@ def evaluate(Qmodel, k, eps, repeats):
     Qmodel.eval()
     perform = 0.
     for r in range(repeats):
-        tqdm.write(f'Starting measure step, repeat num: {r + 1}/{repeats}')
+        print(f'Starting measure step, repeat num: {r + 1}/{repeats}')
         state = env.reset()
         done = False
         while not done:
@@ -209,7 +232,7 @@ def update_parameters(current_model, target_model):
 
 HIDDEN_DIM = 64
 NUM_EPISODES = 3000
-HORIZON = 1222
+HORIZON = 1333
 
 rewards_graph = []
 losses_graph = []
@@ -217,8 +240,9 @@ losses_graph = []
 
 def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=0.01, update_step=10, batch_size=128,
           update_repeats=25, num_episodes=NUM_EPISODES, seed=42, max_memory_size=50000, lr_gamma=0.9, lr_step=100,
-          measure_step=25, measure_repeats=10, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
+          measure_step=25, measure_repeats=10, measure_performance=True, hidden_dim=HIDDEN_DIM, horizon=HORIZON, k=100):
     """
+    :param measure_performance: should measure performance every "measure_step"
     :param gamma: reward discount factor
     :param lr: learning rate for the Q-Network
     :param min_episodes: we wait "min_episodes" many episodes in order to aggregate enough data before starting to train
@@ -264,8 +288,8 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=
     performance = []
 
     for episode in trange(num_episodes):
-        # display the performance
-        if episode > 0 and episode % measure_step == 0:
+        # measure performance
+        if measure_performance is True and episode > 0 and episode % measure_step == 0:
             performance.append([episode, evaluate(Q_1, k, eps, measure_repeats)])
             print("Episode: ", episode)
             print("rewards: ", performance[-1][1])
@@ -276,6 +300,8 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=
         state = env.reset()
         memory.states.append(state)
 
+        # run episode
+        Timer.start(f'episode: {episode}/{num_episodes}')
         for i in range(int(horizon) + 1):
             action = Q_1.select_action(env, state, eps)
             state, reward, done = env.step(action)
@@ -288,11 +314,13 @@ def train(gamma=0.99, lr=1e-3, min_episodes=20, eps=1, eps_decay=0.999, eps_min=
 
             if done:
                 break
+        Timer.stop()
 
+        # update step
         if episode >= min_episodes and episode % update_step == 0:
             ep_loss = 0.
             for r in range(update_repeats):
-                tqdm.write(f'Starting update step, repeat num: {r + 1}/{update_repeats}')
+                print(f'Starting update step, repeat num: {r + 1}/{update_repeats}')
                 ep_loss += update(batch_size, Q_1, Q_2, optimizer, memory, gamma)
             print("Episode: ", episode)
             print("loss: ", ep_loss)
