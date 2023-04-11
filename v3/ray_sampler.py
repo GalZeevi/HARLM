@@ -20,7 +20,7 @@ from tqdm import tqdm, trange
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
-from dqn_sampler import Preprocess
+from preprocessing import Preprocessing
 from score_calculator import get_score2
 from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
@@ -194,8 +194,8 @@ class MyEnv(gym.Env):
 
         reduce_action_dim = env_config.get('reduce_action_dim', True)
         if reduce_action_dim:
-            self.actions = MyEnv.__get_actions2__(self.k, table_size, env_config.get('random_actions_coeff', 0.),
-                                                  self.checkpoint_version)
+            self.actions = MyEnv.__get_actions__(self.k, table_size, env_config.get('random_actions_coeff', 0.),
+                                                 self.checkpoint_version)
             self.num_actions = len(self.actions)
         else:
             self.num_actions = table_size
@@ -221,6 +221,7 @@ class MyEnv(gym.Env):
 
         self.reward_config = {'marginal_reward': env_config.get('marginal_reward', False),
                               'large_reward': env_config.get('large_reward', False)}
+        Preprocessing.init()
 
     @staticmethod
     def __init_table_details__():
@@ -231,19 +232,7 @@ class MyEnv(gym.Env):
         return schema, table, pivot, table_size
 
     @staticmethod
-    def __get_actions__(k, max_action_id, random_actions_coeff):
-        action_space_size = ACTIONS_K_FACTOR * k
-        all_actions = np.arange(max_action_id)
-        queried_tuples_actions = get_queried_tuples(int((1 - random_actions_coeff) * action_space_size), verbose=False)
-        random_tuples_actions = []
-        if len(queried_tuples_actions) < action_space_size:
-            random_tuples_actions = np.random.choice(a=all_actions[~np.isin(all_actions, queried_tuples_actions)],
-                                                     size=action_space_size - len(queried_tuples_actions),
-                                                     replace=False)
-        return np.concatenate((queried_tuples_actions, random_tuples_actions))
-
-    @staticmethod
-    def __get_actions2__(k, max_action_id, random_actions_coeff, checkpoint_ver):
+    def __get_actions__(k, max_action_id, random_actions_coeff, checkpoint_ver):
         action_space_size = ACTIONS_K_FACTOR * k
 
         saved_actions_file_name = f'k={k}_sample-coeff={random_actions_coeff}_size={action_space_size}_actions'
@@ -288,7 +277,7 @@ class MyEnv(gym.Env):
         selected_tuple = DataAccess.select_one(
             f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={tuple_num}')
         self.selected_tuples.append(selected_tuple)
-        self.selected_tuples_numpy[self.step_count] = Preprocess.tuples2numpy([selected_tuple])[0]
+        self.selected_tuples_numpy[self.step_count] = Preprocessing.tuples2numpy([selected_tuple])[0]
         self.step_count += 1
         self.action_mask[action] = 0.
 
@@ -353,16 +342,18 @@ def get_algorithm():
         alg_config = impala.ImpalaConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
             .training(lr=0.0003, train_batch_size=512) \
-            .resources(num_gpus=NUM_GPUS // NUM_ROLLOUT_WORKERS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
+            .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
+            .framework('torch') \
+            .callbacks(callbacks_class=MyCallbacks) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS)
         alg = impala.Impala(alg_config)
+        raise NotImplementedError
     elif ALG == AlgorithmNames.PPO:
         alg_config = ppo.PPOConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
             .training(model=model_config) \
-            .resources(num_gpus=NUM_GPUS / NUM_ROLLOUT_WORKERS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
+            .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
-            .callbacks(callbacks_class=MyCallbacks) \
             .framework('torch') \
             .callbacks(callbacks_class=MyCallbacks) \
             .exploration(explore=True,
@@ -374,7 +365,7 @@ def get_algorithm():
         alg_config = a3c.A3CConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
             .training(lr=0.01, grad_clip=30.0, model=model_config, entropy_coeff=0.3) \
-            .resources(num_gpus=NUM_GPUS / NUM_ROLLOUT_WORKERS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
+            .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
             .framework('torch') \
             .callbacks(callbacks_class=MyCallbacks) \
