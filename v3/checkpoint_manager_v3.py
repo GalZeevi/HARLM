@@ -26,7 +26,7 @@ class CheckpointManager:  # TODO: add support for .npz and save_compressed
         return max(CheckpointManager.get_all_versions())
 
     @staticmethod
-    def save(name, content, append_to_last=True, numpy=False, should_print=True):
+    def save(name, content, append_to_last=True, numpy=False, should_print=True):  # TODO: add version
         if not os.path.exists(CheckpointManager.basePath):
             os.makedirs(CheckpointManager.basePath)
         all_checkpoints = CheckpointManager.get_checkpoints()

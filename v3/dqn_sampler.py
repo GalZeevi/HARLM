@@ -374,26 +374,28 @@ class SaqpEnv2(Env):
         self.table = ConfigManager.get_config('queryConfig.table')
         self.pivot = ConfigManager.get_config('queryConfig.pivot')
         self.table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
-        num_cols_not_pivot = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
-                                                   f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
-                                                   f"AND column_name <> '{self.pivot}'")
+
         validation_size = ConfigManager.get_config('samplerConfig.validationSize')
         validation_size = 10 if validation_size is None else validation_size
         self.train_set, self.validation_set = get_train_queries(validation_size=validation_size)
+
         # self.num_actions = self.table_size
         # self.actions = np.arange(self.num_actions)
         self.actions = self._get_actions()
         self.num_actions = len(self.actions)
+        num_cols_not_pivot = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
+                                                   f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
+                                                   f"AND column_name <> '{self.pivot}'")
         self.state_shape = (k, num_cols_not_pivot)
         self.step_count = 0
         self.selected_tuples = []
         self.selected_tuples_numpy = np.array([])
         self.current_score = 0.
-        self.top_q_score = get_top_q_sample(k, False)[1]
+        self.top_q_score = get_top_q_sample(k, verbose=False)[1]
 
     def _get_actions(self):
         action_size = 100 * self.k  # TODO change to 100 on server, 2 locally
-        return prepare_sample(action_size, False)
+        return prepare_sample(action_size, verbose=False)
 
     def reset(self, seed=None, options=None):
         self.step_count = 0

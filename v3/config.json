@@ -16,7 +16,7 @@
   },
   "samplerConfig": {
     "testSize": 10,
-    "validationSize": 10,
+    "validationSize": 0,
     "viewSize": 50
   },
   "cpuConfig": {
