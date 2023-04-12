@@ -2,9 +2,10 @@ import os
 import pickle
 
 import numpy as np
+import pathlib
 
 
-class CheckpointManager:  # TODO: add support for .npz and save_compressed
+class CheckpointManager:
     basePath = 'checkpoints'
 
     if not os.path.exists(basePath):
@@ -26,24 +27,29 @@ class CheckpointManager:  # TODO: add support for .npz and save_compressed
         return max(CheckpointManager.get_all_versions())
 
     @staticmethod
-    def save(name, content, append_to_last=True, numpy=False, should_print=True):  # TODO: add version
+    def save(name, content, version=None, append_to_last=True, numpy=False, verbose=True):
         if not os.path.exists(CheckpointManager.basePath):
             os.makedirs(CheckpointManager.basePath)
-        all_checkpoints = CheckpointManager.get_checkpoints()
-        all_versions = [int(f) for f in all_checkpoints]
-        if len(all_versions) == 0:
-            next_version = 1
-        elif append_to_last:
-            next_version = max(all_versions)
+
+        if version is not None:
+            next_version = version
         else:
-            next_version = max(all_versions) + 1
+            all_versions = CheckpointManager.get_all_versions()
+            if len(all_versions) == 0:
+                next_version = 1
+            elif append_to_last:
+                next_version = max(all_versions)
+            else:
+                next_version = max(all_versions) + 1
 
         suffix = 'pkl' if numpy is False else 'npy'
-        file_path = f"./{CheckpointManager.basePath}/{next_version}"
-        if not os.path.exists(file_path):
-            os.makedirs(file_path)
 
-        should_print and print(f'Saving checkpoint {name}.{suffix} to: [{file_path}]')
+        file_path = f"./{CheckpointManager.basePath}/{next_version}"
+        parent_path = str(pathlib.Path(f"{file_path}/{name}.{suffix}").parent)
+        if not os.path.exists(parent_path):
+            os.makedirs(parent_path)
+
+        verbose and print(f'Saving checkpoint {name}.{suffix} to: [{parent_path}]')
         if numpy is False:
             with open(f"{file_path}/{name}.{suffix}", 'wb') as f:
                 pickle.dump(content, f)
@@ -53,9 +59,7 @@ class CheckpointManager:  # TODO: add support for .npz and save_compressed
     @staticmethod
     def load(name, version=None, numpy=False):
         if version is None:
-            all_checkpoints = CheckpointManager.get_checkpoints()
-            all_versions = [int(f) for f in all_checkpoints]
-            version = max(all_versions)
+            version = CheckpointManager.get_max_version()
 
         suffix = 'pkl' if numpy is False else 'npy'
         file_path = f"./{CheckpointManager.basePath}/{version}"
