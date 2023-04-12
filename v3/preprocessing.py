@@ -139,7 +139,7 @@ class Preprocessing:
 
             np_col = np_col.astype(float)
 
-            if normalize:
+            if normalize and column.max_val > column.min_val:  # column not constant
                 np_col = (np_col - column.min_val) / (column.max_val - column.min_val)
 
             tuples[:, col_num] = np_col
