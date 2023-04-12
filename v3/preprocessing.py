@@ -31,6 +31,9 @@ class ColumnsRepo:
             raise Exception(f'Pivot column not found!')
         return col[0]
 
+    def get_all_columns(self):
+        return self.columns
+
     def __str__(self):
         return str(self.columns)
 
