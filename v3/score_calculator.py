@@ -4,7 +4,7 @@ from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 # from tuple_distance_calculator_v3 import TupleDistanceCalculator
 from train_test_utils import get_test_queries, get_train_queries
-
+from preprocessing import Preprocessing
 
 # tupleDistanceCalculator = TupleDistanceCalculator()
 
@@ -15,7 +15,7 @@ def get_score(sample, dist=False):  # TODO replace dist with metric
         else get_dist_score_for_test_queries(sample, test_results)
 
 
-def get_score2(sample, queries='train', view_size=ConfigManager.get_config('samplerConfig.viewSize'), func='avg'):
+def get_score2(sample, queries='train', view_size=ConfigManager.get_config('samplerConfig.viewSize')):
     if isinstance(queries, str):
         results = get_test_queries() if queries == 'test' else get_train_queries()
     elif isinstance(queries, list):
@@ -28,14 +28,30 @@ def get_score2(sample, queries='train', view_size=ConfigManager.get_config('samp
     sample_result_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
     attained_result_fraction = np.divide(sample_result_sizes, target_view_sizes)
     score = np.minimum(attained_result_fraction, 1.)
+    return np.average(score)
 
-    if func == 'avg':
-        score = np.average(score)
-    elif func == 'sum':
-        score = np.sum(score)
-    else:
-        raise Exception('func should be a string from ["avg", "sum"]!')
-    return score
+
+def get_diversity(tuples):
+    diversity = 0.
+    Preprocessing.init()
+    columns = Preprocessing.columns_repo.get_all_columns()
+    for col_name, col in columns.items():
+        if col.is_pivot:
+            continue
+        col_values = np.array([tup[col_name] for tup in tuples])
+        if col.is_categorical:
+            diversity += (len(np.unique(col_values)) - 1) / len(col_values)
+        else:
+            col_values = col_values.astype(float)
+            min_val = np.min(col_values)
+            max_val = np.max(col_values)
+            if min_val != max_val:
+                # diversity += 4 * np.var((col_values - min_val) / (max_val - min_val))
+                continue
+
+    diversity = diversity / (len(columns.keys()) - 1)
+    raise NotImplementedError
+    # return diversity
 
 
 def get_score_for_test_queries(sample, test_results):
