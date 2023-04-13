@@ -131,9 +131,9 @@ def generate_batch():
 
         queries_to_generate -= queries_generated
         CheckpointManager.save(f'queries_{first_query_id}-{first_query_id + queries_generated}', queries,
-                               should_print=False)
+                               verbose=False)
         CheckpointManager.save(f'results_{first_query_id}-{first_query_id + queries_generated}', results,
-                               should_print=False)
+                               verbose=False)
         first_query_id += queries_generated
 
 

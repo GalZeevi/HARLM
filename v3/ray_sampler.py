@@ -88,7 +88,6 @@ class TorchActionMaskModel(TorchModelV2, nn.Module):
                 and "action_mask" in orig_space.spaces
                 and "observations" in orig_space.spaces
         )
-        # print(f'$$$$$$$$$$$$$$$$$$$$$$$ num_outputs: {num_outputs}')
         TorchModelV2.__init__(
             self, obs_space, action_space, num_outputs, model_config, name, **kwargs
         )
@@ -120,7 +119,6 @@ class TorchActionMaskModel(TorchModelV2, nn.Module):
 
         # Convert action_mask into a [0.0 || -inf]-type mask.
         inf_mask = torch.clamp(torch.log(action_mask), min=FLOAT_MIN)
-        # print(f'$$$$$$$$$$$$$$$$$$$$$$$ logits size: {logits.size()}')
         masked_logits = logits + inf_mask  # TODO: handle 2-dim logits
 
         # Return masked logits.
@@ -167,7 +165,7 @@ class MyCallbacks(DefaultCallbacks):
         episode.custom_metrics['train_score'] = train_score
         episode.custom_metrics['test_score'] = test_score
 
-        if len(val_scores):
+        if len(val_scores) > 0:
             val_score = np.mean(val_scores)
             episode.custom_metrics['val_score'] = val_score
         # episode.hist_data["pole_angles"] = episode.user_data["pole_angles"]
@@ -194,8 +192,7 @@ class MyEnv(gym.Env):
 
         reduce_action_dim = env_config.get('reduce_action_dim', True)
         if reduce_action_dim:
-            self.actions = MyEnv.__get_actions__(self.k, table_size, env_config.get('random_actions_coeff', 0.),
-                                                 self.checkpoint_version)
+            self.actions = MyEnv.__get_actions__(self.k, table_size, RANDOM_ACTIONS_COEFF, self.checkpoint_version)
             self.num_actions = len(self.actions)
         else:
             self.num_actions = table_size
@@ -235,17 +232,20 @@ class MyEnv(gym.Env):
     def __get_actions__(k, max_action_id, random_actions_coeff, checkpoint_ver):
         action_space_size = ACTIONS_K_FACTOR * k
 
-        saved_actions_file_name = f'k={k}_sample-coeff={random_actions_coeff}_size={action_space_size}_actions'
+        saved_actions_file_name = f'{TRIAL_NAME}/k={k}_sample-coeff={random_actions_coeff}_size={action_space_size}_actions'
         saved_actions = CheckpointManager.load(name=saved_actions_file_name, version=checkpoint_ver)
         if saved_actions is not None:
             return saved_actions
 
         queried_tuples_actions = MyEnv.__get_queries_actions__(int((1 - random_actions_coeff) * action_space_size))
         if len(queried_tuples_actions) == action_space_size:
-            return queried_tuples_actions
-        sampled_tuples_actions = MyEnv.__get_sampled_actions__(action_space_size - len(queried_tuples_actions),
-                                                               max_action_id, queried_tuples_actions)
-        return np.concatenate((queried_tuples_actions, sampled_tuples_actions))
+            actions = queried_tuples_actions
+        else:
+            sampled_tuples_actions = MyEnv.__get_sampled_actions__(action_space_size - len(queried_tuples_actions),
+                                                                   max_action_id, queried_tuples_actions)
+            actions = np.concatenate((queried_tuples_actions, sampled_tuples_actions))
+        CheckpointManager.save(name=saved_actions_file_name, content=actions, version=checkpoint_ver)
+        return actions
 
     @staticmethod
     def __get_queries_actions__(num_actions):
@@ -283,9 +283,9 @@ class MyEnv(gym.Env):
 
         # calculate reward
         if self.inference_mode:
-            new_score = get_score2(self.get_tuple_ids(), queries='test')
+            new_score = get_score2(self.get_tuple_ids(), queries='test', checkpoint_version=self.checkpoint_version)
         else:
-            new_score = get_score2(self.get_tuple_ids(), queries=self.train_set)
+            new_score = get_score2(self.get_tuple_ids(), queries=self.train_set, checkpoint_version=self.checkpoint_version)
 
         # TODO try with and without smoothing, add all that to env_config
         reward = new_score
@@ -298,10 +298,10 @@ class MyEnv(gym.Env):
         done = (self.step_count == self.k)
         info = {}
         if done:
-            info = {'test': get_score2(self.get_tuple_ids(), queries='test'),
-                    'train': get_score2(self.get_tuple_ids(), queries=self.train_set)}
+            info = {'test': get_score2(self.get_tuple_ids(), queries='test', checkpoint_version=self.checkpoint_version),
+                    'train': get_score2(self.get_tuple_ids(), queries=self.train_set, checkpoint_version=self.checkpoint_version)}
             if self.validation_set is not None:
-                info['val'] = get_score2(self.get_tuple_ids(), queries=self.validation_set)
+                info['val'] = get_score2(self.get_tuple_ids(), queries=self.validation_set, checkpoint_version=self.checkpoint_version)
 
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, reward, done, False, info
 
@@ -324,17 +324,18 @@ NUM_GPUS = cli_args.gpus
 NUM_CPUS = cli_args.cpus
 ALG = cli_args.alg
 NUM_ROLLOUT_WORKERS = cli_args.rollouts
-CHECKPOINT_VER = cli_args.checkpoint  # TODO: Finish this to allow concurrent runs
+CHECKPOINT_VER = cli_args.checkpoint
 RANDOM_ACTIONS_COEFF = cli_args.random_actions_coeff
 
 TRIAL_NAME = f'{K}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
+OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
 RECORD_RAW_TRAIN_RESULTS = config.get('RECORD_RAW_TRAIN_RESULTS', True)
 SAVE_RESULT_STEP = 5
 SAVE_MODEL_STEP = 5
 
 
 def get_algorithm():
-    env_config = {'k': K, 'checkpoint_version': CHECKPOINT_VER, 'random_actions_coeff': RANDOM_ACTIONS_COEFF}
+    env_config = {'k': K, 'checkpoint_version': CHECKPOINT_VER}
     model_config = {'custom_model': TorchActionMaskModel, 'custom_model_config': {}}
 
     if ALG == AlgorithmNames.IMPALA:
@@ -428,12 +429,16 @@ def get_algorithm():
                                              "initial_epsilon": 0.996, "type": "EpsilonGreedy"}) \
             .reporting(min_sample_timesteps_per_iteration=1000)
         alg_config = alg_config.framework("torch")
-        # print(f'$$$$$$$$$$$$$$$$$$$$$$$ alg_config: {alg_config.to_dict()}')
         alg = apex_dqn.ApexDQN(config=alg_config)
         raise NotImplementedError
     else:
         raise NotImplementedError
     return alg
+
+
+def init_output_dir():
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
 
 
 def train_model():
@@ -447,19 +452,15 @@ def train_model():
     algo = get_algorithm()
     print(f'Building algorithm: {ALG} took: {round(time.time() - start, 2)} sec')
 
-    results_path = f'{CheckpointManager.basePath}/{CheckpointManager.get_max_version()}/{TRIAL_NAME}'
-    if not os.path.exists(results_path):
-        os.makedirs(results_path)
-
     i = 0
     pbar = tqdm(total=MAX_ITERS)
     while i < MAX_ITERS:
         res = algo.train()
         i += 1
         if i > 0 and i % SAVE_MODEL_STEP == 0:
-            algo.save(checkpoint_dir=results_path)
+            algo.save(checkpoint_dir=OUTPUT_DIR)
         if RECORD_RAW_TRAIN_RESULTS and i > 0 and i % SAVE_RESULT_STEP == 0:
-            f = open(f'{results_path}/iter_{i}_train_results.txt', 'w')
+            f = open(f'{OUTPUT_DIR}/iter_{i}_train_results.txt', 'w')
             f.write(str(res))
             f.close()
         pbar.update()
@@ -467,24 +468,24 @@ def train_model():
 
 
 def _get_sample_from_model(model):
-    env = MyEnv(env_config={'k': K, 'horizon': K, 'checkpoint_version': CHECKPOINT_VER, 'marginal_reward': True})
+    env = MyEnv(env_config={'k': K, 'horizon': K, 'checkpoint_version': CHECKPOINT_VER})
     done = False
     obs, _ = env.reset()
     prev_action = None
     prev_reward = None
 
-    # pbar = tqdm()
     while not done:
         action = model.compute_single_action(observation=obs, prev_action=prev_action, prev_reward=prev_reward)
         next_obs, reward, done, _, _ = env.step(action=action)
         prev_action = action
         prev_reward = reward
         obs = next_obs
-        # pbar.update()
+
     sample = env.get_tuple_ids()
-    scores = {'test': get_score2(sample, queries='test'), 'train': get_score2(sample, queries=env.train_set)}
+    scores = {'test': get_score2(sample, queries='test', checkpoint_version=CHECKPOINT_VER),
+              'train': get_score2(sample, queries=env.train_set, checkpoint_version=CHECKPOINT_VER)}
     if env.validation_set is not None:
-        scores['val'] = get_score2(sample, queries=env.validation_set)
+        scores['val'] = get_score2(sample, queries=env.validation_set, checkpoint_version=CHECKPOINT_VER)
 
     return sample, scores
 
@@ -505,13 +506,14 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=50, output_trial_
             best_test_score = scores_dict['test']
             best_sample = sample
 
-    CheckpointManager.save(name=f'{output_trial_name}/test_scores', content=scores)
-    CheckpointManager.save(name=f'{output_trial_name}/sample', content=[best_sample, best_test_score])
+    CheckpointManager.save(name=f'{output_trial_name}/test_scores', content=scores, version=CHECKPOINT_VER)
+    CheckpointManager.save(name=f'{output_trial_name}/sample', content=[best_sample, best_test_score],
+                           version=CHECKPOINT_VER)
     return best_sample, best_test_score
 
 
 if __name__ == '__main__':
-    print(f'############### Starting main ###############')
+    init_output_dir()
     model = train_model()
     sample, score = test_model(algo=model)
     print(f'############### Sample score: {round(score, ndigits=4)} ###############')

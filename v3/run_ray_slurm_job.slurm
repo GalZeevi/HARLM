@@ -6,15 +6,15 @@
 
 ### This script works for any number of nodes, Ray will find and manage all resources
 #SBATCH --nodes=1
-# n-502,n-503 are bad servers
+# n-502,n-503,n-601,rack-gww-dgx1,rack-bgw-dgx1 are bad servers
 # Also, exclude any servers that already have Ray clusters running on them
-#SBATCH --exclude=n-502,n-503,n-350,rack-omerl-g01,n-304,n-303,n-307,n-306,n-202
+#SBATCH --exclude=n-502,n-503,n-601,rack-gww-dgx1,rack-bgw-dgx1,n-351
 
 ### Give all resources to a single Ray task, ray can manage the resources internally
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=5GB
-#SBATCH --gpus-per-task=4
-#SBATCH --cpus-per-task=64
+#SBATCH --mem-per-cpu=10GB
+#SBATCH --gpus-per-task=2
+#SBATCH --cpus-per-task=16
 
 # Load modules or your own conda environment here
 # module load pytorch/v1.4.0-gpu

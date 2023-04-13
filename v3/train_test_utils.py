@@ -7,18 +7,17 @@ from os.path import isfile, join
 import re
 
 
-def get_test_queries(checkpoint_version=None):
+def get_test_queries(checkpoint_version=CheckpointManager.get_max_version()):
     results_read = 0
     results = []
-    version = CheckpointManager.get_max_version() if checkpoint_version is None else checkpoint_version
-    path = f'{CheckpointManager.basePath}/{version}'
+    path = f'{CheckpointManager.basePath}/{checkpoint_version}'
     results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'results' in f]
     results_files.sort(key=lambda name: int(re.findall(r'\d+', name)[0]))
 
     file_num = 0
     test_size = ConfigManager.get_config('samplerConfig.testSize')
     while results_read < test_size:
-        results += CheckpointManager.load(results_files[file_num].replace('.pkl', ''), version)
+        results += CheckpointManager.load(results_files[file_num].replace('.pkl', ''), checkpoint_version)
         interval = [int(r) for r in re.findall(r'\d+', results_files[file_num])]
         results_read += (interval[1] - interval[0])
         file_num += 1
@@ -26,10 +25,9 @@ def get_test_queries(checkpoint_version=None):
     return results[:test_size]
 
 
-def get_train_queries(checkpoint_version=None, validation_size=0):
+def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), validation_size=0):
     results = []
-    version = CheckpointManager.get_max_version() if checkpoint_version is None else checkpoint_version
-    path = f'{CheckpointManager.basePath}/{version}'
+    path = f'{CheckpointManager.basePath}/{checkpoint_version}'
     results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'results' in f]
     results_files.sort(key=lambda name: int(re.findall(r'\d+', name)[0]))
 
@@ -41,9 +39,9 @@ def get_train_queries(checkpoint_version=None, validation_size=0):
             continue
         elif interval[0] <= test_size <= interval[1]:
             # file belongs to both train and test
-            results += CheckpointManager.load(file.replace('.pkl', ''), version)[(test_size - interval[0]):]
+            results += CheckpointManager.load(file.replace('.pkl', ''), checkpoint_version)[(test_size - interval[0]):]
         else:
-            results += CheckpointManager.load(file.replace('.pkl', ''), version)
+            results += CheckpointManager.load(file.replace('.pkl', ''), checkpoint_version)
 
     # random.shuffle(results)
     if validation_size > 0:

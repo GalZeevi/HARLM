@@ -5,6 +5,7 @@ from collections import namedtuple
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
+from tqdm import tqdm
 
 Column = namedtuple('Column', ['is_pivot', 'col_num', 'is_categorical', 'encodings',
                                'max_val', 'min_val', 'none_substitute'])
@@ -72,6 +73,7 @@ class Preprocessing:
             Preprocessing.columns_repo = cached_column_repo
             return
 
+        print('Start initialising Preprocessing column data')
         columns = {}
         # needs to init ourselves
         columns_data = DataAccess.select(
@@ -86,7 +88,7 @@ class Preprocessing:
 
         column_names = sorted([data['col_name'] for data in columns_data])
 
-        for column_data in columns_data:
+        for column_data in tqdm(columns_data):
             column_name = column_data['col_name']
             is_categorical = True if column_data['is_categorical'] > 0 else False
             data_type = column_data['type']
@@ -127,31 +129,22 @@ class Preprocessing:
         return {value: code for code, value in zip(codes, values)}
 
     @staticmethod
-    @validate_init
-    def get_encode_func(normalize=False):
-        def _encode_column(tuples, col_num):
-            column = Preprocessing.columns_repo.column_by_num(col_num)
-            np_col = tuples[:, col_num]
+    def encode_column(tuples, col_num):
+        column = Preprocessing.columns_repo.column_by_num(col_num)
+        np_col = tuples[:, col_num]
 
-            if column.is_categorical:  # Categorical column
-                # in order to not search the entire thing
-                reduced_mapping = {key: val for key, val in column.encodings.items() if key in np_col}
+        if column.is_categorical:  # Categorical column
+            # in order to not search the entire thing
+            reduced_mapping = {key: val for key, val in column.encodings.items() if key in np_col}
 
-                for key in reduced_mapping.keys():
-                    np_col[np.where(np_col == key)] = reduced_mapping[key]
+            for key in reduced_mapping.keys():
+                np_col[np.where(np_col == key)] = reduced_mapping[key]
 
-            np_col = np_col.astype(float)
-
-            if normalize and column.max_val > column.min_val:  # column not constant
-                np_col = (np_col - column.min_val) / (column.max_val - column.min_val)
-
-            tuples[:, col_num] = np_col
-            return tuples
-
-        return _encode_column
+        np_col = np_col.astype(float)
+        tuples[:, col_num] = np_col
+        return tuples
 
     @staticmethod
-    @validate_init
     def replace_none(tup):
         for col_name, value in tup.items():
             if value is None:
@@ -164,14 +157,13 @@ class Preprocessing:
         return np.delete(a, Preprocessing.columns_repo.get_pivot_column().col_num, 1)
 
     @staticmethod
-    @validate_init
-    def tuples2numpy(tuples_list, normalize=False):
+    def tuples2numpy(tuples_list):
         tuples_list = [Preprocessing.replace_none(tup) for tup in tuples_list]
         tuples_sorted_by_cols = [sorted([*tup.items()], key=lambda pair: pair[0]) for tup in tuples_list]
         tuples_values_only = [[col_and_value[1] for col_and_value in tup] for tup in
                               tuples_sorted_by_cols]
         tuples_as_numpy_not_encoded = np.array(tuples_values_only)
-        encoded_tuples = np.apply_over_axes(Preprocessing.get_encode_func(normalize), tuples_as_numpy_not_encoded,
+        encoded_tuples = np.apply_over_axes(Preprocessing.encode_column, tuples_as_numpy_not_encoded,
                                             range(tuples_as_numpy_not_encoded.shape[1]))
         encoded_tuples = Preprocessing.remove_pivot_from_numpy(encoded_tuples)
         try:
@@ -191,4 +183,3 @@ if __name__ == '__main__':
     print(Preprocessing.columns_repo.column_by_name('title$title'))
     imdb_tuples = DataAccess.select('SELECT * FROM new_imdb.join_title_companies_keyword LIMIT 10')
     print(Preprocessing.tuples2numpy(imdb_tuples))
-    print(Preprocessing.tuples2numpy(imdb_tuples, normalize=True))

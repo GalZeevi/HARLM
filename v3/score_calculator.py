@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 from config_manager_v3 import ConfigManager
+from checkpoint_manager_v3 import CheckpointManager
 from data_access_v3 import DataAccess
 # from tuple_distance_calculator_v3 import TupleDistanceCalculator
 from train_test_utils import get_test_queries, get_train_queries
@@ -15,9 +16,13 @@ def get_score(sample, dist=False):  # TODO replace dist with metric
         else get_dist_score_for_test_queries(sample, test_results)
 
 
-def get_score2(sample, queries='train', view_size=ConfigManager.get_config('samplerConfig.viewSize')):
+def get_score2(sample,
+               queries='train',
+               view_size=ConfigManager.get_config('samplerConfig.viewSize'),
+               checkpoint_version=CheckpointManager.get_max_version()):
     if isinstance(queries, str):
-        results = get_test_queries() if queries == 'test' else get_train_queries()
+        results = get_test_queries(checkpoint_version=checkpoint_version) if queries == 'test' \
+            else get_train_queries(checkpoint_version=checkpoint_version)
     elif isinstance(queries, list):
         results = queries
     else:

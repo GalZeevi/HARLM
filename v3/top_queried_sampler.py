@@ -7,39 +7,39 @@ from tqdm import tqdm
 from train_test_utils import get_train_queries
 
 
-def prepare_weights_for_sample(verbose=True):
+def prepare_weights_for_sample(verbose=True, checkpoint_version=CheckpointManager.get_max_version()):
     schema = ConfigManager.get_config('queryConfig.schema')
     table = ConfigManager.get_config('queryConfig.table')
     table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
 
     weights = np.zeros(table_size)
-    validation_size = 10 if ConfigManager.get_config('samplerConfig.validationSize') is None else \
-        ConfigManager.get_config('samplerConfig.validationSize')
-    train_results, _ = get_train_queries(validation_size=validation_size)
+    validation_size = ConfigManager.get_config('samplerConfig.validationSize')
+    train_results, _ = get_train_queries(validation_size=validation_size, checkpoint_version=checkpoint_version)
 
     for query_result in (tqdm(train_results) if verbose else train_results):
         weights[query_result] += 1.
 
-    verbose and CheckpointManager.save('top_queried_sampler_weights', weights, numpy=True)
+    verbose and CheckpointManager.save('top_queried_sampler_weights', weights, numpy=True, version=checkpoint_version)
     return weights
 
 
-def prepare_sample(k, verbose=True):
-    weights = CheckpointManager.load('top_queried_sampler_weights', numpy=True)
+def prepare_sample(k, verbose=True, checkpoint_version=CheckpointManager.get_max_version()):
+    weights = CheckpointManager.load('top_queried_sampler_weights', numpy=True, version=checkpoint_version)
     if weights is None:
-        weights = prepare_weights_for_sample(verbose)
+        weights = prepare_weights_for_sample(verbose, checkpoint_version=checkpoint_version)
 
     # print(np.sort(weights)[::-1][:k])
 
     return np.argpartition(weights, -k)[-k:]
 
 
-def get_sample(k, verbose=True):
-    sample = prepare_sample(k, verbose)
+def get_sample(k, verbose=True, checkpoint_version=CheckpointManager.get_max_version()):
+    sample = prepare_sample(k, verbose, checkpoint_version)
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
-    score = get_score2(sample, queries='test')
+    score = get_score2(sample, queries='test', checkpoint_version=checkpoint_version)
 
-    verbose and CheckpointManager.save(f'{k}-{view_size}-top_queried_sample', [sample, score])
+    verbose and CheckpointManager.save(f'{k}-{view_size}-top_queried_sample',
+                                       [sample, score], version=checkpoint_version)
     return sample, score
 
 
