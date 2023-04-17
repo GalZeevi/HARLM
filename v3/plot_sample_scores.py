@@ -84,5 +84,106 @@ def plot_ddqn_scores2():
     plt.show()
 
 
+def plot_ray_results(checkpoint):
+    if checkpoint == 3:
+        random_scores = [0.182, 0.212, 0.244]
+        topk_scores = [0.172, 0.201, 0.216]
+        ppo1_scores = [0.490, 0.492, 0.494]
+        ppo2_scores = [0.498, 0.501, 0.505]
+    elif checkpoint == 4:
+        random_scores = [0.32, 0.353, 0.385]
+        topk_scores = [0.28, 0.28, 0.28]
+        ppo1_scores = [0.644, 0.649, 0.653]
+        ppo2_scores = [0.633, 0.635, 0.638]
+    elif checkpoint == 5:
+        random_scores = [0.217, 0.258, 0.301]
+        topk_scores = [0.225, 0.225, 0.225]
+        ppo1_scores = [0.438, 0.445, 0.449]
+        ppo2_scores = [0.418, 0.426, 0.432]
+    else:
+        raise Exception('checkpoint not recognized!')
+
+    x = np.array([0, 1, 2, 3])
+    plt.xticks(x, ['random', 'top-k', 'PPO1', 'PPO2'])
+    y = np.array([random_scores[1], topk_scores[1], ppo1_scores[1], ppo2_scores[1]])
+    yerr = np.array([random_scores[-1] - random_scores[1], 0,
+                     ppo1_scores[-1] - ppo1_scores[1],
+                     ppo2_scores[-1] - ppo2_scores[1]])
+    plt.bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+
+    plt.xlabel("Algorithm")
+    plt.ylabel("Score")
+    plt.title(f"Score by algorithm, k={1000}, viewSize={view_size}, checkpoint={checkpoint}")
+    plt.show()
+
+
+def get_ray_data(checkpoint):
+    if checkpoint == 2:
+        random_scores = [0.285, 0.333, 0.382]
+        topk_scores = [0.377, 0.377, 0.377]
+        ppo1_scores = [0.468, 0.484, 0.516]
+        ppo2_scores = [0.472, 0.482, 0.494]
+    elif checkpoint == 3:
+        random_scores = [0.182, 0.212, 0.244]
+        topk_scores = [0.172, 0.201, 0.216]
+        ppo1_scores = [0.490, 0.492, 0.494]
+        ppo2_scores = [0.498, 0.501, 0.505]
+    elif checkpoint == 4:
+        random_scores = [0.32, 0.353, 0.385]
+        topk_scores = [0.28, 0.28, 0.28]
+        ppo1_scores = [0.644, 0.649, 0.653]
+        ppo2_scores = [0.633, 0.635, 0.638]
+    elif checkpoint == 5:
+        random_scores = [0.217, 0.258, 0.301]
+        topk_scores = [0.225, 0.225, 0.225]
+        ppo1_scores = [0.438, 0.445, 0.449]
+        ppo2_scores = [0.418, 0.426, 0.432]
+    else:
+        raise Exception('checkpoint not recognized!')
+
+    x = np.array([0, 1, 2, 3])
+    y = np.array([random_scores[1], topk_scores[1], ppo1_scores[1], ppo2_scores[1]])
+    yerr = np.array([random_scores[-1] - random_scores[1], 0,
+                     ppo1_scores[-1] - ppo1_scores[1],
+                     ppo2_scores[-1] - ppo2_scores[1]])
+    return x, y, yerr
+
+
+def plot_ray_results2():
+    fig, axs = plt.subplots(2, 2)
+
+    x, y, yerr = get_ray_data(2)
+    axs[0, 0].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[0, 0].set_title('checkpoint 2')
+
+    x, y, yerr = get_ray_data(3)
+    axs[0, 1].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[0, 1].set_title('checkpoint 3')
+
+    x, y, yerr = get_ray_data(4)
+    axs[1, 0].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[1, 0].set_title('checkpoint 4')
+
+    x, y, yerr = get_ray_data(5)
+    axs[1, 1].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[1, 1].set_title('checkpoint 5')
+
+    plt.setp(axs, xticks=x, xticklabels=['random', 'top-k', 'PPO1', 'PPO2'])
+
+    for ax in axs.flat:
+        ax.set(xlabel='Algorithm', ylabel='Score')
+
+    # Hide x labels and tick labels for top plots and y ticks for right plots.
+    for ax in axs.flat:
+        ax.label_outer()
+
+    # plt.xticks(x, ['random', 'top-k', 'PPO1', 'PPO2'])
+
+    # plt.xlabel("Algorithm")
+    # plt.ylabel("Score")
+    plt.suptitle(f"Score by algorithm, k={1000}, view_size={view_size}")
+    plt.show()
+
+
 if __name__ == '__main__':
-    plot_rewards()
+    plot_ray_results2()

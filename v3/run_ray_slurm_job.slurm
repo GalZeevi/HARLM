@@ -8,7 +8,7 @@
 #SBATCH --nodes=1
 # n-502,n-503,n-601,rack-gww-dgx1,rack-bgw-dgx1 are bad servers
 # Also, exclude any servers that already have Ray clusters running on them
-#SBATCH --exclude=n-502,n-503,n-601,rack-gww-dgx1,rack-bgw-dgx1,n-351
+#SBATCH --exclude=n-502,n-503,n-601,rack-gww-dgx1,rack-bgw-dgx1
 
 ### Give all resources to a single Ray task, ray can manage the resources internally
 #SBATCH --ntasks-per-node=1
@@ -73,4 +73,4 @@ done
 
 #### call your code below
 echo "STARTING PYTHON SCRIPT"
-python3 ray_sampler.py --remote True --alg PPO --cpus "${SLURM_CPUS_PER_TASK}" --gpus "${SLURM_GPUS_PER_TASK}" --rollouts 8
+python3 ray_sampler.py --remote True --alg PPO --cpus "${SLURM_CPUS_PER_TASK}" --gpus "${SLURM_GPUS_PER_TASK}" --rollouts 8 --steps 25 --checkpoint 3

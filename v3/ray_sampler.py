@@ -15,6 +15,7 @@ from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.models.torch.fcnet import FullyConnectedNetwork as TorchFC
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MIN
+from ray import air, tune
 from tqdm import tqdm, trange
 
 from checkpoint_manager_v3 import CheckpointManager
@@ -35,7 +36,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--alg", type=str, default=AlgorithmNames.A3C, help="The RLlib-registered algorithm to use."
+        "--alg", type=str, default=AlgorithmNames.PPO, help="The RLlib-registered algorithm to use."
     )
 
     parser.add_argument(
@@ -298,10 +299,14 @@ class MyEnv(gym.Env):
         done = (self.step_count == self.k)
         info = {}
         if done:
-            info = {'test': get_score2(self.get_tuple_ids(), queries='test', checkpoint_version=self.checkpoint_version),
-                    'train': get_score2(self.get_tuple_ids(), queries=self.train_set, checkpoint_version=self.checkpoint_version)}
+            info = {
+                'test': get_score2(self.get_tuple_ids(), queries='test',
+                                   checkpoint_version=self.checkpoint_version),
+                'train': get_score2(self.get_tuple_ids(), queries=self.train_set,
+                                    checkpoint_version=self.checkpoint_version)}
             if self.validation_set is not None:
-                info['val'] = get_score2(self.get_tuple_ids(), queries=self.validation_set, checkpoint_version=self.checkpoint_version)
+                info['val'] = get_score2(self.get_tuple_ids(), queries=self.validation_set,
+                                         checkpoint_version=self.checkpoint_version)
 
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, reward, done, False, info
 
