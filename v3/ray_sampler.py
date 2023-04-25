@@ -15,7 +15,6 @@ from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.models.torch.fcnet import FullyConnectedNetwork as TorchFC
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MIN
-from ray import air, tune
 from tqdm import tqdm, trange
 
 from checkpoint_manager_v3 import CheckpointManager
@@ -36,15 +35,15 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--alg", type=str, default=AlgorithmNames.PPO, help="The RLlib-registered algorithm to use."
+        "--alg", type=str, default=AlgorithmNames.APEX_DQN, help="The RLlib-registered algorithm to use."
     )
 
     parser.add_argument(
-        "--cpus", type=int, default=4, help="How many cpus to use for the algorithm."
+        "--cpus", type=int, default=6, help="How many cpus to use for the algorithm."
     )
 
     parser.add_argument(
-        "--rollouts", type=int, default=1, help="How many rollout workers to use."
+        "--rollouts", type=int, default=3, help="How many rollout workers to use."
     )
 
     parser.add_argument(
@@ -66,6 +65,14 @@ def get_cli_args():
     args = parser.parse_args()
     print(f"Running with following CLI args: {args}")
     return args
+
+
+def __init_table_details__():
+    schema = ConfigManager.get_config('queryConfig.schema')
+    table = ConfigManager.get_config('queryConfig.table')
+    pivot = ConfigManager.get_config('queryConfig.pivot')
+    table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
+    return schema, table, pivot, table_size
 
 
 class TorchActionMaskModel(TorchModelV2, nn.Module):
@@ -181,8 +188,6 @@ class MyEnv(gym.Env):
         self.k = env_config['k']
         self.checkpoint_version = env_config.get('checkpoint_version', CheckpointManager.get_max_version())
 
-        self.schema, self.table, self.pivot, table_size = MyEnv.__init_table_details__()
-
         validation_size = ConfigManager.get_config('samplerConfig.validationSize')
         results = get_train_queries(checkpoint_version=self.checkpoint_version,
                                     validation_size=validation_size)
@@ -191,8 +196,8 @@ class MyEnv(gym.Env):
         else:
             self.train_set, self.validation_set = results, None
 
-        reduce_action_dim = env_config.get('reduce_action_dim', True)
-        if reduce_action_dim:
+        # reduce_action_dim = env_config.get('reduce_action_dim', True)
+        if ACTION_SPACE_SIZE < table_size:
             self.actions = MyEnv.__get_actions__(self.k, table_size, RANDOM_ACTIONS_COEFF, self.checkpoint_version)
             self.num_actions = len(self.actions)
         else:
@@ -200,8 +205,8 @@ class MyEnv(gym.Env):
             self.actions = np.arange(self.num_actions)
 
         num_data_cols = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
-                                              f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
-                                              f"AND column_name <> '{self.pivot}'")
+                                              f"WHERE table_schema='{schema}' AND table_name='{table}' " +
+                                              f"AND column_name <> '{pivot}'")
         self.state_shape = (self.k, num_data_cols)
         self.step_count = 0
         self.selected_tuples = []
@@ -222,27 +227,20 @@ class MyEnv(gym.Env):
         Preprocessing.init()
 
     @staticmethod
-    def __init_table_details__():
-        schema = ConfigManager.get_config('queryConfig.schema')
-        table = ConfigManager.get_config('queryConfig.table')
-        pivot = ConfigManager.get_config('queryConfig.pivot')
-        table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
-        return schema, table, pivot, table_size
-
-    @staticmethod
     def __get_actions__(k, max_action_id, random_actions_coeff, checkpoint_ver):
-        action_space_size = ACTIONS_K_FACTOR * k
+        if ACTION_SPACE_SIZE <= 0:
+            raise Exception('ACTION_SPACE_SIZE must be positive to use __get_actions__!')
 
-        saved_actions_file_name = f'{TRIAL_NAME}/k={k}_sample-coeff={random_actions_coeff}_size={action_space_size}_actions'
+        saved_actions_file_name = f'{TRIAL_NAME}/k={k}_sample-coeff={random_actions_coeff}_size={ACTION_SPACE_SIZE}_actions'
         saved_actions = CheckpointManager.load(name=saved_actions_file_name, version=checkpoint_ver)
         if saved_actions is not None:
             return saved_actions
 
-        queried_tuples_actions = MyEnv.__get_queries_actions__(int((1 - random_actions_coeff) * action_space_size))
-        if len(queried_tuples_actions) == action_space_size:
+        queried_tuples_actions = MyEnv.__get_queries_actions__(int((1 - random_actions_coeff) * ACTION_SPACE_SIZE))
+        if len(queried_tuples_actions) == ACTION_SPACE_SIZE:
             actions = queried_tuples_actions
         else:
-            sampled_tuples_actions = MyEnv.__get_sampled_actions__(action_space_size - len(queried_tuples_actions),
+            sampled_tuples_actions = MyEnv.__get_sampled_actions__(ACTION_SPACE_SIZE - len(queried_tuples_actions),
                                                                    max_action_id, queried_tuples_actions)
             actions = np.concatenate((queried_tuples_actions, sampled_tuples_actions))
         CheckpointManager.save(name=saved_actions_file_name, content=actions, version=checkpoint_ver)
@@ -276,7 +274,7 @@ class MyEnv(gym.Env):
 
         tuple_num = self.actions[action]
         selected_tuple = DataAccess.select_one(
-            f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={tuple_num}')
+            f'SELECT * FROM {schema}.{table} WHERE {pivot}={tuple_num}')
         self.selected_tuples.append(selected_tuple)
         self.selected_tuples_numpy[self.step_count] = Preprocessing.tuples2numpy([selected_tuple])[0]
         self.step_count += 1
@@ -286,7 +284,8 @@ class MyEnv(gym.Env):
         if self.inference_mode:
             new_score = get_score2(self.get_tuple_ids(), queries='test', checkpoint_version=self.checkpoint_version)
         else:
-            new_score = get_score2(self.get_tuple_ids(), queries=self.train_set, checkpoint_version=self.checkpoint_version)
+            new_score = get_score2(self.get_tuple_ids(), queries=self.train_set,
+                                   checkpoint_version=self.checkpoint_version)
 
         # TODO try with and without smoothing, add all that to env_config
         reward = new_score
@@ -314,16 +313,17 @@ class MyEnv(gym.Env):
         pass
 
     def get_tuple_ids(self):
-        return [tup[self.pivot] for tup in self.selected_tuples]
+        return [tup[pivot] for tup in self.selected_tuples]
 
 
 cli_args = get_cli_args()
 local_config_params = {'K': 100}
-remote_config_params = {'K': 1000, 'ACTIONS_K_FACTOR': 100}
+remote_config_params = {'K': 1000, 'ACTION_SPACE_SIZE': 100_000}
 config = remote_config_params if cli_args.remote else local_config_params
 
 K = config.get('K')
-ACTIONS_K_FACTOR = config.get('ACTIONS_K_FACTOR', 2)
+schema, table, pivot, table_size = __init_table_details__()
+ACTION_SPACE_SIZE = config.get('ACTION_SPACE_SIZE', table_size)
 MAX_ITERS = cli_args.steps
 NUM_GPUS = cli_args.gpus
 NUM_CPUS = cli_args.cpus
@@ -339,10 +339,16 @@ SAVE_RESULT_STEP = 5
 SAVE_MODEL_STEP = 5
 
 
-def get_algorithm():
+def get_env_config():
     env_config = {'k': K, 'checkpoint_version': CHECKPOINT_VER}
-    model_config = {'custom_model': TorchActionMaskModel, 'custom_model_config': {}}
+    if not cli_args.remote:
+        env_config['reduce_action_dim'] = False
+    return env_config
 
+
+def get_algorithm():
+    model_config = {'custom_model': TorchActionMaskModel, 'custom_model_config': {}}
+    env_config = get_env_config()
     if ALG == AlgorithmNames.IMPALA:
         # TODO NUM_GPUS // NUM_ROLLOUT_WORKERS or NUM_GPUS
         alg_config = impala.ImpalaConfig() \
@@ -357,15 +363,12 @@ def get_algorithm():
     elif ALG == AlgorithmNames.PPO:
         alg_config = ppo.PPOConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
-            .training(model=model_config) \
+            .training(model=model_config, entropy_coeff=0.01) \
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
             .framework('torch') \
-            .callbacks(callbacks_class=MyCallbacks) \
-            .exploration(explore=True,
-                         exploration_config={'epsilon_timesteps': 20000, 'final_epsilon': 0.01,
-                                             "initial_epsilon": 0.996,
-                                             "type": "EpsilonGreedy"})  # TODO is this doing anything?
+            .callbacks(callbacks_class=MyCallbacks)
+
         alg = ppo.PPO(config=alg_config)
     elif ALG == AlgorithmNames.A3C:
         alg_config = a3c.A3CConfig() \
@@ -406,18 +409,20 @@ def get_algorithm():
         alg = dqn.DQN(config=alg_config)
         raise NotImplementedError
     elif ALG == AlgorithmNames.APEX_DQN:
+        # model_config['fcnet_hiddens'] = [ACTION_SPACE_SIZE] # TODO
+        # model_config['no_final_linear'] = True # TODO
         alg_config = apex_dqn.ApexDQNConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
-            .resources(num_gpus=1 if cli_args.remote else 0, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
-            .rollouts(rollout_fragment_length=4, num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=1) \
+            .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
+            .rollouts(rollout_fragment_length=32, num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=15) \
             .callbacks(callbacks_class=MyCallbacks) \
             .training(
             model=model_config,
             double_q=True,
-            dueling=True,
-            num_atoms=11,  # TODO
+            dueling=False,
+            num_atoms=1,  # TODO
             noisy=False,
-            replay_buffer_config={'capacity': 100000,
+            replay_buffer_config={'capacity': 1000000,
                                   'replay_buffer_shards_colocated_with_driver': True,
                                   "prioritized_replay_alpha": 0.45,
                                   "prioritized_replay_beta": 0.55,
@@ -427,15 +432,15 @@ def get_algorithm():
             target_network_update_freq=8000,
             lr=0.0000625,
             optimizer={'adam_epsilon': 0.00015},
-            train_batch_size=32,
+            train_batch_size=128,
+            hiddens=[]
         ) \
             .exploration(explore=True,
-                         exploration_config={'epsilon_timesteps': 200000, 'final_epsilon': 0.01,
-                                             "initial_epsilon": 0.996, "type": "EpsilonGreedy"}) \
-            .reporting(min_sample_timesteps_per_iteration=1000)
-        alg_config = alg_config.framework("torch")
+                         exploration_config={'epsilon_timesteps': 2000000, 'final_epsilon': 0.01,
+                                             "initial_epsilon": 0.96, "type": "EpsilonGreedy"}) \
+            .reporting(min_sample_timesteps_per_iteration=1000) \
+            .framework('torch')
         alg = apex_dqn.ApexDQN(config=alg_config)
-        raise NotImplementedError
     else:
         raise NotImplementedError
     return alg
@@ -473,7 +478,7 @@ def train_model():
 
 
 def _get_sample_from_model(model):
-    env = MyEnv(env_config={'k': K, 'horizon': K, 'checkpoint_version': CHECKPOINT_VER})
+    env = MyEnv(env_config=get_env_config())
     done = False
     obs, _ = env.reset()
     prev_action = None
