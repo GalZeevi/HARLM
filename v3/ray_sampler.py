@@ -35,7 +35,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--alg", type=str, default=AlgorithmNames.APEX_DQN, help="The RLlib-registered algorithm to use."
+        "--alg", type=str, default=AlgorithmNames.PPO, help="The RLlib-registered algorithm to use."
     )
 
     parser.add_argument(
