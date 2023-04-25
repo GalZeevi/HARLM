@@ -7,7 +7,7 @@ from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 from tqdm import tqdm
 
-Column = namedtuple('Column', ['is_pivot', 'col_num', 'is_categorical', 'encodings',
+Column = namedtuple('Column', ['is_pivot', 'col_num', 'dim', 'is_categorical', 'encodings',
                                'max_val', 'min_val', 'none_substitute'])
 
 
@@ -87,6 +87,7 @@ class Preprocessing:
             f"WHERE table_schema='{schema}' AND table_name='{table}'")
 
         column_names = sorted([data['col_name'] for data in columns_data])
+        column_names_without_pivot = [name for name in column_names if name != pivot]
 
         for column_data in tqdm(columns_data):
             column_name = column_data['col_name']
@@ -94,15 +95,17 @@ class Preprocessing:
             data_type = column_data['type']
             col_num = column_names.index(column_name)
             is_pivot = (column_name == pivot)
+            dim = -1 if is_pivot else column_names_without_pivot.index(column_name)
 
+            column_name_db_format = f'`{column_name}`' if ' ' in column_name else column_name
             if is_categorical:
                 if data_type in ['date', 'datetime', 'timestamp']:
                     uniq_values = DataAccess.select(
-                        f'SELECT DISTINCT {column_name} as val FROM {schema}.{table} ORDER BY val')
+                        f'SELECT DISTINCT {column_name_db_format} as val FROM {schema}.{table} ORDER BY val')
                     uniq_values = [NULL_VALUE if val is None else val for val in uniq_values]
                 elif data_type in ['varchar', 'char', 'text', 'binary', 'varbinary']:
                     uniq_values = DataAccess.select(
-                        f'SELECT DISTINCT BINARY {column_name} as val FROM {schema}.{table} ORDER BY val')
+                        f'SELECT DISTINCT BINARY {column_name_db_format} as val FROM {schema}.{table} ORDER BY val')
                     uniq_values = [NULL_VALUE.encode() if val is None else val for val in uniq_values]
                     uniq_values = [b.decode() for b in uniq_values]
                 else:
@@ -113,11 +116,11 @@ class Preprocessing:
             else:
                 encoding = None
                 min_value = DataAccess.select_one(
-                    f'SELECT COALESCE(MIN({column_name}), 0) as val FROM {schema}.{table}')
+                    f'SELECT COALESCE(MIN({column_name_db_format}), 0) as val FROM {schema}.{table}')
                 max_value = DataAccess.select_one(
-                    f'SELECT COALESCE(MAX({column_name}), 0) as val FROM {schema}.{table}')
+                    f'SELECT COALESCE(MAX({column_name_db_format}), 0) as val FROM {schema}.{table}')
 
-            columns[column_name] = Column(is_pivot, col_num, is_categorical, encoding, max_value, min_value,
+            columns[column_name] = Column(is_pivot, col_num, dim, is_categorical, encoding, max_value, min_value,
                                           NULL_VALUE if is_categorical else min_value - 1)
 
         Preprocessing.columns_repo = ColumnsRepo(columns)
