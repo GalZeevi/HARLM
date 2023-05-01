@@ -35,6 +35,7 @@ pbar = tqdm(total=total_iters)
 
 for _ in range(total_iters):
     DataAccess.update(
-        f'INSERT INTO {DEST_TABLE}({",".join(COLUMNS_LIST)}) SELECT * FROM {SRC_TABLE} LIMIT {completed}, {CHUNK_SIZE};')
+        f'INSERT INTO {SCHEMA}.{DEST_TABLE}({",".join(COLUMNS_LIST)}) '
+        f'SELECT {",".join(COLUMNS_LIST)} FROM {SCHEMA}.{SRC_TABLE} LIMIT {completed}, {CHUNK_SIZE};')
     completed += CHUNK_SIZE
     pbar.update(1)
