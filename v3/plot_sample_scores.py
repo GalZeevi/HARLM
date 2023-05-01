@@ -117,7 +117,7 @@ def plot_ray_results(checkpoint):
     plt.show()
 
 
-def get_ray_data(checkpoint):
+def get_ray_imdb_data(checkpoint):
     if checkpoint == 2:
         random_scores = [0.285, 0.333, 0.382]
         topk_scores = [0.377, 0.377, 0.377]
@@ -149,22 +149,22 @@ def get_ray_data(checkpoint):
     return x, y, yerr
 
 
-def plot_ray_results2():
+def plot_ray_imdb_results():
     fig, axs = plt.subplots(2, 2)
 
-    x, y, yerr = get_ray_data(2)
+    x, y, yerr = get_ray_imdb_data(2)
     axs[0, 0].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
     axs[0, 0].set_title('checkpoint 2')
 
-    x, y, yerr = get_ray_data(3)
+    x, y, yerr = get_ray_imdb_data(3)
     axs[0, 1].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
     axs[0, 1].set_title('checkpoint 3')
 
-    x, y, yerr = get_ray_data(4)
+    x, y, yerr = get_ray_imdb_data(4)
     axs[1, 0].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
     axs[1, 0].set_title('checkpoint 4')
 
-    x, y, yerr = get_ray_data(5)
+    x, y, yerr = get_ray_imdb_data(5)
     axs[1, 1].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
     axs[1, 1].set_title('checkpoint 5')
 
@@ -185,5 +185,68 @@ def plot_ray_results2():
     plt.show()
 
 
+def get_ray_mas_data(checkpoint):
+    if checkpoint == 7:
+        random_scores = [0.182, 0.203, 0.230]
+        topk_scores = [0.625] * 3
+        ppo_scores = [0.64, 0.649, 0.665]
+    elif checkpoint == 8:
+        random_scores = [0.25, 0.283, 0.324]
+        topk_scores = [0.455] * 3
+        ppo_scores = [0.625, 0.633, 0.647]
+    elif checkpoint == 9:
+        random_scores = [0.165, 0.205, 0.24]
+        topk_scores = [0.25] * 3
+        ppo_scores = [0.611, 0.634, 0.652]
+    elif checkpoint == 10:
+        random_scores = [0.075, 0.157, 0.120]
+        topk_scores = [0.507] * 3
+        ppo_scores = [0.675, 0.691, 0.722]
+    else:
+        raise Exception('checkpoint not recognized!')
+
+    x = np.array([0, 1, 2])
+    y = np.array([random_scores[1], topk_scores[1], ppo_scores[1]])
+    yerr = np.array([random_scores[-1] - random_scores[1], 0,
+                     ppo_scores[-1] - ppo_scores[1]])
+    return x, y, yerr
+
+
+def plot_ray_mas_results():
+    fig, axs = plt.subplots(2, 2)
+
+    x, y, yerr = get_ray_mas_data(7)
+    axs[0, 0].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[0, 0].set_title('checkpoint 7')
+
+    x, y, yerr = get_ray_mas_data(8)
+    axs[0, 1].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[0, 1].set_title('checkpoint 8')
+
+    x, y, yerr = get_ray_mas_data(9)
+    axs[1, 0].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[1, 0].set_title('checkpoint 9')
+
+    x, y, yerr = get_ray_mas_data(10)
+    axs[1, 1].bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    axs[1, 1].set_title('checkpoint 10')
+
+    plt.setp([axs[1, 0], axs[1, 1]], xticks=x, xticklabels=['random', 'top-k', 'PPO'])
+    plt.setp([axs[0, 0], axs[0, 1]], xticks=[], xticklabels=[])
+
+    for ax in [axs[1, 0], axs[1, 1]]:
+        ax.set(xlabel='Algorithm')
+
+    for ax in [axs[0, 0], axs[1, 0]]:
+        ax.set(ylabel='Score')
+
+    # Hide x labels and tick labels for top plots and y ticks for right plots.
+    # for ax in axs.flat:
+    #     ax.label_outer()
+
+    plt.suptitle(f"Score by algorithm, k={1000}, view_size={view_size}")
+    plt.show()
+
+
 if __name__ == '__main__':
-    plot_ray_results2()
+    plot_ray_mas_results()

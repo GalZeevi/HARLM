@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --partition=killable
-#SBATCH --job-name=saqp_ppo
-#SBATCH --output=/specific/scratches/parallel/galzeevi-2023-01-06/slurm-logs/saqp_ppo.log
+#SBATCH --job-name=mas_ppo
+#SBATCH --output=/specific/scratches/parallel/galzeevi-2023-01-06/slurm-logs/mas_ppo.log
 
 ### This script works for any number of nodes, Ray will find and manage all resources
 #SBATCH --nodes=1
@@ -73,4 +73,4 @@ done
 
 #### call your code below
 echo "STARTING PYTHON SCRIPT"
-python3 ray_sampler.py --remote True --alg PPO --cpus "${SLURM_CPUS_PER_TASK}" --gpus "${SLURM_GPUS_PER_TASK}" --rollouts 8 --steps 25 --checkpoint 3
+python3 ray_sampler.py --remote True --alg PPO --cpus "${SLURM_CPUS_PER_TASK}" --gpus "${SLURM_GPUS_PER_TASK}" --rollouts 16 --steps 50 --checkpoint 6

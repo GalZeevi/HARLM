@@ -21,7 +21,7 @@ from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 from preprocessing import Preprocessing
-from score_calculator import get_score2
+from score_calculator import get_score2, get_threshold_score
 from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
 
@@ -146,6 +146,28 @@ class AlgorithmNames:
 
 class MyCallbacks(DefaultCallbacks):
 
+    @staticmethod
+    def add_metric_to_episode(episode, ep_infos, metric='score'):
+        train_scores = []
+        val_scores = []
+        test_scores = []
+
+        for key, agent_info in ep_infos.items():
+            if key != '__common__':
+                train_scores.append(agent_info.get(f'train_{metric}', 0))
+                f'val_{metric}' in agent_info.keys() and val_scores.append(agent_info.get(f'val_{metric}'))
+                test_scores.append(agent_info.get(f'test_{metric}', 0))
+
+        train_score = np.mean(train_scores)
+        episode.custom_metrics[f'train_{metric}'] = train_score
+
+        test_score = np.mean(test_scores)
+        episode.custom_metrics[f'test_{metric}'] = test_score
+
+        if len(val_scores) > 0:
+            val_score = np.mean(val_scores)
+            episode.custom_metrics[f'val_{metric}'] = val_score
+
     def on_episode_end(
             self,
             *,
@@ -155,28 +177,10 @@ class MyCallbacks(DefaultCallbacks):
             episode,
             env_index=None,
             **kwargs):
+
         ep_infos = episode._last_infos
-
-        train_scores = []
-        val_scores = []
-        test_scores = []
-
-        for key, agent_info in ep_infos.items():
-            if key != '__common__':
-                train_scores.append(agent_info.get('train', 0))
-                if 'val' in agent_info.keys():
-                    val_scores.append(agent_info.get('val'))
-                test_scores.append(agent_info.get('test', 0))
-
-        train_score = np.mean(train_scores)
-        test_score = np.mean(test_scores)
-        episode.custom_metrics['train_score'] = train_score
-        episode.custom_metrics['test_score'] = test_score
-
-        if len(val_scores) > 0:
-            val_score = np.mean(val_scores)
-            episode.custom_metrics['val_score'] = val_score
-        # episode.hist_data["pole_angles"] = episode.user_data["pole_angles"]
+        MyCallbacks.add_metric_to_episode(episode, ep_infos, metric='score')
+        MyCallbacks.add_metric_to_episode(episode, ep_infos, metric='threshold_score')
 
 
 class MyEnv(gym.Env):
@@ -299,13 +303,20 @@ class MyEnv(gym.Env):
         info = {}
         if done:
             info = {
-                'test': get_score2(self.get_tuple_ids(), queries='test',
-                                   checkpoint_version=self.checkpoint_version),
-                'train': get_score2(self.get_tuple_ids(), queries=self.train_set,
-                                    checkpoint_version=self.checkpoint_version)}
+                'test_score': get_score2(self.get_tuple_ids(), queries='test',
+                                         checkpoint_version=self.checkpoint_version),
+                'train_score': get_score2(self.get_tuple_ids(), queries=self.train_set,
+                                          checkpoint_version=self.checkpoint_version),
+                'test_threshold_score': get_threshold_score(self.get_tuple_ids(), queries='test',
+                                                            checkpoint_version=self.checkpoint_version),
+                'train_threshold_score': get_threshold_score(self.get_tuple_ids(), queries=self.train_set,
+                                                             checkpoint_version=self.checkpoint_version)
+            }
             if self.validation_set is not None:
-                info['val'] = get_score2(self.get_tuple_ids(), queries=self.validation_set,
-                                         checkpoint_version=self.checkpoint_version)
+                info['val_score'] = get_score2(self.get_tuple_ids(), queries=self.validation_set,
+                                               checkpoint_version=self.checkpoint_version)
+                info['val_threshold_score'] = get_threshold_score(self.get_tuple_ids(), queries=self.validation_set,
+                                                                  checkpoint_version=self.checkpoint_version)
 
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, reward, done, False, info
 
@@ -318,7 +329,7 @@ class MyEnv(gym.Env):
 
 cli_args = get_cli_args()
 local_config_params = {'K': 100}
-remote_config_params = {'K': 1000, 'ACTION_SPACE_SIZE': 100_000}
+remote_config_params = {'K': 1000, 'ACTION_SPACE_SIZE': 5_000}
 config = remote_config_params if cli_args.remote else local_config_params
 
 K = config.get('K')
@@ -413,7 +424,7 @@ def get_algorithm():
         # model_config['no_final_linear'] = True # TODO
         alg_config = apex_dqn.ApexDQNConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
-            .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
+            .resources(num_gpus=min(NUM_GPUS, 1), num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(rollout_fragment_length=32, num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=15) \
             .callbacks(callbacks_class=MyCallbacks) \
             .training(
@@ -437,7 +448,7 @@ def get_algorithm():
         ) \
             .exploration(explore=True,
                          exploration_config={'epsilon_timesteps': 2000000, 'final_epsilon': 0.01,
-                                             "initial_epsilon": 0.96, "type": "EpsilonGreedy"}) \
+                                             "initial_epsilon": 1.0, "type": "EpsilonGreedy"}) \
             .reporting(min_sample_timesteps_per_iteration=1000) \
             .framework('torch')
         alg = apex_dqn.ApexDQN(config=alg_config)

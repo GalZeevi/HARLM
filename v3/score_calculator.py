@@ -7,56 +7,54 @@ from data_access_v3 import DataAccess
 from train_test_utils import get_test_queries, get_train_queries
 from preprocessing import Preprocessing
 
+
 # tupleDistanceCalculator = TupleDistanceCalculator()
 
 
-def get_score(sample, dist=False):  # TODO replace dist with metric
-    test_results = get_test_queries()
-    return get_score_for_test_queries(sample, test_results) if dist is False \
-        else get_dist_score_for_test_queries(sample, test_results)
+def __get_results(queries, checkpoint_version):
+    if isinstance(queries, str):
+        assert queries in ['test', 'train']
+        return get_test_queries(checkpoint_version=checkpoint_version) if queries == 'test' \
+            else get_train_queries(checkpoint_version=checkpoint_version)
+    elif isinstance(queries, list) or isinstance(queries, np.ndarray):
+        return queries
+    else:
+        raise Exception('queries should be either a string from ["train", "test"] or a list/array of results!')
 
 
 def get_score2(sample,
                queries='train',
                view_size=ConfigManager.get_config('samplerConfig.viewSize'),
                checkpoint_version=CheckpointManager.get_max_version()):
-    if isinstance(queries, str):
-        results = get_test_queries(checkpoint_version=checkpoint_version) if queries == 'test' \
-            else get_train_queries(checkpoint_version=checkpoint_version)
-    elif isinstance(queries, list):
-        results = queries
-    else:
-        raise Exception('queries should be either a string from ["train", "test"] or a list of results!')
 
-    view_size = 500 if view_size is None else view_size
+    results = __get_results(queries, checkpoint_version)
     target_view_sizes = np.array([min(view_size, len(result)) for result in results])
-    sample_result_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
+    sample_result_sizes = np.array([len(np.intersect1d(result, sample)) for result in
+                                    results])  # TODO: something in the listcomp throws error on None
     attained_result_fraction = np.divide(sample_result_sizes, target_view_sizes)
     score = np.minimum(attained_result_fraction, 1.)
     return np.average(score)
 
 
-def get_diversity(tuples):
-    diversity = 0.
-    Preprocessing.init()
-    columns = Preprocessing.columns_repo.get_all_columns()
-    for col_name, col in columns.items():
-        if col.is_pivot:
-            continue
-        col_values = np.array([tup[col_name] for tup in tuples])
-        if col.is_categorical:
-            diversity += (len(np.unique(col_values)) - 1) / len(col_values)
-        else:
-            col_values = col_values.astype(float)
-            min_val = np.min(col_values)
-            max_val = np.max(col_values)
-            if min_val != max_val:
-                # diversity += 4 * np.var((col_values - min_val) / (max_val - min_val))
-                continue
+def get_threshold_score(sample,
+                        queries='train',
+                        view_size=ConfigManager.get_config('samplerConfig.viewSize'),
+                        threshold=0.20,
+                        checkpoint_version=CheckpointManager.get_max_version()):
 
-    diversity = diversity / (len(columns.keys()) - 1)
-    raise NotImplementedError
-    # return diversity
+    results = __get_results(queries, checkpoint_version)
+    target_sizes = np.array([min(view_size, len(result)) for result in results])
+    sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
+    attained_result_fraction = np.divide(sampled_sizes, target_sizes)
+    score = np.minimum(attained_result_fraction, 1.)
+    score = np.where(score >= threshold, 1, 0)
+    return np.average(score)
+
+
+def get_score(sample, dist=False):  # TODO replace dist with metric
+    test_results = get_test_queries()
+    return get_score_for_test_queries(sample, test_results) if dist is False \
+        else get_dist_score_for_test_queries(sample, test_results)
 
 
 def get_score_for_test_queries(sample, test_results):
