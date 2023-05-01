@@ -53,6 +53,7 @@ def get_sample():
     sample = []
     score = 0.
     tuple_ids = reduce(np.union1d, tuple(results))
+    print(f'Starting greedy sampler, {len(tuple_ids)} tuples to process')
     print('Initialising pool')
     start = time.time()
     pool = multiprocessing.Pool(args.pool_size)
@@ -62,12 +63,14 @@ def get_sample():
         new_tuple = None
         chunks = [chunk for chunk in np.array_split(tuple_ids, np.ceil(len(tuple_ids) / TARGET_CHUNK_SIZE)) if
                   len(chunk) > 0]
+        print(f'Starting to work on {len(chunks)} tasks with {args.pool_size} workers', flush=True)
         worker_args = [(chunk, sample, score) for chunk in chunks]
         pool_res = pool.starmap(worker_task, worker_args)
         for worker_new_tuple, worker_score, worker_pid in pool_res:
             if score < worker_score:
                 tqdm.write(
-                    f'Sample size: {len(sample)}/{args.k}, current test score: {get_score2(sample, queries="test", checkpoint_version=args.checkpoint)}, worker: {worker_pid}')
+                    f'Sample size: {len(sample)}/{args.k}, current test score: ' + \
+                    f'{get_score2(sample, queries="test", checkpoint_version=args.checkpoint)}, worker: {worker_pid}')
                 CheckpointManager.save(f'{args.k}-{args.queries}_greedy_sample', [sample, score],
                                        version=args.checkpoint, verbose=False)
                 score = worker_score
