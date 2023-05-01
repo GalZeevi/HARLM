@@ -1,9 +1,10 @@
-from data_access_v3 import DataAccess
-from config_manager_v3 import ConfigManager
-from checkpoint_manager_v3 import CheckpointManager
-from score_calculator import get_score, get_score2
 import numpy as np
 from tqdm import tqdm
+
+from checkpoint_manager_v3 import CheckpointManager
+from config_manager_v3 import ConfigManager
+from data_access_v3 import DataAccess
+from score_calculator import get_score2
 from train_test_utils import get_train_queries
 
 
