@@ -115,10 +115,10 @@ class Preprocessing:
                 max_value = np.max([*encoding.values()])
             else:
                 encoding = None
-                min_value = DataAccess.select_one(
-                    f'SELECT COALESCE(MIN({column_name_db_format}), 0) as val FROM {schema}.{table}')
-                max_value = DataAccess.select_one(
-                    f'SELECT COALESCE(MAX({column_name_db_format}), 0) as val FROM {schema}.{table}')
+                min_value = float(DataAccess.select_one(
+                    f'SELECT COALESCE(MIN({column_name_db_format}), 0) as val FROM {schema}.{table}'))
+                max_value = float(DataAccess.select_one(
+                    f'SELECT COALESCE(MAX({column_name_db_format}), 0) as val FROM {schema}.{table}'))
 
             columns[column_name] = Column(is_pivot, col_num, dim, is_categorical, encoding, max_value, min_value,
                                           NULL_VALUE if is_categorical else min_value - 1)

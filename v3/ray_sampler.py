@@ -21,7 +21,7 @@ from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 from preprocessing import Preprocessing
-from score_calculator import get_score2, get_threshold_score
+from score_calculator import get_combined_score, get_score2, get_threshold_score
 from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
 
@@ -60,6 +60,10 @@ def get_cli_args():
 
     parser.add_argument(
         "--random_actions_coeff", type=float, default=0, help="Percentage of random tuples to add to action space."
+    )
+
+    parser.add_argument(
+        "--trial_name", type=str, default=None, help="Name of the trial."
     )
 
     args = parser.parse_args()
@@ -271,6 +275,24 @@ class MyEnv(gym.Env):
         self.action_mask = np.ones(self.num_actions)
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, {}
 
+    def __get_episode_scores__(self):
+        ep_scores = {
+            f'test_score': get_score2(self.get_sample_ids(), queries='test',
+                                      checkpoint_version=self.checkpoint_version),
+            'train_score': get_score2(self.get_sample_ids(), queries=self.train_set,
+                                      checkpoint_version=self.checkpoint_version),
+            'test_threshold_score': get_threshold_score(self.get_sample_ids(), queries='test',
+                                                        checkpoint_version=self.checkpoint_version),
+            'train_threshold_score': get_threshold_score(self.get_sample_ids(), queries=self.train_set,
+                                                         checkpoint_version=self.checkpoint_version)
+        }
+        if self.validation_set is not None:
+            ep_scores['val_score'] = get_score2(self.get_sample_ids(), queries=self.validation_set,
+                                                checkpoint_version=self.checkpoint_version)
+            ep_scores['val_threshold_score'] = get_threshold_score(self.get_sample_ids(), queries=self.validation_set,
+                                                                   checkpoint_version=self.checkpoint_version)
+        return ep_scores
+
     def step(self, action):
         if self.action_mask[action] == 0:  # state remains unchanged
             print(f'WARNING! invalid action selected! action: {action}')
@@ -286,9 +308,9 @@ class MyEnv(gym.Env):
 
         # calculate reward
         if self.inference_mode:
-            new_score = get_score2(self.get_tuple_ids(), queries='test', checkpoint_version=self.checkpoint_version)
+            new_score = get_score2(self.get_sample_ids(), queries='test', checkpoint_version=self.checkpoint_version)
         else:
-            new_score = get_score2(self.get_tuple_ids(), queries=self.train_set,
+            new_score = get_score2(self.get_sample_ids(), queries=self.train_set,
                                    checkpoint_version=self.checkpoint_version)
 
         # TODO try with and without smoothing, add all that to env_config
@@ -302,29 +324,18 @@ class MyEnv(gym.Env):
         done = (self.step_count == self.k)
         info = {}
         if done:
-            info = {
-                'test_score': get_score2(self.get_tuple_ids(), queries='test',
-                                         checkpoint_version=self.checkpoint_version),
-                'train_score': get_score2(self.get_tuple_ids(), queries=self.train_set,
-                                          checkpoint_version=self.checkpoint_version),
-                'test_threshold_score': get_threshold_score(self.get_tuple_ids(), queries='test',
-                                                            checkpoint_version=self.checkpoint_version),
-                'train_threshold_score': get_threshold_score(self.get_tuple_ids(), queries=self.train_set,
-                                                             checkpoint_version=self.checkpoint_version)
-            }
-            if self.validation_set is not None:
-                info['val_score'] = get_score2(self.get_tuple_ids(), queries=self.validation_set,
-                                               checkpoint_version=self.checkpoint_version)
-                info['val_threshold_score'] = get_threshold_score(self.get_tuple_ids(), queries=self.validation_set,
-                                                                  checkpoint_version=self.checkpoint_version)
+            info = self.__get_episode_scores__()
 
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, reward, done, False, info
 
     def render(self, mode='human'):
         pass
 
-    def get_tuple_ids(self):
+    def get_sample_ids(self):
         return [tup[pivot] for tup in self.selected_tuples]
+
+    def get_sample_tuples(self):
+        return self.selected_tuples
 
 
 cli_args = get_cli_args()
@@ -343,7 +354,8 @@ NUM_ROLLOUT_WORKERS = cli_args.rollouts
 CHECKPOINT_VER = cli_args.checkpoint
 RANDOM_ACTIONS_COEFF = cli_args.random_actions_coeff
 
-TRIAL_NAME = f'{K}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
+TRIAL_NAME = f'{K}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}' if cli_args.trial_name is None \
+    else cli_args.trial_name
 OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
 RECORD_RAW_TRAIN_RESULTS = config.get('RECORD_RAW_TRAIN_RESULTS', True)
 SAVE_RESULT_STEP = 5
@@ -361,7 +373,6 @@ def get_algorithm():
     model_config = {'custom_model': TorchActionMaskModel, 'custom_model_config': {}}
     env_config = get_env_config()
     if ALG == AlgorithmNames.IMPALA:
-        # TODO NUM_GPUS // NUM_ROLLOUT_WORKERS or NUM_GPUS
         alg_config = impala.ImpalaConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
             .training(lr=0.0003, train_batch_size=512) \
@@ -379,7 +390,6 @@ def get_algorithm():
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
             .framework('torch') \
             .callbacks(callbacks_class=MyCallbacks)
-
         alg = ppo.PPO(config=alg_config)
     elif ALG == AlgorithmNames.A3C:
         alg_config = a3c.A3CConfig() \
@@ -489,7 +499,9 @@ def train_model():
 
 
 def _get_sample_from_model(model):
-    env = MyEnv(env_config=get_env_config())
+    env_config = get_env_config()
+    env_config['inference_mode'] = True
+    env = MyEnv(env_config)
     done = False
     obs, _ = env.reset()
     prev_action = None
@@ -502,18 +514,23 @@ def _get_sample_from_model(model):
         prev_reward = reward
         obs = next_obs
 
-    sample = env.get_tuple_ids()
-    scores = {'test': get_score2(sample, queries='test', checkpoint_version=CHECKPOINT_VER),
-              'train': get_score2(sample, queries=env.train_set, checkpoint_version=CHECKPOINT_VER)}
+    sample_ids = env.get_sample_ids()
+    scores = {'test': get_score2(sample_ids, queries='test', checkpoint_version=CHECKPOINT_VER),
+              'train': get_score2(sample_ids, queries=env.train_set, checkpoint_version=CHECKPOINT_VER)}
+    scores.update({'test_threshold': get_threshold_score(sample_ids, queries='test', checkpoint_version=CHECKPOINT_VER),
+                   'train_threshold': get_threshold_score(sample_ids, queries=env.train_set,
+                                                          checkpoint_version=CHECKPOINT_VER)})
     if env.validation_set is not None:
-        scores['val'] = get_score2(sample, queries=env.validation_set, checkpoint_version=CHECKPOINT_VER)
+        scores['val'] = get_score2(sample_ids, queries=env.validation_set, checkpoint_version=CHECKPOINT_VER)
+        scores['val_threshold'] = get_threshold_score(sample_ids, queries=env.validation_set,
+                                                      checkpoint_version=CHECKPOINT_VER)
 
-    return sample, scores
+    return sample_ids, scores
 
 
-def test_model(ray_checkpoint_path=None, algo=None, num_trials=50, output_trial_name=TRIAL_NAME):
+def test_model(ray_checkpoint_path=None, algo=None, num_trials=50):
     if ray_checkpoint_path is None and algo is None:
-        raise Exception('One of "ray_checkpoint_path" or "model" must not be None!')
+        raise Exception('One of \'ray_checkpoint_path\' or \'model\' must not be None!')
     algo = algo if algo is not None else algorithm.Algorithm.from_checkpoint(ray_checkpoint_path)
 
     best_sample = None
@@ -527,8 +544,8 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=50, output_trial_
             best_test_score = scores_dict['test']
             best_sample = sample
 
-    CheckpointManager.save(name=f'{output_trial_name}/test_scores', content=scores, version=CHECKPOINT_VER)
-    CheckpointManager.save(name=f'{output_trial_name}/sample', content=[best_sample, best_test_score],
+    CheckpointManager.save(name=f'{TRIAL_NAME}/trial_scores', content=scores, version=CHECKPOINT_VER)
+    CheckpointManager.save(name=f'{TRIAL_NAME}/sample', content=[best_sample, best_test_score],
                            version=CHECKPOINT_VER)
     return best_sample, best_test_score
 

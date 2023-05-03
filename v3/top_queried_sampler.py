@@ -4,7 +4,7 @@ from tqdm import tqdm
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
-from score_calculator import get_score2
+from score_calculator import get_score2, get_threshold_score
 from train_test_utils import get_train_queries
 
 
@@ -40,10 +40,11 @@ def get_sample(k, verbose=True, checkpoint_version=CheckpointManager.get_max_ver
     sample = prepare_sample(k, verbose, checkpoint_version)
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     score = get_score2(sample, queries='test', checkpoint_version=checkpoint_version)
+    threshold_score = get_threshold_score(sample, queries='test', checkpoint_version=checkpoint_version)
 
     verbose and CheckpointManager.save(f'{k}-{view_size}-top_queried_sample',
-                                       [sample, score], version=checkpoint_version)
-    return sample, score
+                                       [sample, score, threshold_score], version=checkpoint_version)
+    return sample, score, threshold_score
 
 
 if __name__ == '__main__':

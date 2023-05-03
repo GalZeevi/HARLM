@@ -5,10 +5,12 @@ from checkpoint_manager_v3 import CheckpointManager
 from data_access_v3 import DataAccess
 # from tuple_distance_calculator_v3 import TupleDistanceCalculator
 from train_test_utils import get_test_queries, get_train_queries
-from preprocessing import Preprocessing
-
+from preprocessing import Preprocessing, Column
+from typing import Dict
+from scipy.stats import entropy as entropy_func
 
 # tupleDistanceCalculator = TupleDistanceCalculator()
+Preprocessing.init()
 
 
 def __get_results(queries, checkpoint_version):
@@ -24,24 +26,34 @@ def __get_results(queries, checkpoint_version):
 
 def get_score2(sample,
                queries='train',
-               view_size=ConfigManager.get_config('samplerConfig.viewSize'),
                checkpoint_version=CheckpointManager.get_max_version()):
-
+    view_size = ConfigManager.get_config('samplerConfig.viewSize')
     results = __get_results(queries, checkpoint_version)
-    target_view_sizes = np.array([min(view_size, len(result)) for result in results])
-    sample_result_sizes = np.array([len(np.intersect1d(result, sample)) for result in
-                                    results])  # TODO: something in the listcomp throws error on None
-    attained_result_fraction = np.divide(sample_result_sizes, target_view_sizes)
+    target_sizes = np.array([min(view_size, len(result)) for result in results])
+    try:
+        sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in
+                                  results])  # TODO: something in the listcomp throws error on None
+    except TypeError:
+        print(f'Error thrown! sample: {sample}, results: {results}')
+        raise Exception('Fuck this')
+
+    attained_result_fraction = np.divide(sampled_sizes, target_sizes)
     score = np.minimum(attained_result_fraction, 1.)
     return np.average(score)
 
 
+def get_combined_score(sample_tuples, alpha=0.5, queries='train', checkpoint_version=CheckpointManager.get_max_version()):
+    pivot = ConfigManager.get_config('queryConfig.pivot')
+    tuple_ids = [tup[pivot] for tup in sample_tuples]
+    return alpha * get_score2(tuple_ids, queries, checkpoint_version) + \
+           (1 - alpha) * get_diversity_score(sample_tuples)
+
+
 def get_threshold_score(sample,
                         queries='train',
-                        view_size=ConfigManager.get_config('samplerConfig.viewSize'),
-                        threshold=0.20,
+                        threshold=0.25,
                         checkpoint_version=CheckpointManager.get_max_version()):
-
+    view_size = ConfigManager.get_config('samplerConfig.viewSize')
     results = __get_results(queries, checkpoint_version)
     target_sizes = np.array([min(view_size, len(result)) for result in results])
     sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
@@ -49,6 +61,35 @@ def get_threshold_score(sample,
     score = np.minimum(attained_result_fraction, 1.)
     score = np.where(score >= threshold, 1, 0)
     return np.average(score)
+
+
+def get_diversity_score(sample_tuples):
+    columns: Dict[str, Column] = Preprocessing.columns_repo.get_all_columns()
+    score = 0.
+    for col_name, col_data in columns.items():
+        if col_data.is_pivot:
+            continue
+        col_values = np.array([tup[col_name] for tup in sample_tuples])
+        if col_data.is_categorical:
+            # entropy
+            _, counts = np.unique(col_values, return_counts=True)
+            probs = counts / np.sum(counts)
+            entropy = entropy_func(probs)
+            if len(col_data.encodings.keys()) > 1:
+                entropy = entropy / np.log(len(col_data.encodings.keys()))
+            assert entropy <= 1.0
+            score += entropy
+        else:
+            # variance
+            col_values = col_values.astype(float)
+            if col_data.min_val != col_data.max_val:  # column is not fixed
+                col_values = (col_values - col_data.min_val) / (col_data.max_val - col_data.min_val)
+            elif col_data.min_val != 0:  # column is fixed but nonzero
+                col_values = col_values / col_data.min_val
+            std = 2.0 * np.std(col_values)
+            assert std <= 1.0
+            score += std
+    return score / (len(columns.items()) - 1)
 
 
 def get_score(sample, dist=False):  # TODO replace dist with metric
@@ -63,19 +104,6 @@ def get_score_for_test_queries(sample, test_results):
     sample_result_sizes = np.array([len(np.intersect1d(result, sample)) for result in test_results])
     attained_result_fraction = np.divide(sample_result_sizes, target_view_sizes)
     score = np.average(np.minimum(attained_result_fraction, 1))
-    return score
-
-
-def __shifted_sigmoid(x):
-    sigmoid = 1.0 / (1.0 + np.exp(-x))
-    return 2 * sigmoid - 1
-
-
-def get_differentiable_score_for_test_queries(sample, test_results, view_size):
-    target_view_sizes = np.array([view_size * __shifted_sigmoid(len(result) / view_size) for result in test_results])
-    sample_result_sizes = np.array([len(np.intersect1d(result, sample)) for result in test_results])
-    attained_result_fraction = np.divide(sample_result_sizes, target_view_sizes)
-    score = 2 * np.average(__shifted_sigmoid(attained_result_fraction))
     return score
 
 

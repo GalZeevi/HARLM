@@ -10,7 +10,7 @@ from tqdm import tqdm, trange
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
-from score_calculator import get_score2
+from score_calculator import get_score2, get_threshold_score
 from train_test_utils import get_test_queries
 
 parser = argparse.ArgumentParser()
@@ -69,8 +69,12 @@ def get_sample():
         for worker_new_tuple, worker_score, worker_pid in pool_res:
             if score < worker_score:
                 tqdm.write(
-                    f'Sample size: {len(sample)}/{args.k}, current test score: ' + \
-                    f'{get_score2(sample, queries="test", checkpoint_version=args.checkpoint)}, worker: {worker_pid}')
+                    f'Sample size: {len(sample)}/{args.k}, \n' +
+                    f'current test score: {get_score2(sample, queries="test", checkpoint_version=args.checkpoint)}\n' +
+                    f'current test_threshold score: '
+                    f'{get_threshold_score(sample, queries="test", checkpoint_version=args.checkpoint)}\n' +
+                    f', worker: {worker_pid}'
+                )
                 CheckpointManager.save(f'{args.k}-{args.queries}_greedy_sample', [sample, score],
                                        version=args.checkpoint, verbose=False)
                 score = worker_score
