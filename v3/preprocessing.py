@@ -60,7 +60,7 @@ class Preprocessing:
         return decor
 
     @staticmethod
-    def init():
+    def init(version=CheckpointManager.get_max_version()):
         if Preprocessing.columns_repo is not None:
             return  # already initialised
 
@@ -68,7 +68,7 @@ class Preprocessing:
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
 
-        cached_column_repo = CheckpointManager.load(f'{schema}.{table}_preprocessing_columns')
+        cached_column_repo = CheckpointManager.load(f'{schema}.{table}_preprocessing_columns', version)
         if cached_column_repo is not None:
             Preprocessing.columns_repo = cached_column_repo
             return
@@ -124,7 +124,7 @@ class Preprocessing:
                                           NULL_VALUE if is_categorical else min_value - 1)
 
         Preprocessing.columns_repo = ColumnsRepo(columns)
-        CheckpointManager.save(f'{schema}.{table}_preprocessing_columns', Preprocessing.columns_repo)
+        CheckpointManager.save(f'{schema}.{table}_preprocessing_columns', Preprocessing.columns_repo, version)
 
     @staticmethod
     def __create_encoding_dict__(string_values):

@@ -8,6 +8,7 @@ class DBTypes:
     IS_POSTGRESQL = lambda db_type: str.lower(db_type) == 'postgres' or str.lower(db_type) == 'postgresql'
     IS_MYSQL = lambda db_type: str.lower(db_type) == 'mysql' or str.lower(db_type) == 'pymysql'
 
+
 def row2dict(row):
     d = {}
     fields = row._fields
@@ -72,8 +73,14 @@ class DataAccess:
     @staticmethod
     def disconnect():
         if DataAccess.conn:
-            DataAccess.conn.dispose()
+            DataAccess.conn.close()
+        DataAccess.conn = None
         print('Database connection closed.')
+
+    @staticmethod
+    def reconnect():
+        DataAccess.disconnect()
+        DataAccess._connect()
 
     @staticmethod
     def update(query):

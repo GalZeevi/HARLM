@@ -2,6 +2,7 @@ import argparse
 import datetime
 import os
 import time
+import shutil
 
 import gymnasium as gym
 import numpy as np
@@ -21,7 +22,7 @@ from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 from preprocessing import Preprocessing
-from score_calculator import get_combined_score, get_score2, get_threshold_score
+from score_calculator import get_combined_score, get_score2, get_threshold_score, get_diversity_score
 from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
 
@@ -31,7 +32,7 @@ def get_cli_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--remote", type=bool, default=False, help="Whether to use config for remote server or local server"
+        "--k", type=int, default=100, help="Size of the summary to create"
     )
 
     parser.add_argument(
@@ -43,11 +44,11 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--rollouts", type=int, default=3, help="How many rollout workers to use."
+        "--gpus", type=int, default=0, help="How many gpus to use for the algorithm."
     )
 
     parser.add_argument(
-        "--gpus", type=int, default=0, help="How many gpus to use for the algorithm."
+        "--rollouts", type=int, default=3, help="How many rollout workers to use."
     )
 
     parser.add_argument(
@@ -59,12 +60,26 @@ def get_cli_args():
     )
 
     parser.add_argument(
+        "--num_actions", type=int, default=-1, help="How many actions to use for the model."
+    )
+
+    parser.add_argument(
         "--random_actions_coeff", type=float, default=0, help="Percentage of random tuples to add to action space."
+    )
+
+    parser.add_argument(
+        "--diversity_coeff", type=float, default=0.0, help="Weight to give diversity in score function."
     )
 
     parser.add_argument(
         "--trial_name", type=str, default=None, help="Name of the trial."
     )
+
+    parser.add_argument(
+        "--ray_checkpoint", type=str, default='latest_checkpoint', help="Num of ray's checkpoint directory to use."
+    )
+
+    parser.add_argument('--test', action='store_true', default=False)
 
     args = parser.parse_args()
     print(f"Running with following CLI args: {args}")
@@ -72,10 +87,13 @@ def get_cli_args():
 
 
 def __init_table_details__():
+    start = time.time()
+    print(f'############### Initialising table details... ###############')
     schema = ConfigManager.get_config('queryConfig.schema')
     table = ConfigManager.get_config('queryConfig.table')
     pivot = ConfigManager.get_config('queryConfig.pivot')
     table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
+    print(f'Initialising table details took: {round(time.time() - start, 2)} sec')
     return schema, table, pivot, table_size
 
 
@@ -186,6 +204,13 @@ class MyCallbacks(DefaultCallbacks):
         MyCallbacks.add_metric_to_episode(episode, ep_infos, metric='score')
         MyCallbacks.add_metric_to_episode(episode, ep_infos, metric='threshold_score')
 
+        diversity_scores = []
+        for key, agent_info in ep_infos.items():
+            if key != '__common__':
+                diversity_scores.append(agent_info.get('diversity_score', 0))
+        diversity_score = np.mean(diversity_scores)
+        episode.custom_metrics['diversity_score'] = diversity_score
+
 
 class MyEnv(gym.Env):
 
@@ -204,7 +229,6 @@ class MyEnv(gym.Env):
         else:
             self.train_set, self.validation_set = results, None
 
-        # reduce_action_dim = env_config.get('reduce_action_dim', True)
         if ACTION_SPACE_SIZE < table_size:
             self.actions = MyEnv.__get_actions__(self.k, table_size, RANDOM_ACTIONS_COEFF, self.checkpoint_version)
             self.num_actions = len(self.actions)
@@ -232,7 +256,7 @@ class MyEnv(gym.Env):
 
         self.reward_config = {'marginal_reward': env_config.get('marginal_reward', False),
                               'large_reward': env_config.get('large_reward', False)}
-        Preprocessing.init()
+        Preprocessing.init(CHECKPOINT_VER)
 
     @staticmethod
     def __get_actions__(k, max_action_id, random_actions_coeff, checkpoint_ver):
@@ -275,16 +299,17 @@ class MyEnv(gym.Env):
         self.action_mask = np.ones(self.num_actions)
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, {}
 
-    def __get_episode_scores__(self):
+    def get_episode_scores(self):
         ep_scores = {
-            f'test_score': get_score2(self.get_sample_ids(), queries='test',
-                                      checkpoint_version=self.checkpoint_version),
+            'test_score': get_score2(self.get_sample_ids(), queries='test',
+                                     checkpoint_version=self.checkpoint_version),
             'train_score': get_score2(self.get_sample_ids(), queries=self.train_set,
                                       checkpoint_version=self.checkpoint_version),
             'test_threshold_score': get_threshold_score(self.get_sample_ids(), queries='test',
                                                         checkpoint_version=self.checkpoint_version),
             'train_threshold_score': get_threshold_score(self.get_sample_ids(), queries=self.train_set,
-                                                         checkpoint_version=self.checkpoint_version)
+                                                         checkpoint_version=self.checkpoint_version),
+            'diversity_score': get_diversity_score(self.get_sample_tuples())
         }
         if self.validation_set is not None:
             ep_scores['val_score'] = get_score2(self.get_sample_ids(), queries=self.validation_set,
@@ -310,8 +335,11 @@ class MyEnv(gym.Env):
         if self.inference_mode:
             new_score = get_score2(self.get_sample_ids(), queries='test', checkpoint_version=self.checkpoint_version)
         else:
-            new_score = get_score2(self.get_sample_ids(), queries=self.train_set,
-                                   checkpoint_version=self.checkpoint_version)
+            # new_score = get_score2(self.get_sample_ids(), queries=self.train_set,
+            #                        checkpoint_version=self.checkpoint_version)
+            new_score = get_combined_score(self.get_sample_tuples(), queries=self.train_set,
+                                           alpha=(1 - cli_args.diversity_coeff),
+                                           checkpoint_version=self.checkpoint_version)
 
         # TODO try with and without smoothing, add all that to env_config
         reward = new_score
@@ -322,9 +350,7 @@ class MyEnv(gym.Env):
 
         self.current_score = new_score
         done = (self.step_count == self.k)
-        info = {}
-        if done:
-            info = self.__get_episode_scores__()
+        info = {} if not done else self.get_episode_scores()
 
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, reward, done, False, info
 
@@ -339,13 +365,10 @@ class MyEnv(gym.Env):
 
 
 cli_args = get_cli_args()
-local_config_params = {'K': 100}
-remote_config_params = {'K': 1000, 'ACTION_SPACE_SIZE': 5_000}
-config = remote_config_params if cli_args.remote else local_config_params
 
-K = config.get('K')
+K = cli_args.k
 schema, table, pivot, table_size = __init_table_details__()
-ACTION_SPACE_SIZE = config.get('ACTION_SPACE_SIZE', table_size)
+ACTION_SPACE_SIZE = table_size if cli_args.num_actions < 0 else cli_args.num_actions
 MAX_ITERS = cli_args.steps
 NUM_GPUS = cli_args.gpus
 NUM_CPUS = cli_args.cpus
@@ -357,16 +380,13 @@ RANDOM_ACTIONS_COEFF = cli_args.random_actions_coeff
 TRIAL_NAME = f'{K}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}' if cli_args.trial_name is None \
     else cli_args.trial_name
 OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
-RECORD_RAW_TRAIN_RESULTS = config.get('RECORD_RAW_TRAIN_RESULTS', True)
+RECORD_RAW_TRAIN_RESULTS = True
 SAVE_RESULT_STEP = 5
 SAVE_MODEL_STEP = 5
 
 
 def get_env_config():
-    env_config = {'k': K, 'checkpoint_version': CHECKPOINT_VER}
-    if not cli_args.remote:
-        env_config['reduce_action_dim'] = False
-    return env_config
+    return {'k': K, 'checkpoint_version': CHECKPOINT_VER}
 
 
 def get_algorithm():
@@ -435,7 +455,7 @@ def get_algorithm():
         alg_config = apex_dqn.ApexDQNConfig() \
             .environment(env=MyEnv, render_env=False, env_config=env_config) \
             .resources(num_gpus=min(NUM_GPUS, 1), num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
-            .rollouts(rollout_fragment_length=32, num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=15) \
+            .rollouts(rollout_fragment_length=32, num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=1) \
             .callbacks(callbacks_class=MyCallbacks) \
             .training(
             model=model_config,
@@ -444,7 +464,6 @@ def get_algorithm():
             num_atoms=1,  # TODO
             noisy=False,
             replay_buffer_config={'capacity': 1000000,
-                                  'replay_buffer_shards_colocated_with_driver': True,
                                   "prioritized_replay_alpha": 0.45,
                                   "prioritized_replay_beta": 0.55,
                                   "prioritized_replay_eps": 3e-6},
@@ -457,7 +476,7 @@ def get_algorithm():
             hiddens=[]
         ) \
             .exploration(explore=True,
-                         exploration_config={'epsilon_timesteps': 2000000, 'final_epsilon': 0.01,
+                         exploration_config={'epsilon_timesteps': 1_500_000, 'final_epsilon': 0.01,
                                              "initial_epsilon": 1.0, "type": "EpsilonGreedy"}) \
             .reporting(min_sample_timesteps_per_iteration=1000) \
             .framework('torch')
@@ -489,7 +508,11 @@ def train_model():
         res = algo.train()
         i += 1
         if i > 0 and i % SAVE_MODEL_STEP == 0:
-            algo.save(checkpoint_dir=OUTPUT_DIR)
+            path_to_checkpoint = algo.save(checkpoint_dir=OUTPUT_DIR)
+            if os.path.exists(f'{OUTPUT_DIR}/latest_checkpoint'):
+                shutil.rmtree(f'{OUTPUT_DIR}/latest_checkpoint')
+            shutil.copytree(path_to_checkpoint, f'{OUTPUT_DIR}/latest_checkpoint')
+
         if RECORD_RAW_TRAIN_RESULTS and i > 0 and i % SAVE_RESULT_STEP == 0:
             f = open(f'{OUTPUT_DIR}/iter_{i}_train_results.txt', 'w')
             f.write(str(res))
@@ -515,16 +538,7 @@ def _get_sample_from_model(model):
         obs = next_obs
 
     sample_ids = env.get_sample_ids()
-    scores = {'test': get_score2(sample_ids, queries='test', checkpoint_version=CHECKPOINT_VER),
-              'train': get_score2(sample_ids, queries=env.train_set, checkpoint_version=CHECKPOINT_VER)}
-    scores.update({'test_threshold': get_threshold_score(sample_ids, queries='test', checkpoint_version=CHECKPOINT_VER),
-                   'train_threshold': get_threshold_score(sample_ids, queries=env.train_set,
-                                                          checkpoint_version=CHECKPOINT_VER)})
-    if env.validation_set is not None:
-        scores['val'] = get_score2(sample_ids, queries=env.validation_set, checkpoint_version=CHECKPOINT_VER)
-        scores['val_threshold'] = get_threshold_score(sample_ids, queries=env.validation_set,
-                                                      checkpoint_version=CHECKPOINT_VER)
-
+    scores = env.get_episode_scores()
     return sample_ids, scores
 
 
@@ -540,8 +554,8 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=50):
         sample, scores_dict = _get_sample_from_model(algo)
         scores.append(scores_dict)
 
-        if scores_dict['test'] > best_test_score:
-            best_test_score = scores_dict['test']
+        if scores_dict['test_score'] > best_test_score:
+            best_test_score = scores_dict['test_score']
             best_sample = sample
 
     CheckpointManager.save(name=f'{TRIAL_NAME}/trial_scores', content=scores, version=CHECKPOINT_VER)
@@ -551,7 +565,23 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=50):
 
 
 if __name__ == '__main__':
-    init_output_dir()
-    model = train_model()
-    sample, score = test_model(algo=model)
-    print(f'############### Sample score: {round(score, ndigits=4)} ###############')
+    DataAccess()
+    if cli_args.test:
+        test_model(
+            ray_checkpoint_path=f'{OUTPUT_DIR}/{cli_args.ray_checkpoint}')
+    else:
+        init_output_dir()
+        model = train_model()
+        DataAccess.reconnect()
+        sample, score = test_model(algo=model)
+    all_scores = CheckpointManager.load(name=f'{TRIAL_NAME}/trial_scores', version=CHECKPOINT_VER)
+    test_scores = [scores_dict['test_score'] for scores_dict in all_scores]
+    print(f'############### Sample test score: '
+          f'[min: {round(np.min(test_scores), ndigits=4)}, '
+          f'avg: {round(np.average(test_scores), ndigits=4)}, '
+          f'max: {round(np.max(test_scores), ndigits=4)}] ###############')
+    threshold_scores = [scores_dict['test_threshold_score'] for scores_dict in all_scores]
+    print(f'############### Sample threshold score: '
+          f'[min: {round(np.min(threshold_scores), ndigits=4)}, '
+          f'avg: {round(np.average(threshold_scores), ndigits=4)}, '
+          f'max: {round(np.max(threshold_scores), ndigits=4)}] ###############')
