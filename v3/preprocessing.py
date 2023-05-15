@@ -1,6 +1,6 @@
 import numpy as np
 import functools
-from typing import Dict
+from typing import Dict, List
 from collections import namedtuple
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
@@ -8,7 +8,7 @@ from data_access_v3 import DataAccess
 from tqdm import tqdm
 
 Column = namedtuple('Column', ['is_pivot', 'col_num', 'dim', 'is_categorical', 'encodings',
-                               'max_val', 'min_val', 'none_substitute'])
+                               'max_val', 'min_val', 'std', 'none_substitute'])
 
 
 # TODO: we only support MYSQL for now
@@ -34,6 +34,14 @@ class ColumnsRepo:
 
     def get_all_columns(self):
         return self.columns
+
+    def get_numerical_columns(self) -> List[Column]:
+        return [column for column in self.columns.values()
+                if not column.is_pivot and not column.is_categorical]
+
+    def get_categorical_columns(self) -> List[Column]:
+        return [column for column in self.columns.values()
+                if not column.is_pivot and column.is_categorical]
 
     def __str__(self):
         return str(self.columns)
@@ -62,13 +70,14 @@ class Preprocessing:
     @staticmethod
     def init(version=CheckpointManager.get_max_version()):
         if Preprocessing.columns_repo is not None:
+            # print('Preprocessing has already been initialised.')
             return  # already initialised
 
         schema = ConfigManager.get_config('queryConfig.schema')
         table = ConfigManager.get_config('queryConfig.table')
         pivot = ConfigManager.get_config('queryConfig.pivot')
 
-        cached_column_repo = CheckpointManager.load(f'{schema}.{table}_preprocessing_columns', version)
+        cached_column_repo = CheckpointManager.load(name=f'{schema}.{table}_preprocessing_columns', version=version)
         if cached_column_repo is not None:
             Preprocessing.columns_repo = cached_column_repo
             return
@@ -113,14 +122,20 @@ class Preprocessing:
                 encoding = Preprocessing.__create_encoding_dict__(uniq_values)
                 min_value = np.min([*encoding.values()])
                 max_value = np.max([*encoding.values()])
+                std = 0.
             else:
+                std = 0.
                 encoding = None
                 min_value = float(DataAccess.select_one(
                     f'SELECT COALESCE(MIN({column_name_db_format}), 0) as val FROM {schema}.{table}'))
                 max_value = float(DataAccess.select_one(
                     f'SELECT COALESCE(MAX({column_name_db_format}), 0) as val FROM {schema}.{table}'))
+                if max_value != min_value:  # column is not fixed
+                    expr = f'({column_name_db_format} - {min_value}) / ({max_value} - {min_value})'
+                    std = float(DataAccess.select_one(
+                        f'SELECT COALESCE(STD({expr}), 0) as std FROM {schema}.{table}'))
 
-            columns[column_name] = Column(is_pivot, col_num, dim, is_categorical, encoding, max_value, min_value,
+            columns[column_name] = Column(is_pivot, col_num, dim, is_categorical, encoding, max_value, min_value, std,
                                           NULL_VALUE if is_categorical else min_value - 1)
 
         Preprocessing.columns_repo = ColumnsRepo(columns)
@@ -176,13 +191,4 @@ class Preprocessing:
 
 
 if __name__ == '__main__':
-    print('Testing preprocessing')
-    try:
-        Preprocessing.remove_pivot_from_numpy(np.ones(25))
-    except:
-        print('Exception was thrown intentionally, that\'s good!')
     Preprocessing.init()
-    print(Preprocessing.columns_repo.column_by_name('_id'))
-    print(Preprocessing.columns_repo.column_by_name('title$title'))
-    imdb_tuples = DataAccess.select('SELECT * FROM new_imdb.join_title_companies_keyword LIMIT 10')
-    print(Preprocessing.tuples2numpy(imdb_tuples))

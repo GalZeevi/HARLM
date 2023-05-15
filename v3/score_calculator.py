@@ -9,6 +9,7 @@ from preprocessing import Preprocessing, Column
 from typing import Dict
 from scipy.stats import entropy as entropy_func
 
+
 # tupleDistanceCalculator = TupleDistanceCalculator()
 
 
@@ -78,28 +79,24 @@ def get_diversity_score(sample_tuples, checkpoint_version=CheckpointManager.get_
             continue
         col_values = np.array([tup[col_name] for tup in sample_tuples])
         if col_data.is_categorical:
-            # entropy
-            _, counts = np.unique(col_values, return_counts=True)
-            probs = counts / np.sum(counts)
-            entropy = entropy_func(probs)
-            if len(col_data.encodings.keys()) > 1:
-                entropy = entropy / np.log(len(col_data.encodings.keys()))
-            assert entropy <= 1.0
-            score += entropy
+            # diversity ratio
+            num_uniq_vals = len(np.unique(col_values))
+            score += num_uniq_vals / len(col_data.encodings.keys())
         else:
             # variance
             col_values = col_values.astype(float)
             if col_data.min_val != col_data.max_val:  # column is not fixed
                 col_values = (col_values - col_data.min_val) / (col_data.max_val - col_data.min_val)
-            elif col_data.min_val != 0:  # column is fixed but nonzero
-                col_values = col_values / col_data.min_val
-            std = 2.0 * np.std(col_values)
-            assert std <= 1.0
-            score += std
+                sample_col_std = 2.0 * np.std(col_values)
+                full_col_std = 2.0 * col_data.std
+                score += (1 - abs(sample_col_std - full_col_std))
+            else:
+                score += 1
     return score / (len(columns.items()) - 1)
 
 
-def get_score(sample, dist=False):  # TODO replace dist with metric
+def get_score(sample, dist=False):
+    raise DeprecationWarning()
     test_results = get_test_queries()
     return get_score_for_test_queries(sample, test_results) if dist is False \
         else get_dist_score_for_test_queries(sample, test_results)
@@ -135,14 +132,16 @@ def get_dist_score_for_test_queries(sample, test_results):
 
 
 if __name__ == '__main__':
+    Preprocessing.init()
     schema = ConfigManager.get_config('queryConfig.schema')
     table = ConfigManager.get_config('queryConfig.table')
     tuples = DataAccess.select(f'SELECT * FROM {schema}.{table} LIMIT 5;')
     a = [tuples[0]] * 10
     b = [tuples[0], tuples[1]] * 5
     c = tuples * 2
-    d = DataAccess.select(f'SELECT * FROM {schema}.{table} ORDER BY RAND();')
-    # print('a: ', get_diversity_score(a, 16))
-    # print('b: ', get_diversity_score(b, 16))
-    # print('c: ', get_diversity_score(c, 16))
-    print('d: ', get_diversity_score(d, 16))
+    d = DataAccess.select(f'SELECT * FROM {schema}.{table} ORDER BY RAND() LIMIT 1000;')
+    print('x')
+    print('a: ', get_diversity_score(a, 17))
+    print('b: ', get_diversity_score(b, 17))
+    print('c: ', get_diversity_score(c, 17))
+    print('d: ', get_diversity_score(d, 17))
