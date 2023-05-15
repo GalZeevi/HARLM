@@ -21,7 +21,7 @@ from tqdm import tqdm, trange
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
-from preprocessing import Preprocessing
+from preprocessing import Preprocessing, ColumnsRepo, Column
 from score_calculator import get_combined_score, get_score2, get_threshold_score, get_diversity_score
 from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
@@ -64,6 +64,10 @@ def get_cli_args():
     )
 
     parser.add_argument(
+        "--margin_reward", action='store_true', default=False
+    )
+
+    parser.add_argument(
         "--random_actions_coeff", type=float, default=0, help="Percentage of random tuples to add to action space."
     )
 
@@ -76,7 +80,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--ray_checkpoint", type=str, default='latest_checkpoint', help="Num of ray's checkpoint directory to use."
+        "--ray_checkpoint", type=str, default='latest_checkpoint', help="Name of ray's checkpoint directory to use."
     )
 
     parser.add_argument('--test', action='store_true', default=False)
@@ -166,10 +170,19 @@ class AlgorithmNames:
     APEX_DQN = 'APEX_DQN'
 
 
-class MyCallbacks(DefaultCallbacks):
+class MyCallbacks(DefaultCallbacks):  # TODO add episode reward, hist_data
 
     @staticmethod
-    def add_metric_to_episode(episode, ep_infos, metric='score'):
+    def add_simple_metric_to_episode(episode, ep_infos, metric):
+        scores = []
+        for key, agent_info in ep_infos.items():
+            if key != '__common__':
+                scores.append(agent_info.get(metric, 0))
+        score = np.mean(scores)
+        episode.custom_metrics[metric] = score
+
+    @staticmethod
+    def add_train_test_metric_to_episode(episode, ep_infos, metric='score'):
         train_scores = []
         val_scores = []
         test_scores = []
@@ -201,15 +214,10 @@ class MyCallbacks(DefaultCallbacks):
             **kwargs):
 
         ep_infos = episode._last_infos
-        MyCallbacks.add_metric_to_episode(episode, ep_infos, metric='score')
-        MyCallbacks.add_metric_to_episode(episode, ep_infos, metric='threshold_score')
-
-        diversity_scores = []
-        for key, agent_info in ep_infos.items():
-            if key != '__common__':
-                diversity_scores.append(agent_info.get('diversity_score', 0))
-        diversity_score = np.mean(diversity_scores)
-        episode.custom_metrics['diversity_score'] = diversity_score
+        MyCallbacks.add_train_test_metric_to_episode(episode, ep_infos, metric='score')
+        MyCallbacks.add_train_test_metric_to_episode(episode, ep_infos, metric='threshold_score')
+        MyCallbacks.add_simple_metric_to_episode(episode, ep_infos, metric='diversity_score')
+        MyCallbacks.add_simple_metric_to_episode(episode, ep_infos, metric='episode_reward_sum')
 
 
 class MyEnv(gym.Env):
@@ -256,6 +264,7 @@ class MyEnv(gym.Env):
 
         self.reward_config = {'marginal_reward': env_config.get('marginal_reward', False),
                               'large_reward': env_config.get('large_reward', False)}
+        self.ep_reward = 0.
         Preprocessing.init(CHECKPOINT_VER)
 
     @staticmethod
@@ -297,6 +306,7 @@ class MyEnv(gym.Env):
         self.selected_tuples = []
         self.selected_tuples_numpy = np.zeros(self.state_shape)
         self.action_mask = np.ones(self.num_actions)
+        self.ep_reward = 0.
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, {}
 
     def get_episode_scores(self):
@@ -309,7 +319,8 @@ class MyEnv(gym.Env):
                                                         checkpoint_version=self.checkpoint_version),
             'train_threshold_score': get_threshold_score(self.get_sample_ids(), queries=self.train_set,
                                                          checkpoint_version=self.checkpoint_version),
-            'diversity_score': get_diversity_score(self.get_sample_tuples())
+            'diversity_score': get_diversity_score(self.get_sample_tuples()),
+            'episode_reward_sum': self.ep_reward
         }
         if self.validation_set is not None:
             ep_scores['val_score'] = get_score2(self.get_sample_ids(), queries=self.validation_set,
@@ -346,7 +357,8 @@ class MyEnv(gym.Env):
         if self.reward_config['marginal_reward']:
             reward -= self.current_score
         if self.reward_config['large_reward']:
-            reward *= 100
+            reward *= K
+        self.ep_reward += reward
 
         self.current_score = new_score
         done = (self.step_count == self.k)
@@ -382,11 +394,13 @@ TRIAL_NAME = f'{K}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}
 OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
 RECORD_RAW_TRAIN_RESULTS = True
 SAVE_RESULT_STEP = 5
-SAVE_MODEL_STEP = 5
+SAVE_MODEL_STEP = 25
 
 
 def get_env_config():
-    return {'k': K, 'checkpoint_version': CHECKPOINT_VER}
+    return {'k': K, 'checkpoint_version': CHECKPOINT_VER,
+            'marginal_reward': cli_args.margin_reward,
+            'large_reward': cli_args.margin_reward}
 
 
 def get_algorithm():
@@ -553,6 +567,7 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=50):
     for _ in trange(num_trials):
         sample, scores_dict = _get_sample_from_model(algo)
         scores.append(scores_dict)
+        print(f'Current scores: {scores_dict}', flush=True)
 
         if scores_dict['test_score'] > best_test_score:
             best_test_score = scores_dict['test_score']
@@ -566,6 +581,7 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=50):
 
 if __name__ == '__main__':
     DataAccess()
+    print(f'############### Starting trial: {TRIAL_NAME} ###############')
     if cli_args.test:
         test_model(
             ray_checkpoint_path=f'{OUTPUT_DIR}/{cli_args.ray_checkpoint}')
@@ -575,13 +591,18 @@ if __name__ == '__main__':
         DataAccess.reconnect()
         sample, score = test_model(algo=model)
     all_scores = CheckpointManager.load(name=f'{TRIAL_NAME}/trial_scores', version=CHECKPOINT_VER)
-    test_scores = [scores_dict['test_score'] for scores_dict in all_scores]
-    print(f'############### Sample test score: '
+    test_scores = [scores_dict.get('test_score', 0) for scores_dict in all_scores]
+    threshold_scores = [scores_dict.get('test_threshold_score', 0) for scores_dict in all_scores]
+    diversity_scores = [scores_dict.get('diversity_score', 0) for scores_dict in all_scores]
+    print(f'############### Sample score: '
           f'[min: {round(np.min(test_scores), ndigits=4)}, '
           f'avg: {round(np.average(test_scores), ndigits=4)}, '
           f'max: {round(np.max(test_scores), ndigits=4)}] ###############')
-    threshold_scores = [scores_dict['test_threshold_score'] for scores_dict in all_scores]
-    print(f'############### Sample threshold score: '
+    print(f'############### Sample 0.25-score: '
           f'[min: {round(np.min(threshold_scores), ndigits=4)}, '
           f'avg: {round(np.average(threshold_scores), ndigits=4)}, '
           f'max: {round(np.max(threshold_scores), ndigits=4)}] ###############')
+    print(f'############### Sample diversity score: '
+          f'[min: {round(np.min(diversity_scores), ndigits=4)}, '
+          f'avg: {round(np.average(diversity_scores), ndigits=4)}, '
+          f'max: {round(np.max(diversity_scores), ndigits=4)}] ###############')

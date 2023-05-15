@@ -14,7 +14,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem-per-cpu=10GB
 #SBATCH --gpus-per-task=2
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=24
 
 # Load modules or your own conda environment here
 # module load pytorch/v1.4.0-gpu
@@ -72,5 +72,6 @@ done
 ##############################################################################################
 
 #### call your code below
-echo "STARTING PYTHON SCRIPT"
-python3 ray_sampler.py --remote True --alg PPO --cpus "${SLURM_CPUS_PER_TASK}" --gpus "${SLURM_GPUS_PER_TASK}" --rollouts 32 --steps 200 --checkpoint 6
+echo "STARTING PYTHON SCRIPT FOR JOB: $SLURM_JOB_NAME"
+ROLLOUTS=$(($SLURM_CPUS_PER_TASK * 2))
+python3 ray_sampler.py --k 1000 --num_actions 5000 --alg PPO --cpus "${SLURM_CPUS_PER_TASK}" --gpus "${SLURM_GPUS_PER_TASK}" --rollouts $ROLLOUTS --steps 500 --checkpoint 5 --random_actions_coeff 0 --diversity_coeff 0
