@@ -72,8 +72,11 @@ class DataAccess:
 
     @staticmethod
     def disconnect():
-        if DataAccess.conn:
-            DataAccess.conn.close()
+        try:
+            if DataAccess.conn:
+                DataAccess.conn.close()
+        except:
+            print(f'Error thrown during closing connection')
         DataAccess.conn = None
         print('Database connection closed.')
 
