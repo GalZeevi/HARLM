@@ -210,46 +210,59 @@ def plot_ray_avg_imdb_results():
     plt.show()
 
 
-# TODO
+MAS_ALG_NAMES = ['random', 'K-means', 'top-k', 'greedy', 'PPO', 'PPO+div', 'DQN', 'DQN+div']
+
+
 def get_ray_mas_data(checkpoint):
     if checkpoint == 7:
         topk_scores = [0.625] * 3
         random_scores = [0.182, 0.203, 0.230]
+        kmeans_scores = [0.3475] * 3
         greedy_train_scores = [0.537] * 3
         ppo_scores = [0.64, 0.649, 0.665]
-        ppo_0dot3_scores = [0.6431, 0.65, 0.6638]
+        ppo_plus_diversity_scores = [0.6339, 0.6552, 0.6741]
+        # ppo_0dot3_scores = [0.6431, 0.65, 0.6638]
         apex_scores = [0.668, 0.668, 0.672]
+        apex_plus_diversity_scores = [0.6328, 0.633, 0.6367]
     elif checkpoint == 8:
         topk_scores = [0.455] * 3
         random_scores = [0.25, 0.283, 0.324]
+        kmeans_scores = [0.402] * 3
         greedy_train_scores = [0.632] * 3
         ppo_scores = [0.625, 0.633, 0.647]
-        ppo_0dot3_scores = [0.76, 0.768, 0.782]
+        ppo_plus_diversity_scores = [0.7525, 0.7621, 0.77]
+        # ppo_0dot3_scores = [0.76, 0.768, 0.782]
         apex_scores = [0.765, 0.7651, 0.7675]
+        apex_plus_diversity_scores = [0.7675, 0.7677, 0.775]
     elif checkpoint == 9:
         topk_scores = [0.25] * 3
         random_scores = [0.165, 0.205, 0.24]
+        kmeans_scores = [0.14] * 3
         greedy_train_scores = [0.395] * 3
         ppo_scores = [0.611, 0.634, 0.652]
-        ppo_0dot3_scores = [0.655, 0.685, 0.718]
+        ppo_plus_diversity_scores = [0.6637, 0.6893, 0.7147]
+        # ppo_0dot3_scores = [0.655, 0.685, 0.718]
         apex_scores = [0.6523, 0.6524, 0.6562]
+        apex_plus_diversity_scores = [0.658, 0.6592, 0.6644]
     elif checkpoint == 10:
         topk_scores = [0.507] * 3
         random_scores = [0.075, 0.120, 0.157]
+        kmeans_scores = [0.3814] * 3
         greedy_train_scores = [0.507] * 3
         ppo_scores = [0.675, 0.691, 0.722]
-        ppo_0dot3_scores = [0.660, 0.676, 0.700]
+        ppo_plus_diversity_scores = [0.6612, 0.6804, 0.7003]
+        # ppo_0dot3_scores = [0.660, 0.676, 0.700]
         apex_scores = [0.6836, 0.6839, 0.6875]
+        apex_plus_diversity_scores = [0.6875, 0.6877, 0.6914]
     else:
         raise Exception('checkpoint not recognized!')
 
-    x = np.array([0, 1, 2, 3, 4, 5])
-    y = np.array([random_scores[1], topk_scores[1], greedy_train_scores[1], ppo_scores[1], ppo_0dot3_scores[1],
-                  apex_scores[1]])
-    yerr_max = np.array([random_scores[-1] - random_scores[1], 0, 0, ppo_scores[-1] - ppo_scores[1],
-                         ppo_0dot3_scores[-1] - ppo_0dot3_scores[1], apex_scores[-1] - apex_scores[1]])
-    yerr_min = np.array([random_scores[1] - random_scores[0], 0, 0, ppo_scores[1] - ppo_scores[0],
-                         ppo_0dot3_scores[1] - ppo_0dot3_scores[0], apex_scores[1] - apex_scores[0]])
+    all_scores = [random_scores, kmeans_scores, topk_scores, greedy_train_scores, ppo_scores, ppo_plus_diversity_scores,
+                  apex_scores, apex_plus_diversity_scores]
+    x = np.arange(len(all_scores))
+    y = np.array([scores[1] for scores in all_scores])
+    yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
+    yerr_min = np.array([scores[1] - scores[0] for scores in all_scores])
     return x, y, [yerr_min, yerr_max]
 
 
@@ -257,41 +270,55 @@ def get_ray_mas_threshold_data(checkpoint):
     if checkpoint == 7:
         topk_scores = [0.625] * 3
         random_scores = [0.125, 0.16, 0.25]
+        kmeans_scores = [0.5] * 3
         greedy_train_scores = [0.625] * 3
         ppo_scores = [0.625, 0.702, 0.75]
-        ppo_0dot3_scores = [0.625, 0.635, 0.75]
+        # ppo_0dot3_scores = [0.625, 0.635, 0.75]
+        ppo_plus_diversity_scores = [0.625, 0.6417, 0.75]
         apex_scores = [0.75, 0.75, 0.75]
     elif checkpoint == 8:
         topk_scores = [0.5] * 3
         random_scores = [0.25, 0.342, 0.625]
+        kmeans_scores = [0.375] * 3
         greedy_train_scores = [0.625] * 3
         ppo_scores = [0.625, 0.625, 0.625]
-        ppo_0dot3_scores = [0.75, 0.75, 0.75]
+        # ppo_0dot3_scores = [0.75, 0.75, 0.75]
+        ppo_plus_diversity_scores = [0.75] * 3
         apex_scores = [0.75, 0.75, 0.75]
     elif checkpoint == 9:
         topk_scores = [0.25] * 3
         random_scores = [0.125, 0.242, 0.375]
+        kmeans_scores = [0.25] * 3
         greedy_train_scores = [0.625] * 3
         ppo_scores = [0.625, 0.625, 0.625]
-        ppo_0dot3_scores = [0.625, 0.743, 0.875]
+        # ppo_0dot3_scores = [0.625, 0.743, 0.875]
+        ppo_plus_diversity_scores = [0.625, 0.76, 0.875]
         apex_scores = [0.625, 0.6275, 0.75]
     elif checkpoint == 10:
         topk_scores = [0.5] * 3
         random_scores = [0.125, 0.13, 0.25]
+        kmeans_scores = [0.5] * 3
         greedy_train_scores = [0.5] * 3
         ppo_scores = [0.625, 0.777, 0.875]
-        ppo_0dot3_scores = [0.625, 0.682, 0.875]
+        # ppo_0dot3_scores = [0.625, 0.682, 0.875]
+        ppo_plus_diversity_scores = [0.625, 0.7175, 0.875]
         apex_scores = [0.75, 0.7525, 0.875]
     else:
         raise Exception('checkpoint not recognized!')
 
-    x = np.array([0, 1, 2, 3, 4, 5])
-    y = np.array([random_scores[1], topk_scores[1], greedy_train_scores[1], ppo_scores[1], ppo_0dot3_scores[1],
-                  apex_scores[1]])
-    yerr_max = np.array([random_scores[-1] - random_scores[1], 0, 0, ppo_scores[-1] - ppo_scores[1],
-                         ppo_0dot3_scores[-1] - ppo_0dot3_scores[1], apex_scores[-1] - apex_scores[1]])
-    yerr_min = np.array([random_scores[1] - random_scores[0], 0, 0, ppo_scores[1] - ppo_scores[0],
-                         ppo_0dot3_scores[1] - ppo_0dot3_scores[0], apex_scores[1] - apex_scores[0]])
+    all_scores = [random_scores, kmeans_scores, topk_scores, greedy_train_scores, ppo_scores, ppo_plus_diversity_scores,
+                  apex_scores]
+    x = np.arange(len(all_scores))
+    y = np.array([scores[1] for scores in all_scores])
+    yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
+    yerr_min = np.array([scores[1] - scores[0] for scores in all_scores])
+    # x = np.array([0, 1, 2, 3, 4, 5])
+    # y = np.array([random_scores[1], topk_scores[1], greedy_train_scores[1], ppo_scores[1], ppo_0dot3_scores[1],
+    #               apex_scores[1]])
+    # yerr_max = np.array([random_scores[-1] - random_scores[1], 0, 0, ppo_scores[-1] - ppo_scores[1],
+    #                      ppo_0dot3_scores[-1] - ppo_0dot3_scores[1], apex_scores[-1] - apex_scores[1]])
+    # yerr_min = np.array([random_scores[1] - random_scores[0], 0, 0, ppo_scores[1] - ppo_scores[0],
+    #                      ppo_0dot3_scores[1] - ppo_0dot3_scores[0], apex_scores[1] - apex_scores[0]])
     return x, y, [yerr_min, yerr_max]
 
 
@@ -318,7 +345,7 @@ def plot_ray_mas_results():
     plt.setp([axs[1, 0], axs[1, 1]], xticks=x)
     for ax in [axs[1, 0], axs[1, 1]]:
         ax.tick_params(labelrotation=45)
-        ax.set_xticklabels(['rand', 'topk', 'greedy', 'PPO', 'PPO_0.3', 'ApexDQN'], fontsize=8)
+        ax.set_xticklabels(MAS_ALG_NAMES, fontsize=8)
 
     plt.setp([axs[0, 0], axs[0, 1]], xticks=[], xticklabels=[])
 
@@ -359,7 +386,7 @@ def plot_ray_mas_threshold_results():
     plt.setp([axs[1, 0], axs[1, 1]], xticks=x)
     for ax in [axs[1, 0], axs[1, 1]]:
         ax.tick_params(labelrotation=45)
-        ax.set_xticklabels(['rand', 'topk', 'greedy', 'PPO', 'PPO_0.3', 'ApexDQN'], fontsize=8)
+        ax.set_xticklabels(MAS_ALG_NAMES, fontsize=8)
 
     plt.setp([axs[0, 0], axs[0, 1]], xticks=[], xticklabels=[])
 
@@ -380,10 +407,9 @@ def plot_ray_mas_threshold_results():
 def plot_ray_avg_mas_results():
     checkpoints = [7, 8, 9, 10]
 
-    algos = ['rand', 'topk', 'greedy', 'PPO', 'PPO_0.3', 'ApexDQN']
     x = []
-    y = np.zeros(len(algos))
-    y_err = np.zeros((2, len(algos)))
+    y = np.zeros(len(MAS_ALG_NAMES))
+    y_err = np.zeros((2, len(MAS_ALG_NAMES)))
     for c in checkpoints:
         data = get_ray_mas_data(c)
         y += data[1]
@@ -395,7 +421,7 @@ def plot_ray_avg_mas_results():
 
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10)
     plt.title('')
-    plt.xticks(x, algos, rotation=45, fontsize=8)
+    plt.xticks(x, MAS_ALG_NAMES, rotation=45, fontsize=8)
 
     plt.xlabel("Algorithm")
     plt.ylabel("Score")
@@ -406,10 +432,9 @@ def plot_ray_avg_mas_results():
 def plot_ray_avg_mas_threshold_results():
     checkpoints = [7, 8, 9, 10]
 
-    algos = ['rand', 'topk', 'greedy', 'PPO', 'PPO_0.3', 'ApexDQN']
     x = []
-    y = np.zeros(len(algos))
-    y_err = np.zeros((2, len(algos)))
+    y = np.zeros(len(MAS_ALG_NAMES))
+    y_err = np.zeros((2, len(MAS_ALG_NAMES)))
     for c in checkpoints:
         data = get_ray_mas_threshold_data(c)
         y += data[1]
@@ -421,7 +446,7 @@ def plot_ray_avg_mas_threshold_results():
 
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10)
     plt.title('')
-    plt.xticks(x, algos, rotation=45, fontsize=8)
+    plt.xticks(x, MAS_ALG_NAMES, rotation=45, fontsize=8)
 
     plt.xlabel("Algorithm")
     plt.ylabel("0.25-Score")
@@ -430,4 +455,7 @@ def plot_ray_avg_mas_threshold_results():
 
 
 if __name__ == '__main__':
-    plot_ray_avg_mas_threshold_results()
+    plot_ray_mas_results()
+    plot_ray_avg_mas_results()
+    # plot_ray_mas_threshold_results()
+    # plot_ray_avg_mas_threshold_results()
