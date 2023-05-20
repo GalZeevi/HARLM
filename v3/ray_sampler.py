@@ -247,6 +247,7 @@ class MyEnv(gym.Env):
         # num_data_cols = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
         #                                       f"WHERE table_schema='{schema}' AND table_name='{table}' " +
         #                                       f"AND column_name <> '{pivot}'")
+        Preprocessing.init(CHECKPOINT_VER)
         num_data_cols = len(Preprocessing.columns_repo.get_all_columns().keys()) - 1
         self.state_shape = (self.k, num_data_cols)
         self.step_count = 0
@@ -266,7 +267,6 @@ class MyEnv(gym.Env):
         self.reward_config = {'marginal_reward': env_config.get('marginal_reward', False),
                               'large_reward': env_config.get('large_reward', False)}
         self.ep_reward = 0.
-        Preprocessing.init(CHECKPOINT_VER)
 
     @staticmethod
     def __get_actions__(k, max_action_id, random_actions_coeff, checkpoint_ver):
