@@ -244,9 +244,10 @@ class MyEnv(gym.Env):
             self.num_actions = table_size
             self.actions = np.arange(self.num_actions)
 
-        num_data_cols = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
-                                              f"WHERE table_schema='{schema}' AND table_name='{table}' " +
-                                              f"AND column_name <> '{pivot}'")
+        # num_data_cols = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
+        #                                       f"WHERE table_schema='{schema}' AND table_name='{table}' " +
+        #                                       f"AND column_name <> '{pivot}'")
+        num_data_cols = len(Preprocessing.columns_repo.get_all_columns().keys()) - 1
         self.state_shape = (self.k, num_data_cols)
         self.step_count = 0
         self.selected_tuples = []
