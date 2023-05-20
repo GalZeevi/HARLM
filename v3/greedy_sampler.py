@@ -93,7 +93,8 @@ def get_sample():
                     f'{get_threshold_score([t[pivot] for t in sample], queries="test", checkpoint_version=args.checkpoint)}\n' +
                     f', worker: {worker_pid}'
                 )
-                CheckpointManager.save(f'{args.k}-{args.queries}_greedy_sample', [sample, score],
+                sample_ids = [tup[pivot] for tup in sample]
+                CheckpointManager.save(f'{args.k}-{args.queries}_greedy_sample', [sample_ids, score],
                                        version=args.checkpoint, verbose=False)
                 score = worker_score
                 new_tuple = worker_new_tuple
