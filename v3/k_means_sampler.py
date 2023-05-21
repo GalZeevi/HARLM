@@ -1,5 +1,6 @@
 import argparse
 import itertools
+import os
 
 import numpy as np
 from nltk.cluster.kmeans import KMeansClusterer
@@ -174,12 +175,14 @@ def get_kmeans_sample(k, ids, index, lib='pyclustering'):
     Preprocessing.init(args.checkpoint)
     result_tuples = select_tuples(ids)
 
-    if CheckpointManager.load(name=f'{lib}_{index}_kmeans_clusters', version=args.checkpoint) is not None:
-        clusters_means = CheckpointManager.load(name=f'{lib}_{index}_kmeans_clusters', version=args.checkpoint)
+    if CheckpointManager.load(name=f'{OUTPUT_DIR}/{lib}_{index}_kmeans_clusters', version=args.checkpoint) is not None:
+        clusters_means = CheckpointManager.load(name=f'{OUTPUT_DIR}/{lib}_{index}_kmeans_clusters',
+                                                version=args.checkpoint)
         clusters, means = clusters_means[0], clusters_means[1]
     else:
         clusters, means = __get_clusters__(k, ids, result_tuples, lib=lib)
-        CheckpointManager.save(name=f'{lib}_{index}_kmeans_clusters', content=[clusters, means], version=args.checkpoint)
+        CheckpointManager.save(name=f'{OUTPUT_DIR}/{lib}_{index}_kmeans_clusters', content=[clusters, means],
+                               version=args.checkpoint)
 
     sample = []
     for cluster_id, cluster in enumerate(clusters):
@@ -195,6 +198,11 @@ def get_kmeans_sample(k, ids, index, lib='pyclustering'):
 
 if __name__ == '__main__':
     print('Starting k_means_sampler.main()!')
+    OUTPUT_DIR = f'{args.k}_{args.lib}_kmeans'
+    COMPLETE_OUTPUT_DIR = f'{CheckpointManager.basePath}/{args.checkpoint}/{OUTPUT_DIR}'
+    if not os.path.exists(COMPLETE_OUTPUT_DIR):
+        os.makedirs(COMPLETE_OUTPUT_DIR)
+
     Preprocessing.init(args.checkpoint)
     print('Preparing data...')
     train_results = get_train_queries(checkpoint_version=args.checkpoint)
