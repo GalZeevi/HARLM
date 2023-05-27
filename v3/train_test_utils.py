@@ -1,10 +1,9 @@
-import random
+import re
+from os import listdir
+from os.path import isfile, join
 
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
-from os import listdir
-from os.path import isfile, join
-import re
 
 
 def get_test_queries(checkpoint_version=CheckpointManager.get_max_version()):
@@ -43,7 +42,6 @@ def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), va
         else:
             results += CheckpointManager.load(file.replace('.pkl', ''), checkpoint_version)
 
-    # random.shuffle(results)
     if validation_size > 0:
         return results[validation_size:], results[:validation_size]  # return train_set, validation_set
     return results  # return train_set

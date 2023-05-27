@@ -395,7 +395,7 @@ TRIAL_NAME = f'{K}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}
 OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
 RECORD_RAW_TRAIN_RESULTS = True
 SAVE_RESULT_STEP = 5
-SAVE_MODEL_STEP = 25
+SAVE_MODEL_STEP = 15
 
 
 def get_env_config():
@@ -557,7 +557,7 @@ def _get_sample_from_model(model):
     return sample_ids, scores
 
 
-def test_model(ray_checkpoint_path=None, algo=None, num_trials=50):
+def test_model(ray_checkpoint_path=None, algo=None, num_trials=20):
     if ray_checkpoint_path is None and algo is None:
         raise Exception('One of \'ray_checkpoint_path\' or \'model\' must not be None!')
     algo = algo if algo is not None else algorithm.Algorithm.from_checkpoint(ray_checkpoint_path)
