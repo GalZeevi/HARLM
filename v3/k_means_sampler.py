@@ -41,6 +41,7 @@ def get_args():
     parser.add_argument(
         "--config_path", type=str, default=None, help="Which config file to use."
     )
+
     parser.add_argument("--pool_size", type=int, default=6, help="how many processes to use")
 
     cli_args = parser.parse_args()
@@ -173,18 +174,20 @@ def split_by_column(ids, col_name):
 
 def get_kmeans_sample(k, ids, index, lib='pyclustering'):
     Preprocessing.init(args.checkpoint)
-    result_tuples = select_tuples(ids)
+    DataAccess()
 
     if CheckpointManager.load(name=f'{OUTPUT_DIR}/{lib}_{index}_kmeans_clusters', version=args.checkpoint) is not None:
         clusters_means = CheckpointManager.load(name=f'{OUTPUT_DIR}/{lib}_{index}_kmeans_clusters',
                                                 version=args.checkpoint)
         clusters, means = clusters_means[0], clusters_means[1]
     else:
+        result_tuples = select_tuples(ids)
         clusters, means = __get_clusters__(k, ids, result_tuples, lib=lib)
         CheckpointManager.save(name=f'{OUTPUT_DIR}/{lib}_{index}_kmeans_clusters', content=[clusters, means],
                                version=args.checkpoint)
 
     sample = []
+    result_tuples = select_tuples(ids)
     for cluster_id, cluster in enumerate(clusters):
         cluster_tuples = [tup for tup in result_tuples if tup[pivot] in cluster]
         cluster_tuples_numpy = Preprocessing.tuples2numpy(cluster_tuples)
@@ -228,26 +231,20 @@ if __name__ == '__main__':
     print(f'Initialising pool took: {round(time.time() - start, 2)} sec')
 
     print(f'Starting to work on {len(worker_args)} tasks with pool of {args.pool_size} workers', flush=True)
-    pool_res = pool.starmap(get_kmeans_sample, worker_args)
+    pool_res = pool.starmap_async(get_kmeans_sample, worker_args)
     sample = []
-    for k_means_sample in pool_res:
+    for k_means_sample in pool_res.get():
         sample += k_means_sample
         CheckpointManager.save(name=f'{args.k}_{args.lib}_kmeans_sample',
                                content=[sample, get_score2(sample, queries='test', checkpoint_version=args.checkpoint)],
                                version=args.checkpoint)
-        tqdm.write(f'Current sample size={len(sample)}')
-
-    # sample = []
-    # for i, p in tqdm(enumerate(partition)):
-    #     sample_size = min(max(int(np.floor(1.1 * args.k * (len(p) / len(result_ids)))), 3), len(p))
-    #     sample += get_kmeans_sample(k=sample_size, ids=p, index=i, lib=args.lib)
-    #     CheckpointManager.save(name=f'{args.k}_{args.lib}_kmeans_sample',
-    #                            content=[sample, get_score2(sample, queries='test', checkpoint_version=args.checkpoint)],
-    #                            version=args.checkpoint)
-    #     tqdm.write(f'Current sample size={len(sample)}')
+        print(f'Current sample size={len(sample)}', flush=True)
 
     if len(sample) < args.k:
-        available_idx = np.setdiff1d(result_ids, sample)
+        print('Calculating table_size', flush=True)
+        table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
+        print(f'table_size: {table_size}', flush=True)
+        available_idx = np.setdiff1d(np.arange(table_size), sample)
         random_ids = np.random.choice(a=available_idx, size=args.k - len(sample), replace=True)
         sample = np.concatenate((sample, random_ids))
     if len(sample) > args.k:
