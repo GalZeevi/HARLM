@@ -117,36 +117,95 @@ def plot_ray_results(checkpoint):
     plt.show()
 
 
+IMDB_ALG_NAMES = ['random', 'skyline', 'K-means', 'top-k', 'DQN', 'PPO']
+
+
 def get_ray_imdb_data(checkpoint):
     if checkpoint == 2:
         random_scores = [0.285, 0.333, 0.382]
+        skyline_scores = [0.394] * 3
+        kmeans_scores = [0.376] * 3
         topk_scores = [0.377, 0.377, 0.377]
-        ppo1_scores = [0.468, 0.484, 0.516]
-        ppo2_scores = [0.472, 0.482, 0.494]
+        # ppo1_scores = [0.468, 0.484, 0.516]
+        apex_scores = [0.562, 0.564, 0.566]
+        ppo_scores = [0.472, 0.482, 0.494]
     elif checkpoint == 3:
         random_scores = [0.182, 0.212, 0.244]
+        skyline_scores = [0.273] * 3
+        kmeans_scores = [0.306] * 3
         topk_scores = [0.172, 0.201, 0.216]
-        ppo1_scores = [0.490, 0.492, 0.494]
-        ppo2_scores = [0.498, 0.501, 0.505]
+        # ppo1_scores = [0.490, 0.492, 0.494]
+        apex_scores = [0.32, 0.322, 0.324]
+        ppo_scores = [0.498, 0.501, 0.505]
     elif checkpoint == 4:
         random_scores = [0.32, 0.353, 0.385]
+        skyline_scores = [0.47] * 3
+        kmeans_scores = [0.404] * 3
         topk_scores = [0.28, 0.28, 0.28]
-        ppo1_scores = [0.644, 0.649, 0.653]
-        ppo2_scores = [0.633, 0.635, 0.638]
+        # ppo1_scores = [0.644, 0.649, 0.653]
+        apex_scores = [0.374, 0.374, 0.378]
+        ppo_scores = [0.633, 0.635, 0.638]
     elif checkpoint == 5:
         random_scores = [0.217, 0.258, 0.301]
+        skyline_scores = [0.251] * 3
+        kmeans_scores = [0.2] * 3
         topk_scores = [0.225, 0.225, 0.225]
-        ppo1_scores = [0.438, 0.445, 0.449]
-        ppo2_scores = [0.418, 0.426, 0.432]
+        # ppo1_scores = [0.438, 0.445, 0.449]
+        apex_scores = [0.202, 0.204, 0.208]
+        ppo_scores = [0.418, 0.426, 0.432]
     else:
         raise Exception('checkpoint not recognized!')
 
-    x = np.array([0, 1, 2, 3])
-    y = np.array([random_scores[1], topk_scores[1], ppo1_scores[1], ppo2_scores[1]])
-    yerr = np.array([random_scores[-1] - random_scores[1], 0,
-                     ppo1_scores[-1] - ppo1_scores[1],
-                     ppo2_scores[-1] - ppo2_scores[1]])
-    return x, y, yerr
+    all_scores = [random_scores, skyline_scores, kmeans_scores, topk_scores, apex_scores, ppo_scores]
+    x = np.arange(len(all_scores))
+    y = np.array([scores[1] for scores in all_scores])
+    yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
+    yerr_min = np.array([scores[1] - scores[0] for scores in all_scores])
+    return x, y, [yerr_min, yerr_max]
+
+
+def get_ray_imdb_threshold_data(checkpoint):
+    if checkpoint == 2:
+        random_scores = [0.285, 0.333, 0.382]
+        skyline_scores = [0.394] * 3
+        kmeans_scores = [0.376] * 3
+        topk_scores = [0.377, 0.377, 0.377]
+        # ppo1_scores = [0.468, 0.484, 0.516]
+        apex_scores = [0.562, 0.564, 0.566]
+        ppo_scores = [0.472, 0.482, 0.494]
+    elif checkpoint == 3:
+        random_scores = [0.182, 0.212, 0.244]
+        skyline_scores = [0.273] * 3
+        kmeans_scores = [0.306] * 3
+        topk_scores = [0.172, 0.201, 0.216]
+        # ppo1_scores = [0.490, 0.492, 0.494]
+        apex_scores = [0.32, 0.322, 0.324]
+        ppo_scores = [0.498, 0.501, 0.505]
+    elif checkpoint == 4:
+        random_scores = [0.32, 0.353, 0.385]
+        skyline_scores = [0.47] * 3
+        kmeans_scores = [0.404] * 3
+        topk_scores = [0.28, 0.28, 0.28]
+        # ppo1_scores = [0.644, 0.649, 0.653]
+        apex_scores = [0.374, 0.374, 0.378]
+        ppo_scores = [0.633, 0.635, 0.638]
+    elif checkpoint == 5:
+        random_scores = [0.217, 0.258, 0.301]
+        skyline_scores = [0.251] * 3
+        kmeans_scores = [0.2] * 3
+        topk_scores = [0.225, 0.225, 0.225]
+        # ppo1_scores = [0.438, 0.445, 0.449]
+        apex_scores = [0.202, 0.204, 0.208]
+        ppo_scores = [0.418, 0.426, 0.432]
+    else:
+        raise Exception('checkpoint not recognized!')
+
+    all_scores = [random_scores, skyline_scores, kmeans_scores, topk_scores, apex_scores, ppo_scores]
+    x = np.arange(len(all_scores))
+    y = np.array([scores[1] for scores in all_scores])
+    yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
+    yerr_min = np.array([scores[1] - scores[0] for scores in all_scores])
+    return x, y, [yerr_min, yerr_max]
 
 
 def plot_ray_imdb_results():
@@ -187,22 +246,22 @@ def plot_ray_imdb_results():
 
 def plot_ray_avg_imdb_results():
     checkpoints = [2, 3, 4, 5]
-    algos = ['random', 'top-k', 'PPO']
+
     x = []
-    y = np.zeros(len(algos))
-    yerr = np.zeros(len(algos))
+    y = np.zeros(len(IMDB_ALG_NAMES))
+    y_err = np.zeros((2, len(IMDB_ALG_NAMES)))
     for c in checkpoints:
         data = get_ray_imdb_data(c)
-        y += data[1][:-1]
-        yerr += data[2][:-1]
-        x = data[0][:-1]
+        y += data[1]
+        y_err += data[2]
+        x = data[0]
 
     y = y / len(checkpoints)
-    yerr = yerr / len(checkpoints)
+    y_err = y_err / len(checkpoints)
 
-    plt.bar(x, y, yerr=yerr, align='center', alpha=0.5, capsize=10)
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10)
     plt.title('')
-    plt.xticks(x, algos)
+    plt.xticks(x, IMDB_ALG_NAMES, rotation=45, fontsize=8)
 
     plt.xlabel("Algorithm")
     plt.ylabel("Score")
@@ -210,25 +269,56 @@ def plot_ray_avg_imdb_results():
     plt.show()
 
 
-MAS_ALG_NAMES = ['random', 'K-means', 'top-k', 'greedy', 'PPO', 'PPO+div', 'DQN', 'DQN+div']
+def plot_ray_avg_imdb_threshold_results():
+    checkpoints = [2, 3, 4, 5]
+
+    x = []
+    y = np.zeros(len(IMDB_ALG_NAMES))
+    y_err = np.zeros((2, len(IMDB_ALG_NAMES)))
+    for c in checkpoints:
+        data = get_ray_imdb_threshold_data(c)
+        y += data[1]
+        y_err += data[2]
+        x = data[0]
+
+    y = y / len(checkpoints)
+    y_err = y_err / len(checkpoints)
+
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10)
+    plt.title('')
+    plt.xticks(x, IMDB_ALG_NAMES, rotation=45, fontsize=8)
+
+    plt.xlabel("Algorithm")
+    plt.ylabel("0.25-Score")
+    # plt.suptitle(f"Score by algorithm, k={1000}, view_size={view_size}")
+    plt.show()
+
+
+MAS_ALG_NAMES = ['random', 'skyline', 'brute', 'K-means', 'top-k', 'greedy', 'PPO', 'DQN']
 
 
 def get_ray_mas_data(checkpoint):
     if checkpoint == 7:
         topk_scores = [0.625] * 3
         random_scores = [0.182, 0.203, 0.230]
+        skyline_scores = [0.265] * 3
+        brute_force_scores = [0.27] * 3
         kmeans_scores = [0.3475] * 3
         greedy_train_scores = [0.537] * 3
+        greedy_train_plus_diversity_scores = [0.532] * 3
         ppo_scores = [0.64, 0.649, 0.665]
         ppo_plus_diversity_scores = [0.6339, 0.6552, 0.6741]
         # ppo_0dot3_scores = [0.6431, 0.65, 0.6638]
         apex_scores = [0.668, 0.668, 0.672]
-        apex_plus_diversity_scores = [0.6328, 0.633, 0.6367]
+        apex_plus_diversity_scores = [0.6641, 0.6642, 0.668]
     elif checkpoint == 8:
         topk_scores = [0.455] * 3
         random_scores = [0.25, 0.283, 0.324]
+        skyline_scores = [0.3125] * 3
+        brute_force_scores = [0.405] * 3
         kmeans_scores = [0.402] * 3
         greedy_train_scores = [0.632] * 3
+        greedy_train_plus_diversity_scores = [0.632] * 3
         ppo_scores = [0.625, 0.633, 0.647]
         ppo_plus_diversity_scores = [0.7525, 0.7621, 0.77]
         # ppo_0dot3_scores = [0.76, 0.768, 0.782]
@@ -237,8 +327,11 @@ def get_ray_mas_data(checkpoint):
     elif checkpoint == 9:
         topk_scores = [0.25] * 3
         random_scores = [0.165, 0.205, 0.24]
+        skyline_scores = [0.217] * 3
+        brute_force_scores = [0.305] * 3
         kmeans_scores = [0.14] * 3
         greedy_train_scores = [0.395] * 3
+        greedy_train_plus_diversity_scores = [0.337] * 3
         ppo_scores = [0.611, 0.634, 0.652]
         ppo_plus_diversity_scores = [0.6637, 0.6893, 0.7147]
         # ppo_0dot3_scores = [0.655, 0.685, 0.718]
@@ -247,8 +340,11 @@ def get_ray_mas_data(checkpoint):
     elif checkpoint == 10:
         topk_scores = [0.507] * 3
         random_scores = [0.075, 0.120, 0.157]
+        skyline_scores = [0.14] * 3
+        brute_force_scores = [0.21] * 3
         kmeans_scores = [0.3814] * 3
         greedy_train_scores = [0.507] * 3
+        greedy_train_plus_diversity_scores = [0.51] * 3
         ppo_scores = [0.675, 0.691, 0.722]
         ppo_plus_diversity_scores = [0.6612, 0.6804, 0.7003]
         # ppo_0dot3_scores = [0.660, 0.676, 0.700]
@@ -257,8 +353,8 @@ def get_ray_mas_data(checkpoint):
     else:
         raise Exception('checkpoint not recognized!')
 
-    all_scores = [random_scores, kmeans_scores, topk_scores, greedy_train_scores, ppo_scores, ppo_plus_diversity_scores,
-                  apex_scores, apex_plus_diversity_scores]
+    all_scores = [random_scores, skyline_scores, brute_force_scores, kmeans_scores, topk_scores,
+                  greedy_train_scores, ppo_scores, apex_scores]
     x = np.arange(len(all_scores))
     y = np.array([scores[1] for scores in all_scores])
     yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
@@ -270,44 +366,60 @@ def get_ray_mas_threshold_data(checkpoint):
     if checkpoint == 7:
         topk_scores = [0.625] * 3
         random_scores = [0.125, 0.16, 0.25]
+        skyline_scores = [0.25] * 3
+        brute_force_scores = [0.25] * 3
         kmeans_scores = [0.5] * 3
         greedy_train_scores = [0.625] * 3
+        greedy_train_plus_diversity_scores = [0.625] * 3
         ppo_scores = [0.625, 0.702, 0.75]
         # ppo_0dot3_scores = [0.625, 0.635, 0.75]
         ppo_plus_diversity_scores = [0.625, 0.6417, 0.75]
         apex_scores = [0.75, 0.75, 0.75]
+        apex_plus_diversity_scores = [0.75] * 3
     elif checkpoint == 8:
         topk_scores = [0.5] * 3
         random_scores = [0.25, 0.342, 0.625]
+        skyline_scores = [0.375] * 3
+        brute_force_scores = [0.5] * 3
         kmeans_scores = [0.375] * 3
         greedy_train_scores = [0.625] * 3
+        greedy_train_plus_diversity_scores = [0.625] * 3
         ppo_scores = [0.625, 0.625, 0.625]
         # ppo_0dot3_scores = [0.75, 0.75, 0.75]
         ppo_plus_diversity_scores = [0.75] * 3
         apex_scores = [0.75, 0.75, 0.75]
+        apex_plus_diversity_scores = [0.75] * 3
     elif checkpoint == 9:
         topk_scores = [0.25] * 3
         random_scores = [0.125, 0.242, 0.375]
+        skyline_scores = [0.125] * 3
+        brute_force_scores = [0.375] * 3
         kmeans_scores = [0.25] * 3
         greedy_train_scores = [0.625] * 3
+        greedy_train_plus_diversity_scores = [0.25] * 3
         ppo_scores = [0.625, 0.625, 0.625]
         # ppo_0dot3_scores = [0.625, 0.743, 0.875]
         ppo_plus_diversity_scores = [0.625, 0.76, 0.875]
         apex_scores = [0.625, 0.6275, 0.75]
+        apex_plus_diversity_scores = [0.75] * 3
     elif checkpoint == 10:
         topk_scores = [0.5] * 3
         random_scores = [0.125, 0.13, 0.25]
+        skyline_scores = [0.125] * 3
+        brute_force_scores = [0.375] * 3
         kmeans_scores = [0.5] * 3
         greedy_train_scores = [0.5] * 3
+        greedy_train_plus_diversity_scores = [0.5] * 3
         ppo_scores = [0.625, 0.777, 0.875]
         # ppo_0dot3_scores = [0.625, 0.682, 0.875]
         ppo_plus_diversity_scores = [0.625, 0.7175, 0.875]
         apex_scores = [0.75, 0.7525, 0.875]
+        apex_plus_diversity_scores = [0.75] * 3
     else:
         raise Exception('checkpoint not recognized!')
 
-    all_scores = [random_scores, kmeans_scores, topk_scores, greedy_train_scores, ppo_scores, ppo_plus_diversity_scores,
-                  apex_scores]
+    all_scores = [random_scores, skyline_scores, brute_force_scores, kmeans_scores, topk_scores,
+                  greedy_train_plus_diversity_scores, ppo_plus_diversity_scores, apex_plus_diversity_scores]
     x = np.arange(len(all_scores))
     y = np.array([scores[1] for scores in all_scores])
     yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
@@ -455,7 +567,7 @@ def plot_ray_avg_mas_threshold_results():
 
 
 if __name__ == '__main__':
-    plot_ray_mas_results()
     plot_ray_avg_mas_results()
-    # plot_ray_mas_threshold_results()
-    # plot_ray_avg_mas_threshold_results()
+    # plot_ray_avg_imdb_results()
+    plot_ray_avg_mas_threshold_results()
+    # plot_ray_avg_imdb_threshold_results()
