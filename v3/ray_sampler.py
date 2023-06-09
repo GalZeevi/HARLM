@@ -19,6 +19,7 @@ from ray.rllib.utils.torch_utils import FLOAT_MIN
 from tqdm import tqdm, trange
 
 from checkpoint_manager_v3 import CheckpointManager
+from ray_environments import ChooseKEnv, DropOneEnv
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 from preprocessing import Preprocessing, ColumnsRepo, Column
@@ -40,6 +41,10 @@ def get_cli_args():
     )
 
     parser.add_argument(
+        "--env", type=str, default=EnvNames.CHOOSE_K, help="The environment to use."
+    )
+
+    parser.add_argument(
         "--cpus", type=int, default=6, help="How many cpus to use for the algorithm."
     )
 
@@ -53,6 +58,10 @@ def get_cli_args():
 
     parser.add_argument(
         "--steps", type=int, default=300, help="How many train steps to run."
+    )
+
+    parser.add_argument(
+        "--eval_steps", type=int, default=25, help="How many evaluation steps to run."
     )
 
     parser.add_argument(
@@ -76,6 +85,18 @@ def get_cli_args():
     )
 
     parser.add_argument(
+        "--horizon", type=int, default=50_000, help="Time horizon for each episode (for DropOneEnv)."
+    )
+
+    parser.add_argument(
+        "--reset_state_method", type=str, default='step_tuples', help="How to create initial state (for DropOneEnv)."
+    )
+
+    parser.add_argument(
+        "--existing_sample", type=str, default=None, help="Path to an existing sample (for DropOneEnv)."
+    )
+
+    parser.add_argument(
         "--trial_name", type=str, default=None, help="Name of the trial."
     )
 
@@ -86,7 +107,7 @@ def get_cli_args():
     parser.add_argument('--test', action='store_true', default=False)
 
     args = parser.parse_args()
-    print(f"Running with following CLI args: {args}")
+    print(f"Running with following CLI args: {args}", flush=True)
     return args
 
 
@@ -170,7 +191,12 @@ class AlgorithmNames:
     APEX_DQN = 'APEX_DQN'
 
 
-class MyCallbacks(DefaultCallbacks):  # TODO add episode reward, hist_data
+class EnvNames:
+    CHOOSE_K = 'CHOOSE_K'
+    DROP_ONE = 'DROP_ONE'
+
+
+class MyCallbacks(DefaultCallbacks):  # TODO: remove ep_reward_sum from callbacks!
 
     @staticmethod
     def add_simple_metric_to_episode(episode, ep_infos, metric):
@@ -182,7 +208,7 @@ class MyCallbacks(DefaultCallbacks):  # TODO add episode reward, hist_data
         episode.custom_metrics[metric] = score
 
     @staticmethod
-    def add_train_test_metric_to_episode(episode, ep_infos, metric='score'):
+    def add_complex_metric_to_episode(episode, ep_infos, metric='score'):
         train_scores = []
         val_scores = []
         test_scores = []
@@ -214,8 +240,8 @@ class MyCallbacks(DefaultCallbacks):  # TODO add episode reward, hist_data
             **kwargs):
 
         ep_infos = episode._last_infos
-        MyCallbacks.add_train_test_metric_to_episode(episode, ep_infos, metric='score')
-        MyCallbacks.add_train_test_metric_to_episode(episode, ep_infos, metric='threshold_score')
+        MyCallbacks.add_complex_metric_to_episode(episode, ep_infos, metric='score')
+        MyCallbacks.add_complex_metric_to_episode(episode, ep_infos, metric='threshold_score')
         MyCallbacks.add_simple_metric_to_episode(episode, ep_infos, metric='diversity_score')
         MyCallbacks.add_simple_metric_to_episode(episode, ep_infos, metric='episode_reward_sum')
 
@@ -238,15 +264,13 @@ class MyEnv(gym.Env):
             self.train_set, self.validation_set = results, None
 
         if ACTION_SPACE_SIZE < table_size:
-            self.actions = MyEnv.__get_actions__(self.k, table_size, RANDOM_ACTIONS_COEFF, self.checkpoint_version)
+            self.actions = MyEnv.__get_actions__(self.k, table_size, cli_args.random_actions_coeff,
+                                                 self.checkpoint_version)
             self.num_actions = len(self.actions)
         else:
             self.num_actions = table_size
             self.actions = np.arange(self.num_actions)
 
-        # num_data_cols = DataAccess.select_one(f"SELECT COUNT(column_name) FROM information_schema.columns " +
-        #                                       f"WHERE table_schema='{schema}' AND table_name='{table}' " +
-        #                                       f"AND column_name <> '{pivot}'")
         Preprocessing.init(CHECKPOINT_VER)
         num_data_cols = len(Preprocessing.columns_repo.get_all_columns().keys()) - 1
         self.state_shape = (self.k, num_data_cols)
@@ -388,10 +412,9 @@ NUM_CPUS = cli_args.cpus
 ALG = cli_args.alg
 NUM_ROLLOUT_WORKERS = cli_args.rollouts
 CHECKPOINT_VER = cli_args.checkpoint
-RANDOM_ACTIONS_COEFF = cli_args.random_actions_coeff
 
-TRIAL_NAME = f'{K}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}' if cli_args.trial_name is None \
-    else cli_args.trial_name
+TRIAL_NAME = f'{K}_{cli_args.env}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}' \
+    if cli_args.trial_name is None else cli_args.trial_name
 OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
 RECORD_RAW_TRAIN_RESULTS = True
 SAVE_RESULT_STEP = 5
@@ -399,17 +422,30 @@ SAVE_MODEL_STEP = 15
 
 
 def get_env_config():
-    return {'k': K, 'checkpoint_version': CHECKPOINT_VER,
-            'marginal_reward': cli_args.margin_reward,
-            'large_reward': cli_args.margin_reward}
+    config = {'k': K,
+              'checkpoint_version': CHECKPOINT_VER,
+              'marginal_reward': cli_args.margin_reward,  # ChooseK specific
+              'large_reward': cli_args.margin_reward,
+              'table_details': {'schema': schema, 'table': table, 'pivot': pivot, 'table_size': table_size},
+              'action_space_size': ACTION_SPACE_SIZE,
+              'random_actions_coeff': cli_args.random_actions_coeff,
+              'diversity_coeff': cli_args.diversity_coeff,
+              'trial_name': TRIAL_NAME,
+              'horizon': cli_args.horizon,  # DropOne specific
+              'reset_state_method': cli_args.reset_state_method  # DropOne specific
+              }
+    if cli_args.reset_state_method == 'custom':
+        config['existing_sample'] = cli_args.existing_sample  # DropOne specific
+    return config
 
 
 def get_algorithm():
     model_config = {'custom_model': TorchActionMaskModel, 'custom_model_config': {}}
     env_config = get_env_config()
+    env_class = get_environment()
     if ALG == AlgorithmNames.IMPALA:
         alg_config = impala.ImpalaConfig() \
-            .environment(env=MyEnv, render_env=False, env_config=env_config) \
+            .environment(env=env_class, render_env=False, env_config=env_config) \
             .training(lr=0.0003, train_batch_size=512) \
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .framework('torch') \
@@ -419,7 +455,7 @@ def get_algorithm():
         raise NotImplementedError
     elif ALG == AlgorithmNames.PPO:
         alg_config = ppo.PPOConfig() \
-            .environment(env=MyEnv, render_env=False, env_config=env_config) \
+            .environment(env=env_class, render_env=False, env_config=env_config) \
             .training(model=model_config, entropy_coeff=0.01) \
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
@@ -428,7 +464,7 @@ def get_algorithm():
         alg = ppo.PPO(config=alg_config)
     elif ALG == AlgorithmNames.A3C:
         alg_config = a3c.A3CConfig() \
-            .environment(env=MyEnv, render_env=False, env_config=env_config) \
+            .environment(env=env_class, render_env=False, env_config=env_config) \
             .training(lr=0.01, grad_clip=30.0, model=model_config, entropy_coeff=0.3) \
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
@@ -441,7 +477,7 @@ def get_algorithm():
         alg = a3c.A3C(config=alg_config)
     elif ALG == AlgorithmNames.DQN:
         alg_config = dqn.DQNConfig() \
-            .environment(env=MyEnv, render_env=False, env_config=env_config) \
+            .environment(env=env_class, render_env=False, env_config=env_config) \
             .resources(num_gpus=NUM_GPUS // NUM_ROLLOUT_WORKERS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(rollout_fragment_length=4, num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=1) \
             .callbacks(callbacks_class=MyCallbacks) \
@@ -468,7 +504,7 @@ def get_algorithm():
         # model_config['fcnet_hiddens'] = [ACTION_SPACE_SIZE] # TODO
         # model_config['no_final_linear'] = True # TODO
         alg_config = apex_dqn.ApexDQNConfig() \
-            .environment(env=MyEnv, render_env=False, env_config=env_config) \
+            .environment(env=env_class, render_env=False, env_config=env_config) \
             .resources(num_gpus=min(NUM_GPUS, 1), num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(rollout_fragment_length=32, num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=1) \
             .callbacks(callbacks_class=MyCallbacks) \
@@ -476,7 +512,7 @@ def get_algorithm():
             model=model_config,
             double_q=True,
             dueling=False,
-            num_atoms=1,  # TODO
+            num_atoms=1,
             noisy=False,
             replay_buffer_config={'capacity': 1000000,
                                   "prioritized_replay_alpha": 0.45,
@@ -491,7 +527,7 @@ def get_algorithm():
             hiddens=[]
         ) \
             .exploration(explore=True,
-                         exploration_config={'epsilon_timesteps': 1_500_000, 'final_epsilon': 0.01,
+                         exploration_config={'epsilon_timesteps': 562_500, 'final_epsilon': 0.01,
                                              "initial_epsilon": 1.0, "type": "EpsilonGreedy"}) \
             .reporting(min_sample_timesteps_per_iteration=1000) \
             .framework('torch')
@@ -501,6 +537,15 @@ def get_algorithm():
     return alg
 
 
+def get_environment():
+    if cli_args.env == EnvNames.CHOOSE_K:
+        return ChooseKEnv
+    elif cli_args.env == EnvNames.DROP_ONE:
+        return DropOneEnv
+    else:
+        raise NotImplementedError
+
+
 def init_output_dir():
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
@@ -508,14 +553,14 @@ def init_output_dir():
 
 def train_model():
     start = time.time()
-    print(f'############### Initialising ray ###############')
+    print(f'############### Initialising ray ###############', flush=True)
     ray.init()
-    print(f'Initialising ray took: {round(time.time() - start, 2)} sec')
+    print(f'Initialising ray took: {round(time.time() - start, 2)} sec', flush=True)
 
     start = time.time()
-    print(f'############### Building algorithm: {ALG} ###############')
+    print(f'############### Building algorithm: {ALG} ###############', flush=True)
     algo = get_algorithm()
-    print(f'Building algorithm: {ALG} took: {round(time.time() - start, 2)} sec')
+    print(f'Building algorithm: {ALG} took: {round(time.time() - start, 2)} sec', flush=True)
 
     i = 0
     pbar = tqdm(total=MAX_ITERS)
@@ -539,15 +584,15 @@ def train_model():
 def _get_sample_from_model(model):
     env_config = get_env_config()
     env_config['inference_mode'] = True
-    env = MyEnv(env_config)
+    env = get_environment()(env_config)  # TODO Why recreate the env every time? can we reset?
     done = False
     obs, _ = env.reset()
     prev_action = None
     prev_reward = None
 
-    while not done:
+    while not done:  # TODO add trange here?
         action = model.compute_single_action(observation=obs, prev_action=prev_action, prev_reward=prev_reward)
-        next_obs, reward, done, _, _ = env.step(action=action)
+        next_obs, reward, done, _, _ = env.step(action)
         prev_action = action
         prev_reward = reward
         obs = next_obs
@@ -557,32 +602,44 @@ def _get_sample_from_model(model):
     return sample_ids, scores
 
 
-def test_model(ray_checkpoint_path=None, algo=None, num_trials=20):
+def test_model(ray_checkpoint_path=None, algo=None, num_trials=cli_args.eval_steps):
     if ray_checkpoint_path is None and algo is None:
         raise Exception('One of \'ray_checkpoint_path\' or \'model\' must not be None!')
     algo = algo if algo is not None else algorithm.Algorithm.from_checkpoint(ray_checkpoint_path)
 
     best_sample = None
     best_test_score = 0.
+    min_test_score = 1.0
+    avg_test_score = 0.
     scores = []
-    for _ in trange(num_trials):
+    for i in trange(num_trials):
         sample, scores_dict = _get_sample_from_model(algo)
         scores.append(scores_dict)
-        print(f'Current scores: {scores_dict}', flush=True)
+        # print(f'Current scores: {scores_dict}', flush=True)
 
-        if scores_dict['test_score'] > best_test_score:
-            best_test_score = scores_dict['test_score']
+        curr_test_score = scores_dict['test_score']
+
+        if curr_test_score > best_test_score:
+            best_test_score = curr_test_score
             best_sample = sample
 
-    CheckpointManager.save(name=f'{TRIAL_NAME}/trial_scores', content=scores, version=CHECKPOINT_VER)
-    CheckpointManager.save(name=f'{TRIAL_NAME}/sample', content=[best_sample, best_test_score],
-                           version=CHECKPOINT_VER)
+        elif curr_test_score < min_test_score:
+            min_test_score = curr_test_score
+
+        avg_test_score += curr_test_score
+        print(f'Min score: [{min_test_score}], Avg score: [{avg_test_score / (i + 1)}], Max score: [{best_test_score}]',
+              flush=True)
+
+        CheckpointManager.save(name=f'{TRIAL_NAME}/trial_scores', content=scores, version=CHECKPOINT_VER)
+        CheckpointManager.save(name=f'{TRIAL_NAME}/sample', content=[best_sample, best_test_score],
+                               version=CHECKPOINT_VER)
+
     return best_sample, best_test_score
 
 
 if __name__ == '__main__':
     DataAccess()
-    print(f'############### Starting trial: {TRIAL_NAME} ###############')
+    print(f'############### Starting trial: {TRIAL_NAME} ###############', flush=True)
     if cli_args.test:
         test_model(
             ray_checkpoint_path=f'{OUTPUT_DIR}/{cli_args.ray_checkpoint}')
