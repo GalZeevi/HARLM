@@ -566,8 +566,37 @@ def plot_ray_avg_mas_threshold_results():
     plt.show()
 
 
+############# experiment: drop1, avg: 0.39698507462686566, std: 0.09682936099328326 #############
+############# experiment: drop1+random, avg: 0.26135, std: 0.07448139029314638 #############
+############# experiment: drop1+choose k, avg: 0.5315294117647059, std: 0.17535447046316976 #############
+############# experiment: choose k, avg: 0.5430476190476191, std: 0.14262387304023733 #############
+
+
+############# experiment: drop1, avg: 0.3977331088137009, std: 0.017051618117053618 #############
+############# experiment: drop1+random, avg: 0.27678466386554623, std: 0.01967992128215682 #############
+############# experiment: drop1+choose k, avg: 0.5044978354978356, std: 0.008459471253482065 #############
+############# experiment: choose k, avg: 0.49850666666666665, std: 0.0009713488600580323 #############
+
+
+def plot_drop1_imdb_results():
+    experiments = ['DropOne', 'DropOne+Rand', 'ChooseK', 'ChooseK+DropOne']
+    scores = [0.39773, 0.27678, 0.50449, 0.49850]
+    stds = [0.01705, 0.01967, 0.00845, 0.00097]
+    x = [*range(len(experiments))]
+
+    plt.bar(x, scores, yerr=stds, align='center', alpha=0.5, capsize=10)
+    plt.title('')
+    plt.xticks(x, experiments, fontsize=8)
+
+    plt.xlabel("Algorithm")
+    plt.ylabel("Score")
+    plt.suptitle(f"Imdb Data")
+    plt.show()
+
+
 if __name__ == '__main__':
-    plot_ray_avg_mas_results()
+    # plot_ray_avg_mas_results()
     # plot_ray_avg_imdb_results()
-    plot_ray_avg_mas_threshold_results()
+    # plot_ray_avg_mas_threshold_results()
     # plot_ray_avg_imdb_threshold_results()
+    plot_drop1_imdb_results()

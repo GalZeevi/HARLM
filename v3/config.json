@@ -2,20 +2,20 @@
   "dbConfig": {
     "type": "mysql",
     "host": "localhost",
-    "database": "datasets",
+    "database": "mas",
     "user": "root",
     "password": "root",
     "port": 3306
   },
   "queryConfig": {
-    "schema": "datasets",
-    "table": "flights_2009_2010",
+    "schema": "mas",
+    "table": "mas_full_data2",
     "pivot": "_id",
     "batchSize": 60,
     "numToGenerate": 60
   },
   "samplerConfig": {
-    "testSize": 10,
+    "testSize": 8,
     "validationSize": 0,
     "viewSize": 50
   },

@@ -212,11 +212,13 @@ if __name__ == '__main__':
     result_ids = [*set().union(*train_results)]
     print(f'There are {len(result_ids)} tuples in results')
 
-    if CheckpointManager.load(name=f'kmeans_partition', version=args.checkpoint) is None:
+    PARTITION_CHECKPOINT_NAME = 'kmeans_partition'
+
+    if CheckpointManager.load(name=PARTITION_CHECKPOINT_NAME, version=args.checkpoint) is None:
         partition = partition_dataset(result_ids)
-        CheckpointManager.save(name=f'kmeans_partition', content=partition, version=args.checkpoint)
+        CheckpointManager.save(name=PARTITION_CHECKPOINT_NAME, content=partition, version=args.checkpoint)
     else:
-        partition = CheckpointManager.load(name=f'kmeans_partition', version=args.checkpoint)
+        partition = CheckpointManager.load(name=PARTITION_CHECKPOINT_NAME, version=args.checkpoint)
         print(f'Saved partition sizes: {[len(p) for p in partition]}')
     print(f'Partition length: {len(partition)}')
 
