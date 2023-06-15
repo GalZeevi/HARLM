@@ -127,7 +127,7 @@ def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), va
 
 def get_sample():
     print('Starting skyline_sampler.main()!')
-    OUTPUT_DIR = f'{args.k}_skyline'
+    OUTPUT_DIR = 'skyline'
     COMPLETE_OUTPUT_DIR = f'{CheckpointManager.basePath}/{args.checkpoint}/{OUTPUT_DIR}'
     if not os.path.exists(COMPLETE_OUTPUT_DIR):
         os.makedirs(COMPLETE_OUTPUT_DIR)
@@ -147,7 +147,7 @@ def get_sample():
     sample_ids = []
     columns = [*Preprocessing.columns_repo.get_all_columns().keys()]
 
-    tasks_per_q = 2 * int(max(np.ceil(args.k / (len(train_results))), 1))
+    tasks_per_q = int(max(np.ceil(args.k / (len(train_results))), 1))
     worker_args = []
     for i, q in tqdm(enumerate(train_results)):
 
