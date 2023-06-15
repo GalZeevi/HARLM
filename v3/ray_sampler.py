@@ -356,7 +356,7 @@ class MyEnv(gym.Env):
 
     def step(self, action):
         if self.action_mask[action] == 0:  # state remains unchanged
-            print(f'WARNING! invalid action selected! action: {action}')
+            print(f'WARNING! invalid action selected! action: {action}', flush=True)
             return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, 0., False, False, {}
 
         tuple_num = self.actions[action]
@@ -551,6 +551,11 @@ def init_output_dir():
         os.makedirs(OUTPUT_DIR)
 
 
+def save_namespace():
+    with open(f'{OUTPUT_DIR}/namespace.txt', "w") as f:
+        f.write(str(cli_args))
+
+
 def train_model():
     start = time.time()
     print(f'############### Initialising ray ###############', flush=True)
@@ -581,16 +586,13 @@ def train_model():
     return algo
 
 
-def _get_sample_from_model(model):
-    env_config = get_env_config()
-    env_config['inference_mode'] = True
-    env = get_environment()(env_config)  # TODO Why recreate the env every time? can we reset?
+def _get_sample_from_model(model, env):
     done = False
     obs, _ = env.reset()
     prev_action = None
     prev_reward = None
 
-    while not done:  # TODO add trange here?
+    while not done:  # TODO add tqdm here?
         action = model.compute_single_action(observation=obs, prev_action=prev_action, prev_reward=prev_reward)
         next_obs, reward, done, _, _ = env.step(action)
         prev_action = action
@@ -607,13 +609,20 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=cli_args.eval_ste
         raise Exception('One of \'ray_checkpoint_path\' or \'model\' must not be None!')
     algo = algo if algo is not None else algorithm.Algorithm.from_checkpoint(ray_checkpoint_path)
 
+    start = time.time()
+    print(f'############### Initialising environment for test... ###############', flush=True)
+    env_config = get_env_config()
+    env_config['inference_mode'] = True
+    env = get_environment()(env_config)
+    print(f'Initialising environment for test took: {round(time.time() - start, 2)} sec', flush=True)
+
     best_sample = None
     best_test_score = 0.
     min_test_score = 1.0
     avg_test_score = 0.
     scores = []
     for i in trange(num_trials):
-        sample, scores_dict = _get_sample_from_model(algo)
+        sample, scores_dict = _get_sample_from_model(algo, env)
         scores.append(scores_dict)
         # print(f'Current scores: {scores_dict}', flush=True)
 
@@ -645,6 +654,7 @@ if __name__ == '__main__':
             ray_checkpoint_path=f'{OUTPUT_DIR}/{cli_args.ray_checkpoint}')
     else:
         init_output_dir()
+        save_namespace()
         model = train_model()
         DataAccess.reconnect()
         sample, score = test_model(algo=model)
