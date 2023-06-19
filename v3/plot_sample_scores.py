@@ -594,9 +594,256 @@ def plot_drop1_imdb_results():
     plt.show()
 
 
+# IMDB_ALG_NAMES = ['random', 'skyline', 'K-means', 'top-k', 'DQN', 'PPO']
+
+def plot_imdb_k_array_results():
+    x = [*range(len(IMDB_ALG_NAMES))]
+
+    y_1k = [
+        0.212,  # random
+        0.273,  # skyline
+        0.306,  # kmeans
+        0.201,  # topk
+        0.322,  # dqn
+        0.501,  # ppo
+    ]
+    min_max_1k = [
+        [0.182,
+         0.273,
+         0.306,
+         0.201,
+         0.32,
+         0.498],
+        [0.244,
+         0.273,
+         0.306,
+         0.201,
+         0.324,
+         0.505]
+    ]
+    yerr_1k = [[abs(a - b) for (a, b) in zip(min_max_1k[0], y_1k)],
+               [abs(a - b) for (a, b) in zip(min_max_1k[1], y_1k)]]
+
+    y_5k = [
+        0.4354,  # random
+        0.451,  # skyline
+        0.316,  # kmeans
+        0.346,  # topk
+        0.6365,  # dqn
+        0.6376,  # ppo
+    ]
+    min_max_5k = [
+        [0.414,
+         0.451,
+         0.316,
+         0.346,
+         0.632,
+         0.624],
+        [0.456,
+         0.451,
+         0.316,
+         0.346,
+         0.64,
+         0.648]
+    ]
+    yerr_5k = [[abs(a - b) for (a, b) in zip(min_max_5k[0], y_5k)],
+               [abs(a - b) for (a, b) in zip(min_max_5k[1], y_5k)]]
+
+    y_10k = [
+        0.469,  # random
+        0.511,  # skyline
+        0.432,  # kmeans
+        0.43,  # topk
+        0.6773,  # dqn
+        0.6653,  # ppo
+    ]
+    min_max_10k = [
+        [0.43,
+         0.511,
+         0.432,
+         0.43,
+         0.672,
+         0.66],
+        [0.492,
+         0.511,
+         0.432,
+         0.43,
+         0.684,
+         0.67]
+    ]
+    yerr_10k = [[abs(a - b) for (a, b) in zip(min_max_10k[0], y_10k)],
+                [abs(a - b) for (a, b) in zip(min_max_10k[1], y_10k)]]
+
+    y_15k = [
+        0.50164,  # random
+        0.534,  # skyline
+        0.492,  # kmeans
+        0.476,  # topk
+        0.712,  # dqn
+        0.714,  # ppo
+    ]
+    min_max_15k = [
+        [0.466,
+         0.534,
+         0.492,
+         0.476,
+         0.71,
+         0.708],
+        [0.522,
+         0.534,
+         0.492,
+         0.476,
+         0.72,
+         0.72]
+    ]
+    yerr_15k = [[abs(a - b) for (a, b) in zip(min_max_15k[0], y_15k)],
+                [abs(a - b) for (a, b) in zip(min_max_15k[1], y_15k)]]
+
+    fig, axs = plt.subplots(4)
+    axs[0].bar(x, y_1k, yerr=yerr_1k, align='center', alpha=0.5, capsize=10)
+    axs[0].set_title('k=1000', y=1.0, pad=-14)
+    axs[1].bar(x, y_5k, yerr=yerr_5k, align='center', alpha=0.5, capsize=10)
+    axs[1].set_title('k=5000', y=1.0, pad=-14)
+    axs[2].bar(x, y_10k, yerr=yerr_10k, align='center', alpha=0.5, capsize=10)
+    axs[2].set_title('k=10000', y=1.0, pad=-14)
+    axs[3].bar(x, y_15k, yerr=yerr_15k, align='center', alpha=0.5, capsize=10)
+    axs[3].set_title('k=15000', y=1.0, pad=-14)
+
+    plt.setp(axs, yticks=[0.1, 0.3, 0.5, 0.7, 0.9])
+    plt.suptitle('Baselines with varying sample size')
+
+    # axs[-1].set_xticklabels(IMDB_ALG_NAMES, fontsize=8)
+
+    plt.setp(axs[:3], xticks=[], xticklabels=[])
+    plt.setp([axs[-1]], xticks=x, xticklabels=IMDB_ALG_NAMES)
+
+    plt.show()
+
+
+def plot_imdb_rl_algos():
+    RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'PPO', 'PPO+diverse', 'PPO+DropOne']
+    x = [*range(len(RL_ALGOS))]
+    y = np.zeros(len(RL_ALGOS))
+    y_err = np.zeros((2, len(RL_ALGOS)))
+    num_checkpoints = 4
+
+    # 2
+    # y += [0.564, 0.4101, 0.489]
+    # y_err += [np.array([0.564, 0.4101, 0.489]) - np.array([0.562, 0.41, 0.477]),
+    #           np.array([0.566, 0.412, 0.5]) - np.array([0.564, 0.4101, 0.489])]
+
+    dqn_v2_scores = [0.562, 0.564, 0.566]
+    dqn_diversity_v2_scores = [0.331, 0.334, 0.346]
+    a3c_v2_scores = [0.41, 0.4101, 0.412]
+    ppo_v2_scores = [0.477, 0.489, 0.5]
+    ppo_diversity_v2_scores = [0.394, 0.4682, 0.51]
+    ppo_choosek_drop1_v2_scores = [0.474, 0.4914, 0.506]
+
+    v2_scores = [dqn_v2_scores, dqn_diversity_v2_scores, a3c_v2_scores, ppo_v2_scores, ppo_diversity_v2_scores,
+                 ppo_choosek_drop1_v2_scores]
+
+    y += [alg[1] for alg in v2_scores]
+    y_err += [np.array([alg[1] for alg in v2_scores]) - np.array([alg[0] for alg in v2_scores]), 
+              np.array([alg[2] for alg in v2_scores]) - np.array([alg[1] for alg in v2_scores])]
+
+    # 3
+    # y += [0.322, 0.4136, 0.501]
+    # y_err += [np.array([0.322, 0.4136, 0.501]) - np.array([0.32, 0.412, 0.498]),
+    #           np.array([0.324, 0.418, 0.505]) - np.array([0.322, 0.4136, 0.501])]
+
+    dqn_v3_scores = [0.32, 0.322, 0.324]
+    dqn_diversity_v3_scores = [0.284, 0.285, 0.286]
+    a3c_v3_scores = [0.412, 0.4136, 0.418]
+    ppo_v3_scores = [0.498, 0.501, 0.505]
+    ppo_diversity_v3_scores = [0.313, 0.3306, 0.352]
+    ppo_choosek_drop1_v3_scores = [0.528, 0.5329, 0.542]
+
+    v3_scores = [dqn_v3_scores, dqn_diversity_v3_scores, a3c_v3_scores, ppo_v3_scores, ppo_diversity_v3_scores,
+                 ppo_choosek_drop1_v3_scores]
+    y += [alg[1] for alg in v3_scores]
+    y_err += [np.array([alg[1] for alg in v3_scores]) - np.array([alg[0] for alg in v3_scores]),
+              np.array([alg[2] for alg in v3_scores]) - np.array([alg[1] for alg in v3_scores])]
+
+    # 4
+    # y += [0.374, 0.5436, 0.635]
+    # y_err += [np.array([0.374, 0.5436, 0.635]) - np.array([0.374, 0.54, 0.633]),
+    #           np.array([0.378, 0.55, 0.638]) - np.array([0.374, 0.5436, 0.635])]
+    
+    dqn_v4_scores = [0.374, 0.374, 0.378]
+    dqn_diversity_v4_scores = [0.294, 0.296, 0.3]
+    a3c_v4_scores = [0.54, 0.5436, 0.55]
+    ppo_v4_scores = [0.633, 0.635, 0.638]
+    ppo_diversity_v4_scores = [0.472, 0.486, 0.5]
+    ppo_choosek_drop1_v4_scores = [0.734, 0.7422, 0.76]
+
+    v4_scores = [dqn_v4_scores, dqn_diversity_v4_scores, a3c_v4_scores, ppo_v4_scores, ppo_diversity_v4_scores,
+                 ppo_choosek_drop1_v4_scores]
+    y += [alg[1] for alg in v4_scores]
+    y_err += [np.array([alg[1] for alg in v4_scores]) - np.array([alg[0] for alg in v4_scores]),
+              np.array([alg[2] for alg in v4_scores]) - np.array([alg[1] for alg in v4_scores])]
+
+    # 5
+    # y += [0.204, 0.2568, 0.426]
+    # y_err += [np.array([0.204, 0.2568, 0.426]) - np.array([0.202, 0.256, 0.418]),
+    #           np.array([0.208, 0.26, 0.432]) - np.array([0.204, 0.2568, 0.426])]
+    
+    dqn_v5_scores = [0.202, 0.204, 0.208]
+    dqn_diversity_v5_scores = [0.178, 0.179, 0.18]
+    a3c_v5_scores = [0.256, 0.2568, 0.26]
+    ppo_v5_scores = [0.418, 0.426, 0.432]
+    ppo_diversity_v5_scores = [0.262, 0.287, 0.304]
+    ppo_choosek_drop1_v5_scores = [0.244, 0.2543, 0.27]
+
+    v5_scores = [dqn_v5_scores, dqn_diversity_v5_scores, a3c_v5_scores, ppo_v5_scores, ppo_diversity_v5_scores,
+                 ppo_choosek_drop1_v5_scores]
+    y += [alg[1] for alg in v5_scores]
+    y_err += [np.array([alg[1] for alg in v5_scores]) - np.array([alg[0] for alg in v5_scores]),
+              np.array([alg[2] for alg in v5_scores]) - np.array([alg[1] for alg in v5_scores])]
+    
+
+    y /= num_checkpoints
+    y_err /= num_checkpoints
+
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10)
+    plt.title('')
+    plt.xticks(x, RL_ALGOS, rotation=30, fontsize=6)
+
+    plt.xlabel("Algorithm")
+    plt.ylabel("Score")
+    plt.suptitle(f"RL algorithms on Imdb Data")
+    plt.show()
+
+
+def plot_imdb_aqp_results():
+    xticks = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Avg']
+
+    x_orig = [*range(len(xticks))]
+    x_1k = [x - 0.2 for x in x_orig]
+    x_5k = [x for x in x_orig]
+    x_10k = [x + 0.2 for x in x_orig]
+
+    y_1k = [0.00078, 0.03669, 0.63384, 0.63582, 0.36308, 0.9982, 0.40667, 0.69, 0.95438, 0.84218, 0.556164]
+    y_5k = [0.06247, 0.1911, 0.75935, 0.47151, 0.69606, 0.99075, 0.73534, 0.87251, 0.96978, 0.93919, 0.668806]
+    y_10k = [0.02758, 0.11309, 0.87833, 0.85269, 0.77044, 0.97991, 0.72984, 0.90305, 0.95543, 0.88635, 0.709671]
+
+    plt.bar(x_1k, y_1k, width=0.2, label='k=1000')
+    plt.bar(x_5k, y_5k, width=0.2, label='k=5000')
+    plt.bar(x_10k, y_10k, width=0.2, label='k=1000')
+    plt.xticks(x_1k, xticks)
+
+    plt.xlabel("Query")
+    plt.ylabel("|a_pred - a_truth|/|a_truth|")
+    plt.suptitle(f"AQP queries on Flights data")
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
     # plot_ray_avg_mas_results()
     # plot_ray_avg_imdb_results()
     # plot_ray_avg_mas_threshold_results()
     # plot_ray_avg_imdb_threshold_results()
-    plot_drop1_imdb_results()
+    # plot_drop1_imdb_results()
+    # plot_imdb_k_array_results()
+    plot_imdb_rl_algos()
+    # plot_imdb_aqp_results()
