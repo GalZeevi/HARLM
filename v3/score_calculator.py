@@ -7,7 +7,6 @@ from data_access_v3 import DataAccess
 from train_test_utils import get_test_queries, get_train_queries
 from preprocessing import Preprocessing, Column
 from typing import Dict
-from scipy.stats import entropy as entropy_func
 
 
 # tupleDistanceCalculator = TupleDistanceCalculator()
@@ -31,13 +30,7 @@ def get_score2(sample,
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     results = __get_results(queries, checkpoint_version)
     target_sizes = np.array([min(view_size, len(result)) for result in results])
-    try:
-        sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in
-                                  results])  # TODO: something in the listcomp throws error on None
-    except TypeError:
-        print(f'Error thrown! sample: {sample}, results: {results}')
-        raise Exception('Fuck.')
-
+    sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
     attained_result_fraction = np.divide(sampled_sizes, target_sizes)
     score = np.minimum(attained_result_fraction, 1.)
     return np.average(score)
