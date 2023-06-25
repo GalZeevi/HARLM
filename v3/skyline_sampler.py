@@ -24,11 +24,11 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--checkpoint", type=int, default=CheckpointManager.get_max_version(), help="The size of the sample to create."
+        "--checkpoint", type=int, default=CheckpointManager.get_max_version(), help="The Checkpoint to use."
     )
 
     parser.add_argument(
-        "--k", type=int, default=100, help="Which checkpoint version to use."
+        "--k", type=int, default=100, help="Sample size."
     )
 
     parser.add_argument(
