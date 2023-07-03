@@ -10,6 +10,7 @@ from preprocessing import Preprocessing
 from score_calculator import get_combined_score, get_score2, get_threshold_score, get_diversity_score
 from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
+from tqdm import tqdm
 
 
 # TODO: remove ep_reward_sum from callbacks!
@@ -246,6 +247,16 @@ class DropOneEnv(gym.Env):
         self.reward_config = {'large_reward': env_config.get('large_reward', False)}
         self.ep_reward = 0.
 
+    def select_tuples(self, ids, MAX_TUPLES_TO_SELECT=1000):
+        tuples = []
+        chunks = [chunk for chunk in np.array_split(ids, np.ceil(len(ids) / MAX_TUPLES_TO_SELECT)) if
+                  len(chunk) > 0]
+        for chunk in tqdm(chunks):
+            ids_db_format = ','.join([str(idx) for idx in chunk])
+            tuples += DataAccess.select(
+                f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot} IN ({ids_db_format})')
+        return tuples
+
     def __get_step_tuples__(self):
         if self.action_space_size <= 0:
             raise Exception('ACTION_SPACE_SIZE must be positive to use __get_step_tuples__!')
@@ -265,10 +276,10 @@ class DropOneEnv(gym.Env):
             sampled_tuples_actions = self.__get_sampled_actions__(
                 self.action_space_size - len(queried_tuples_actions), queried_tuples_actions)
             actions = np.concatenate((queried_tuples_actions, sampled_tuples_actions))
-        tuple_ids_db_fmt = [str(idx) for idx in actions]
-        # TODO: This takes too long
-        actions_tuples = DataAccess.select(
-            f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot} IN ({",".join(tuple_ids_db_fmt)})')
+        # tuple_ids_db_fmt = [str(idx) for idx in actions]
+        # actions_tuples = DataAccess.select(
+        #     f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot} IN ({",".join(tuple_ids_db_fmt)})')
+        actions_tuples = self.select_tuples(actions)
         CheckpointManager.save(name=saved_actions_file_name, content=actions_tuples, version=self.checkpoint_version)
         np.random.shuffle(actions_tuples)
         return actions_tuples
@@ -288,7 +299,7 @@ class DropOneEnv(gym.Env):
     def get_initial_tuples(self, method='step_tuples'):
         # TODO: 1. random set, 2. top-k, 3. output of ppo/dqn in other env
         initial_tuples = None
-        if method == 'step_tuples':
+        if method == 'step_tuples' or method == 'shuffle':
             return self.step_tuples[:self.k]
         elif method == 'random':
             initial_k_ids = np.random.choice(self.table_size, self.k, replace=False)

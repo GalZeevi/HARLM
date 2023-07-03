@@ -89,7 +89,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--reset_state_method", type=str, default='step_tuples', help="How to create initial state (for DropOneEnv)."
+        "--reset_state_method", type=str, default='shuffle', help="How to create initial state (for DropOneEnv)."
     )
 
     parser.add_argument(
