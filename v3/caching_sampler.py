@@ -61,6 +61,7 @@ if __name__ == '__main__':
     test_scores = []
     test_threshold_scores = []
     # test_diversities = []
+    # TODO save sample
 
     for i in trange(25):
         sample_ids = get_cache()

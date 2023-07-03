@@ -31,6 +31,7 @@ DataAccess()
 print(f'Calculating table size...')
 table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {schema}.{table}')
 print('Done.')
+DataAccess.disconnect()
 
 
 def process_func(output_dir):
@@ -62,6 +63,22 @@ def process_func(output_dir):
     return best_sample
 
 
+def read_best_from_folder(folder_name, checkpoint):
+    full_path = f'checkpoints/{checkpoint}/{folder_name}'
+    ckpt_files = [f.split('.pkl')[0] for f in listdir(full_path) if isfile(join(full_path, f)) and '.pkl' in f]
+    ckpt_content = [CheckpointManager.load(f'{folder_name}/{f}', version=checkpoint) for f in ckpt_files]
+
+    if len(ckpt_content) > 0:
+        best_result = sorted(ckpt_content, key=lambda x: x[1], reverse=True)[0]
+        sample, score = best_result[0], best_result[1]
+
+        test_score = get_score2(sample, queries='test', checkpoint_version=checkpoint)
+        test_threshold_score = get_threshold_score(sample, queries='test', checkpoint_version=checkpoint)
+        print(f'############### Sample score: [{test_score}] ###############')
+        print(f'############### Sample threshold score: [{test_threshold_score}] ###############')
+        CheckpointManager.save(name=f'{args.k}_brute_force_sample', content=best_result, version=checkpoint)
+
+
 if __name__ == "__main__":
     OUTPUT_DIR = f'{args.k}_brute_force_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
     COMPLETE_OUTPUT_DIR = f'{CheckpointManager.basePath}/{args.checkpoint}/{OUTPUT_DIR}'
@@ -89,9 +106,9 @@ if __name__ == "__main__":
         test_score = get_score2(sample, queries='test', checkpoint_version=args.checkpoint)
         test_threshold_score = get_threshold_score(sample, queries='test', checkpoint_version=args.checkpoint)
         sample_ids_db_format = ','.join([str(idx) for idx in sample])
-        sample_tuples = DataAccess.select(f'SELECT * FROM {schema}.{table} WHERE {pivot} IN ({sample_ids_db_format})')
-        test_diversity = get_diversity_score(sample_tuples, args.checkpoint)
+        # sample_tuples = DataAccess.select(f'SELECT * FROM {schema}.{table} WHERE {pivot} IN ({sample_ids_db_format})')
+        # test_diversity = get_diversity_score(sample_tuples, args.checkpoint)
         print(f'############### Sample score: [{test_score}] ###############')
         print(f'############### Sample threshold score: [{test_threshold_score}] ###############')
-        print(f'############### Sample diversity: [{test_diversity}] ###############')
+        # print(f'############### Sample diversity: [{test_diversity}] ###############')
         CheckpointManager.save(name=f'{args.k}_brute_force_sample', content=best_result, version=args.checkpoint)
