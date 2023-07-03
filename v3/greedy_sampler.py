@@ -17,9 +17,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--k", type=int, default=100, help="sample size")
 parser.add_argument("--queries", type=str, default='test', help="use test queries or train queries")
 parser.add_argument("--pool_size", type=int, default=6, help="how many processes to use")
-parser.add_argument("--checkpoint", type=int, default=CheckpointManager.get_max_version(),
-                    help="which checkpoint to use")
-parser.add_argument("--diversity_coeff", type=float, default=0.5, help="Weight to give diversity in score function.")
+parser.add_argument("--checkpoint", type=int, default=CheckpointManager.get_max_version(), help="which checkpoint to use")
+parser.add_argument("--diversity_coeff", type=float, default=0., help="Weight to give diversity in score function.")
 args = parser.parse_args()
 print(f"Running with following CLI args: {args}")
 
@@ -47,8 +46,7 @@ def worker_task(tuples, sample, score):
         if t_id in sample_ids:
             continue
         if not added_once or \
-                get_combined_score(sample[:-1] + [t], queries=args.queries, alpha=(1 - args.diversity_coeff),
-                                   checkpoint_version=args.checkpoint) > score:
+                get_score2(sample_ids[:-1] + [t_id], queries=args.queries, checkpoint_version=args.checkpoint) > score:
             if not added_once:
                 sample += [t]
                 sample_ids += [t_id]
@@ -58,10 +56,10 @@ def worker_task(tuples, sample, score):
                 sample_ids = sample_ids[:-1] + [t_id]
 
             new_tuple = t
-            # score = get_score2(sample, queries=args.queries, checkpoint_version=args.checkpoint)
-            score = get_combined_score(sample, queries=args.queries,
-                                       alpha=(1 - args.diversity_coeff),
-                                       checkpoint_version=args.checkpoint)
+            score = get_score2(sample_ids, queries=args.queries, checkpoint_version=args.checkpoint)
+            # score = get_combined_score(sample, queries=args.queries,
+            #                            alpha=(1 - args.diversity_coeff),
+            #                            checkpoint_version=args.checkpoint)
     return new_tuple, score, os.getpid()
 
 
