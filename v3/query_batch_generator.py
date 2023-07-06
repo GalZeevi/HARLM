@@ -3,6 +3,7 @@ from random import randint
 
 import numpy as np
 from tqdm import tqdm
+import os
 
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
@@ -29,7 +30,7 @@ class QueryGenerator:
             raise Exception('Unsupported db type! supported types are "postgresql" or "mysql"')
 
     def init_numerical_cols(self):
-        numeric_data_types = ['smallint', 'integer', 'bigint', 'decimal', 'numeric', 'real', 'double precision',
+        numeric_data_types = ['smallint', 'integer', 'int', 'bigint', 'decimal', 'numeric', 'real', 'double precision',
                               'smallserial', 'serial', 'bigserial', 'float']
         db_formatted_data_types = [f"\'{data_type}\'" for data_type in numeric_data_types]
         columns = DataAccess.select(f"SELECT column_name AS col FROM information_schema.columns " +
@@ -66,10 +67,27 @@ class QueryGenerator:
             vals[col] = column_values
         return vals
 
-    def get_query(self, num_of_columns):
+    def get_query(self, num_of_columns, agg=False):
+        use_group_by = False
+        if agg:
+            use_group_by = np.random.binomial(n=1, p=0.7) > 0
+
         #  making sure no more columns than available are selected
         num_of_columns = min(num_of_columns, len(self.categorical_cols) + len(self.numerical_cols))
-        chosen_columns = random.sample(self.categorical_cols + self.numerical_cols, num_of_columns)
+
+        chosen_columns = np.array([])
+        if agg:
+            chosen_columns = np.concatenate([chosen_columns, random.sample(self.numerical_cols, 1)])
+            agg_col = chosen_columns[-1]
+            agg_func = random.sample(['AVG', 'SUM', 'COUNT'], 1)[0]
+        if use_group_by:
+            chosen_columns = np.concatenate([chosen_columns, random.sample(self.categorical_cols, 1)])
+            group_by_col = chosen_columns[-1]
+
+        free_columns = [col for col in (self.categorical_cols + self.numerical_cols) if col not in list(chosen_columns)]
+
+        chosen_columns = np.concatenate([chosen_columns,
+                                         random.sample(free_columns, num_of_columns)])
 
         # table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
         view_size = ConfigManager.get_config('samplerConfig.viewSize')
@@ -80,7 +98,7 @@ class QueryGenerator:
         for col in chosen_columns:
             if col in self.categorical_cols:
                 # categorical column
-                frequency = random.uniform(0, 0.3) * len(self.categorical_vals[col])
+                frequency = random.uniform(0, 0.05) * len(self.categorical_vals[col])
                 values = random.sample(self.categorical_vals[col], max(int(frequency), 1))
                 values = [val.replace("'", "''") for val in values]
                 db_formatted_values = " , ".join([f"\'{value}\'" for value in values])
@@ -95,47 +113,75 @@ class QueryGenerator:
                 lb = min(choice1, choice2)
                 ub = max(choice1, choice2)
 
-                where_clause.append(f'{col} BETWEEN {lb} AND {ub}')
+                coin = np.random.choice([0, 1, 2], size=1).item()
+                if coin == 0:
+                    where_clause.append(f'{col} > {lb}')
+                elif coin == 1:
+                    where_clause.append(f'{col} < {ub}')
+                else:
+                    where_clause.append(f'{col} BETWEEN {lb} AND {ub}')
 
         where_clause_str = ''
         if len(where_clause) > 0:
             where_clause_str = f'WHERE {" AND ".join(where_clause)}'
+        if agg is False:
+            return f"SELECT {self.pivot} FROM {self.schema}.{self.table} {where_clause_str} " \
+                   f"ORDER BY {self.get_random_func()}() LIMIT {max_result_size};"
+        elif use_group_by is True:
+            # print(f"SELECT {group_by_col} AS col, {agg_func}({agg_col}) AS agg FROM {self.schema}.{self.table} " \
+            #       f"{where_clause_str} GROUP BY {group_by_col};")
+            return f"SELECT {group_by_col} AS col, {agg_func}({agg_col}) AS agg FROM {self.schema}.{self.table} " \
+                   f"{where_clause_str} GROUP BY {group_by_col};"
+        else:
+            return f"SELECT {agg_func}({agg_col}) AS agg FROM {self.schema}.{self.table} {where_clause_str};"
 
-        return f"SELECT {self.pivot} FROM {self.schema}.{self.table} {where_clause_str} " \
-               f"ORDER BY {self.get_random_func()}() LIMIT {max_result_size}"
 
-
-def generate_batch():
-    queries_to_generate = ConfigManager.get_config('queryConfig.numToGenerate')
-    batch_size = ConfigManager.get_config('queryConfig.batchSize')
+def generate_batch(num_queries_to_generate, checkpoint, agg, outdir=''):
+    batch_size = 150
     CheckpointManager.start_new_version()
-    pbar = tqdm(total=queries_to_generate)
+    pbar = tqdm(total=num_queries_to_generate)
     query_generator = QueryGenerator()
 
     first_query_id = 0
-    while queries_to_generate > 0:
+    while num_queries_to_generate > 0:
         queries = []
         results = []
-        batch = [query_generator.get_query(randint(1, 3))
-                 for _ in range(min(batch_size, queries_to_generate))]
+        batch = [query_generator.get_query(np.random.binomial(n=1, p=0.3) + 1, agg=agg)
+                 for _ in range(min(batch_size, num_queries_to_generate))]
 
         queries_generated = 0
         for query in batch:
             query_result = np.array(DataAccess.select(query))
 
-            if len(query_result) > 0:
+            if (query_result is not None) and (len(query_result) > 0) and (all(x is not None for x in query_result)):
+                # print(f'#### num results: {len(query_result)}')
                 queries.append(query)
                 results.append(query_result)
                 queries_generated += 1
                 pbar.update(1)
 
-        queries_to_generate -= queries_generated
-        CheckpointManager.save(f'queries_{first_query_id}-{first_query_id + queries_generated}', queries,
-                               verbose=False)
-        CheckpointManager.save(f'results_{first_query_id}-{first_query_id + queries_generated}', results,
-                               verbose=False)
+        num_queries_to_generate -= queries_generated
+        CheckpointManager.save(f'{outdir}/queries_{first_query_id}-{first_query_id + queries_generated}',
+                               queries,
+                               version=checkpoint, verbose=False)
+        CheckpointManager.save(f'{outdir}/results_{first_query_id}-{first_query_id + queries_generated}',
+                               results,
+                               version=checkpoint, verbose=False)
         first_query_id += queries_generated
 
 
+def read_all_aqp_queries(ver):
+    filenames = os.listdir(f'checkpoints/{vers}/aqp_queries')
+    with open(f'checkpoints/{vers}/flights_aqp_queries.sql', 'w') as outfile:
+        for fname in filenames:
+            if 'queries' not in fname:
+                continue
+            queries = CheckpointManager.load(name='aqp_queries/' + fname.replace('.pkl', ''), version=ver)
+            for q in queries:
+                outfile.write(f'{q}\n')
+
+
 if __name__ == '__main__':
-    generate_batch()
+    vers = 19
+    generate_batch(1000, vers, True)
+    read_all_aqp_queries(vers)
