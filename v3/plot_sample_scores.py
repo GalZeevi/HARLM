@@ -735,8 +735,8 @@ def plot_drop1_extended_results():
     ckdrp_scores = [
         [0.324, 0.325, 0.326],  # DQN
         [0.286, 0.306, 0.326],  # Diversity DQN
-        [0.408, 0.418, 0.422],  # A3C
-        [0.374, 0.3909, 0.388],  # A3C Diversity
+        [0.398, 0.408, 0.412],  # A3C
+        [0.392, 0.405, 0.41],  # A3C Diversity
         [0.324, 0.3309, 0.348],  # PPO Diversity
         [0.272, 0.289, 0.3],  # PPO not tuned
         [0.49753, 0.49850, 0.49947],  # PPO
@@ -753,7 +753,7 @@ def plot_drop1_extended_results():
         [0.412, 0.4136, 0.418],  # A3C
         [0.376, 0.3809, 0.388],  # A3C Diversity
         [0.36025, 0.39295, 0.4165],  # PPO Diversity
-        [0.3855, 0.416125, 0.442],  # PPO not tuned
+        [0.405, 0.428125, 0.442],  # PPO not tuned
         [0.51604, 0.52449, 0.53294],  # PPO
     ]
     ck_x = [i - 3 / 7, i - 2 / 7, i - 1 / 7, i, i + 1 / 7, i + 2 / 7, i + 3 / 7]
@@ -1360,31 +1360,10 @@ def plot_query_answer_time():
     plt.show()
 
 
-def plot_flights_aqp_results():
-    xticks = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Avg']
-
-    x_orig = [*range(len(xticks))]
-    x_1k = [x - 0.2 for x in x_orig]
-    x_5k = [x for x in x_orig]
-    x_10k = [x + 0.2 for x in x_orig]
-
-    y_1k = [0.00078, 0.03669, 0.63384, 0.63582, 0.36308, 0.9982, 0.40667, 0.69, 0.95438, 0.84218, 0.556164]
-    y_5k = [0.06247, 0.1911, 0.75935, 0.47151, 0.69606, 0.99075, 0.73534, 0.87251, 0.96978, 0.93919, 0.668806]
-    y_10k = [0.02758, 0.11309, 0.87833, 0.85269, 0.77044, 0.97991, 0.72984, 0.90305, 0.95543, 0.88635, 0.709671]
-
-    plt.bar(x_1k, y_1k, width=0.2, label='k=1000')
-    plt.bar(x_5k, y_5k, width=0.2, label='k=5000')
-    plt.bar(x_10k, y_10k, width=0.2, label='k=1000')
-    plt.xticks(x_1k, xticks)
-
-    plt.xlabel("Query")
-    plt.ylabel("|a_pred - a_truth|/a_truth")
-    plt.suptitle(f"AQP queries on Flights data")
-    plt.legend()
-    plt.show()
-
-
 def plot_flights_aqp_results2():
+    # TODO: change this to show query categories in x-axis
+    # TODO: plot quality instead of error
+    # TODO: add plot showing miss rate
     xticks = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Avg']
 
     x_orig = [*range(len(xticks))]
@@ -1414,7 +1393,7 @@ if __name__ == '__main__':
     # plot_mas_runtime_results()
     # plot_ray_avg_mas_threshold_results()
     # plot_ray_avg_imdb_threshold_results()
-    plot_drop1_imdb_results()
+    # plot_drop1_imdb_results()
     # plot_imdb_k_array_results()
     # plot_view_size_array_results()
     # plot_imdb_rl_algos()
