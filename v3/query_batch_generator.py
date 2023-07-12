@@ -125,19 +125,18 @@ class QueryGenerator:
         if len(where_clause) > 0:
             where_clause_str = f'WHERE {" AND ".join(where_clause)}'
         if agg is False:
-            return f"SELECT {self.pivot} FROM {self.schema}.{self.table} {where_clause_str} " \
-                   f"ORDER BY {self.get_random_func()}() LIMIT {max_result_size};"
+            # return f"SELECT {self.pivot} FROM {self.schema}.{self.table} {where_clause_str} " \
+            #        f"ORDER BY {self.get_random_func()}() LIMIT {max_result_size};"
+            return f"SELECT {self.pivot} FROM {self.schema}.{self.table} {where_clause_str};"
         elif use_group_by is True:
-            # print(f"SELECT {group_by_col} AS col, {agg_func}({agg_col}) AS agg FROM {self.schema}.{self.table} " \
-            #       f"{where_clause_str} GROUP BY {group_by_col};")
             return f"SELECT {group_by_col} AS col, {agg_func}({agg_col}) AS agg FROM {self.schema}.{self.table} " \
                    f"{where_clause_str} GROUP BY {group_by_col};"
         else:
             return f"SELECT {agg_func}({agg_col}) AS agg FROM {self.schema}.{self.table} {where_clause_str};"
 
 
-def generate_batch(num_queries_to_generate, checkpoint, agg, outdir=''):
-    batch_size = 150
+def generate_batch(num_queries_to_generate, checkpoint, agg, outdir='queries'):
+    batch_size = 200
     CheckpointManager.start_new_version()
     pbar = tqdm(total=num_queries_to_generate)
     query_generator = QueryGenerator()
@@ -170,18 +169,18 @@ def generate_batch(num_queries_to_generate, checkpoint, agg, outdir=''):
         first_query_id += queries_generated
 
 
-def read_all_aqp_queries(ver):
-    filenames = os.listdir(f'checkpoints/{vers}/aqp_queries')
-    with open(f'checkpoints/{vers}/flights_aqp_queries.sql', 'w') as outfile:
+def read_all_queries(ver, outdir, outfile_name):
+    filenames = os.listdir(f'checkpoints/{vers}/{outdir}')
+    with open(f'checkpoints/{vers}/{outfile_name}.sql', 'w') as outfile:
         for fname in filenames:
             if 'queries' not in fname:
                 continue
-            queries = CheckpointManager.load(name='aqp_queries/' + fname.replace('.pkl', ''), version=ver)
+            queries = CheckpointManager.load(name=f'{outdir}/' + fname.replace('.pkl', ''), version=ver)
             for q in queries:
                 outfile.write(f'{q}\n')
 
 
 if __name__ == '__main__':
-    vers = 19
-    generate_batch(1000, vers, True)
-    read_all_aqp_queries(vers)
+    vers = 20
+    generate_batch(500, vers, False)
+    read_all_queries(vers, outdir='queries_min', outfile_name='flights_select_queries_min')
