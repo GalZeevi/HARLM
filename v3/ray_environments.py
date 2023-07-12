@@ -2,6 +2,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium.spaces import Dict
 from gymnasium.spaces import Discrete, Box
+import os
 
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
@@ -73,6 +74,8 @@ class ChooseKEnv(gym.Env):
         self.reward_config = {'marginal_reward': env_config.get('marginal_reward', False),
                               'large_reward': env_config.get('large_reward', False)}
         self.ep_reward = 0.
+        self.iter_num = 0
+        self.save_sample_step = 10
 
     def __get_actions__(self, k, random_actions_coeff, checkpoint_ver):
         if self.action_space_size <= 0:
@@ -113,6 +116,7 @@ class ChooseKEnv(gym.Env):
         self.selected_tuples_numpy = np.zeros(self.state_shape)
         self.action_mask = np.ones(self.num_actions)
         self.ep_reward = 0.
+        self.iter_num += 1
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, {}
 
     def get_episode_scores(self):
@@ -134,6 +138,14 @@ class ChooseKEnv(gym.Env):
             ep_scores['val_threshold_score'] = get_threshold_score(self.get_sample_ids(), queries=self.validation_set,
                                                                    checkpoint_version=self.checkpoint_version)
         return ep_scores
+
+    def save_sample(self):
+        path = f"{self.trial_name}/samples"
+        full_path = f'{CheckpointManager.basePath}/{self.checkpoint_version}/{path}'
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
+        CheckpointManager.save(name=f"{path}/proc_{os.getpid()}_sample", version=self.checkpoint_version,
+                               content=self.get_sample_ids())
 
     def step(self, action):
         if self.action_mask[action] == 0:  # state remains unchanged
@@ -168,6 +180,7 @@ class ChooseKEnv(gym.Env):
         self.current_score = new_score
         done = (self.step_count == self.k)
         info = {} if not done else self.get_episode_scores()
+        (self.iter_num % self.save_sample_step == 0) and self.save_sample()
 
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, reward, done, False, info
 
@@ -296,7 +309,7 @@ class DropOneEnv(gym.Env):
         else:
             raise Exception('Only random sampling is currently supported for actions!')
 
-    def get_initial_tuples(self, method='step_tuples'):
+    def get_initial_tuples(self, method='shuffle'):
         # TODO: 1. random set, 2. top-k, 3. output of ppo/dqn in other env
         initial_tuples = None
         if method == 'step_tuples' or method == 'shuffle':
