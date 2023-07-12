@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import matplotlib as mpl
+import itertools
 import numpy as np
 
 from checkpoint_manager_v3 import CheckpointManager
@@ -310,6 +310,8 @@ def plot_ray_avg_imdb_results():
     plt.yticks(np.arange(0, 0.6, 0.1), fontsize=18)
 
     plt.ylabel("Score(S)", fontsize=18)
+    plt.savefig('plots/imdb_baselines.pdf')
+    plt.savefig('plots/imdb_baselines.png')
     plt.show()
 
 
@@ -327,6 +329,8 @@ def plot_imdb_runtime_results():
     plt.yticks(np.arange(0, 50, 5), fontsize=18)
 
     plt.ylabel("Hours", fontsize=18)
+    plt.savefig('plots/imdb_runtime.pdf')
+    plt.savefig('plots/imdb_runtime.png')
     plt.show()
 
 
@@ -374,6 +378,8 @@ def plot_mas_runtime_results():
     plt.yticks(np.arange(0, 50, 5), fontsize=18)
 
     plt.ylabel("Hours", fontsize=18)
+    plt.savefig('plots/mas_runtime.pdf')
+    plt.savefig('plots/mas_runtime.png')
     plt.show()
 
 
@@ -631,6 +637,8 @@ def plot_ray_avg_mas_results():
     plt.yticks(np.arange(0, 0.8, 0.1), fontsize=18)
 
     plt.ylabel("Score(S)", fontsize=18)
+    plt.savefig('plots/mas_baselines.pdf')
+    plt.savefig('plots/mas_baselines.png')
     plt.show()
 
 
@@ -696,7 +704,7 @@ def plot_drop1_imdb_results():
 
 def plot_drop1_extended_results():
     experiments = ['DropOne', 'DropOne+Rand', 'ChooseK+DropOne', 'ChooseK']
-    experiments_short = ['DRP', 'DRP+R', 'CK+DRP', 'CK']
+    experiments_short = ['DRP', 'DRP+R', 'GSL+DRP', 'GSL']
     ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO']
     ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#eb144f']
     colors = ['#FFDB58', '#D966E1', '#17D580', '#FF5733']
@@ -786,6 +794,8 @@ def plot_drop1_extended_results():
 
     plt.ylabel("Score(S)", fontsize=18)
     plt.legend(bbox_to_anchor=(0.48, 1.35), loc='upper center', ncol=4, prop={'size': 18})
+    plt.savefig('plots/all_envs_all_rl.pdf')
+    plt.savefig('plots/all_envs_all_rl.png')
     plt.show()
 
 
@@ -971,6 +981,8 @@ def plot_imdb_k_array_results():
     plt.setp([axs[-1]], xticks=x, xticklabels=ALG_SHORTCUTS)
     axs[-1].tick_params(axis='x', labelsize=16, rotation=90)
 
+    plt.savefig('plots/tune_k.pdf')
+    plt.savefig('plots/tune_k.png')
     plt.show()
 
 
@@ -1154,12 +1166,15 @@ def plot_view_size_array_results():
     plt.setp([axs[-1]], xticks=x, xticklabels=ALG_SHORTCUTS)
     axs[-1].tick_params(axis='x', labelsize=16, rotation=90)
 
+    plt.savefig('plots/tune_f.pdf')
+    plt.savefig('plots/tune_f.png')
     plt.show()
 
 
 def plot_imdb_rl_algos():
-    RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO+DropOne', 'PPO']
-    RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#a1153b', '#eb144f']
+    RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO']
+    xlabels = ['DQN', 'DQN+D', 'A3C', 'A3C+D', 'PPO+D', 'NT+PPO', 'PPO']
+    RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5','#eb144f']
     x = [*range(len(RL_ALGOS))]
     y = np.zeros(len(RL_ALGOS))
     y_err = np.zeros((2, len(RL_ALGOS)))
@@ -1176,7 +1191,7 @@ def plot_imdb_rl_algos():
     ppo_choosek_drop1_v2_scores = [0.474, 0.4914, 0.506]
 
     v2_scores = [dqn_v2_scores, dqn_diversity_v2_scores, a3c_v2_scores, a3c_diversity_v2_scores,
-                 ppo_diversity_v2_scores, ppo_untuned_v2_scores, ppo_choosek_drop1_v2_scores, ppo_v2_scores]
+                 ppo_diversity_v2_scores, ppo_untuned_v2_scores, ppo_v2_scores]
 
     y += [alg[1] for alg in v2_scores]
     y_err += [np.array([alg[1] for alg in v2_scores]) - np.array([alg[0] for alg in v2_scores]),
@@ -1193,7 +1208,7 @@ def plot_imdb_rl_algos():
     ppo_choosek_drop1_v3_scores = [0.528, 0.5329, 0.542]
 
     v3_scores = [dqn_v3_scores, dqn_diversity_v3_scores, a3c_v3_scores, a3c_diversity_v3_scores,
-                 ppo_diversity_v3_scores, ppo_untuned_v3_scores, ppo_choosek_drop1_v3_scores, ppo_v3_scores]
+                 ppo_diversity_v3_scores, ppo_untuned_v3_scores, ppo_v3_scores]
     y += [alg[1] for alg in v3_scores]
     y_err += [np.array([alg[1] for alg in v3_scores]) - np.array([alg[0] for alg in v3_scores]),
               np.array([alg[2] for alg in v3_scores]) - np.array([alg[1] for alg in v3_scores])]
@@ -1209,7 +1224,7 @@ def plot_imdb_rl_algos():
     ppo_choosek_drop1_v4_scores = [0.734, 0.7422, 0.76]
 
     v4_scores = [dqn_v4_scores, dqn_diversity_v4_scores, a3c_v4_scores, a3c_diversity_v4_scores,
-                 ppo_diversity_v4_scores, ppo_untuned_v4_scores, ppo_choosek_drop1_v4_scores, ppo_v4_scores]
+                 ppo_diversity_v4_scores, ppo_untuned_v4_scores, ppo_v4_scores]
     y += [alg[1] for alg in v4_scores]
     y_err += [np.array([alg[1] for alg in v4_scores]) - np.array([alg[0] for alg in v4_scores]),
               np.array([alg[2] for alg in v4_scores]) - np.array([alg[1] for alg in v4_scores])]
@@ -1225,7 +1240,7 @@ def plot_imdb_rl_algos():
     ppo_choosek_drop1_v5_scores = [0.244, 0.2543, 0.27]
 
     v5_scores = [dqn_v5_scores, dqn_diversity_v5_scores, a3c_v5_scores, a3c_diversity_v5_scores,
-                 ppo_diversity_v5_scores, ppo_untuned_v5_scores, ppo_choosek_drop1_v5_scores, ppo_v5_scores]
+                 ppo_diversity_v5_scores, ppo_untuned_v5_scores, ppo_v5_scores]
     y += [alg[1] for alg in v5_scores]
     y_err += [np.array([alg[1] for alg in v5_scores]) - np.array([alg[0] for alg in v5_scores]),
               np.array([alg[2] for alg in v5_scores]) - np.array([alg[1] for alg in v5_scores])]
@@ -1237,19 +1252,23 @@ def plot_imdb_rl_algos():
     plt.minorticks_on()
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=RL_ALGOS_COLORS)
     plt.title('')
-    plt.xticks(x, RL_ALGOS, rotation=90, fontsize=18)
-    plt.subplots_adjust(bottom=0.5)
+    plt.xticks(x, xlabels, rotation=90, fontsize=18)
+    plt.subplots_adjust(bottom=0.3)
     plt.yticks(np.arange(0, 0.6, 0.1), fontsize=18)
 
     # plt.xlabel("Algorithm")
     plt.ylabel("Score(S)", fontsize=18)
     # plt.suptitle(f"RL algorithms on Mas Data")
+
+    plt.savefig('plots/imdb_all_rl.pdf')
+    plt.savefig('plots/imdb_all_rl.png')
     plt.show()
 
 
 def plot_mas_rl_algos():
-    RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO+DropOne', 'PPO']
-    RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#a1153b', '#eb144f']
+    RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO']
+    xlabels = ['DQN', 'DQN+D', 'A3C', 'A3C+D', 'PPO+D', 'NT+PPO', 'PPO']
+    RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#eb144f']
     x = [*range(len(RL_ALGOS))]
     y = np.zeros(len(RL_ALGOS))
     y_err = np.zeros((2, len(RL_ALGOS)))
@@ -1266,7 +1285,7 @@ def plot_mas_rl_algos():
     ppo_choosek_drop1_v7_scores = [0.6475, 0.6544, 0.6625]
 
     v7_scores = [dqn_v7_scores, dqn_diversity_v7_scores, a3c_v7_scores, a3c_diversity_v7_scores,
-                 ppo_diversity_v7_scores, ppo_untuned_v7_scores, ppo_choosek_drop1_v7_scores, ppo_v7_scores]
+                 ppo_diversity_v7_scores, ppo_untuned_v7_scores, ppo_v7_scores]
 
     y += [alg[1] for alg in v7_scores]
     y_err += [np.array([alg[1] for alg in v7_scores]) - np.array([alg[0] for alg in v7_scores]),
@@ -1283,7 +1302,7 @@ def plot_mas_rl_algos():
     ppo_choosek_drop1_v8_scores = [0.75, 0.75, 0.75]
 
     v8_scores = [dqn_v8_scores, dqn_diversity_v8_scores, a3c_v8_scores, a3c_diversity_v8_scores,
-                 ppo_diversity_v8_scores, ppo_untuned_v8_scores, ppo_choosek_drop1_v8_scores, ppo_v8_scores]
+                 ppo_diversity_v8_scores, ppo_untuned_v8_scores, ppo_v8_scores]
     y += [alg[1] for alg in v8_scores]
     y_err += [np.array([alg[1] for alg in v8_scores]) - np.array([alg[0] for alg in v8_scores]),
               np.array([alg[2] for alg in v8_scores]) - np.array([alg[1] for alg in v8_scores])]
@@ -1299,7 +1318,7 @@ def plot_mas_rl_algos():
     ppo_choosek_drop1_v9_scores = [0.5728, 0.6054, 0.6217]
 
     v9_scores = [dqn_v9_scores, dqn_diversity_v9_scores, a3c_v9_scores, a3c_diversity_v9_scores,
-                 ppo_diversity_v9_scores, ppo_untuned_v9_scores, ppo_choosek_drop1_v9_scores, ppo_v9_scores]
+                 ppo_diversity_v9_scores, ppo_untuned_v9_scores, ppo_v9_scores]
     y += [alg[1] for alg in v9_scores]
     y_err += [np.array([alg[1] for alg in v9_scores]) - np.array([alg[0] for alg in v9_scores]),
               np.array([alg[2] for alg in v9_scores]) - np.array([alg[1] for alg in v9_scores])]
@@ -1315,7 +1334,7 @@ def plot_mas_rl_algos():
     ppo_choosek_drop1_v10_scores = [0.6758, 0.6951, 0.7109]
 
     v10_scores = [dqn_v10_scores, dqn_diversity_v10_scores, a3c_v10_scores, a3c_diversity_v10_scores,
-                  ppo_diversity_v10_scores, ppo_untuned_v10_scores, ppo_choosek_drop1_v10_scores, ppo_v10_scores]
+                  ppo_diversity_v10_scores, ppo_untuned_v10_scores, ppo_v10_scores]
     y += [alg[1] for alg in v10_scores]
     y_err += [np.array([alg[1] for alg in v10_scores]) - np.array([alg[0] for alg in v10_scores]),
               np.array([alg[2] for alg in v10_scores]) - np.array([alg[1] for alg in v10_scores])]
@@ -1327,13 +1346,16 @@ def plot_mas_rl_algos():
     plt.minorticks_on()
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=RL_ALGOS_COLORS)
     plt.title('')
-    plt.xticks(x, RL_ALGOS, rotation=90, fontsize=18)
-    plt.subplots_adjust(bottom=0.5)
+    plt.xticks(x, xlabels, rotation=90, fontsize=18)
+    plt.subplots_adjust(bottom=0.3)
     plt.yticks(np.arange(0, 0.8, 0.1), fontsize=18)
 
     # plt.xlabel("Algorithm")
     plt.ylabel("Score(S)", fontsize=18)
     # plt.suptitle(f"RL algorithms on Mas Data")
+
+    plt.savefig('plots/mas_all_rl.pdf')
+    plt.savefig('plots/mas_all_rl.png')
     plt.show()
 
 
@@ -1386,6 +1408,116 @@ def plot_flights_aqp_results2():
     plt.show()
 
 
+def plot_flights_aqp_results3():
+    xticks = ['SUM', 'AVG', 'CNT', 'G+SUM', 'G+AVG', 'G+CNT']
+
+    x_orig = [*range(len(xticks))]
+    x_gaqp = [x - 0.2 for x in x_orig]
+    x_deepdb = [x for x in x_orig]
+    x_ours = [x + 0.2 for x in x_orig]
+
+    # y_gaqp = [0.002, 0.002, 0.07, 0.0001, 0.05, 0.02]
+    # std_gaqp = [0.005, 0.005, 0.09, 0, 0.2, 0.09]
+    # y_deepdb = [0.12, 0.03, 0.77, 0.11, 0.06, 0.41]
+    # std_deepdb = [0.2, 0.05, 0.29, 0.23, 0.08, 0.47]
+    # y_ours = [0.61, 0.91, 0.55, 0.002, 0.45, 0.001]
+    # std_ours = [0.41, 0.13, 0.45, 0.005, 0.41, 0.003]
+
+    y_gaqp = [0.994, 0.997, 0.91, 0.99, 0.93, 0.95]
+    std_gaqp = [0.005, 0.005, 0.09, 0, 0.2, 0.09]
+    y_deepdb = [0.87, 0.96, 0.22, 0.88, 0.93, 0.58]
+    std_deepdb = [0.2, 0.05, 0.29, 0.23, 0.08, 0.47]
+    y_ours = [0.432, 0.084, 0.44, 0.99, 0.54, 0.99]
+    std_ours = [0.42, 0.13, 0.45, 0.005, 0.41, 0.003]
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    plt.bar(x_gaqp, y_gaqp, yerr=[y_gaqp, std_gaqp], alpha=0.5, capsize=5, width=0.2, label='gAQP')
+    plt.bar(x_deepdb, y_deepdb, yerr=[y_deepdb, std_deepdb], alpha=0.5, capsize=5, width=0.2, label='DeepDb')
+    plt.bar(x_ours, y_ours, yerr=[y_ours, std_ours], alpha=0.5, capsize=5, width=0.2, label='Ours')
+
+    # plt.xlabel("Query")
+    plt.xticks(x_orig, xticks, fontsize=14, rotation=90)
+    plt.subplots_adjust(bottom=0.25, left=0.15)
+    plt.ylabel("Average Relative Error", fontsize=14)
+    plt.yticks(np.arange(0, 1.1, 0.2), fontsize=14)
+    plt.legend()
+    plt.legend(bbox_to_anchor=(0.48, 1.20), loc='upper center', ncol=3, prop={'size': 16})
+    plt.savefig('plots/flights_aqp.pdf')
+    plt.savefig('plots/flights_aqp.png')
+    plt.show()
+
+
+def plot_rl_tune():
+    RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO+DropOne', 'PPO']
+    RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#a1153b', '#eb144f']
+    colors = ['#ED93C9',
+              '#E778B7',
+              '#E35DA5',
+              '#DE428F',
+              '#D92879',
+              '#D40D63',
+              '#CF004D',
+              '#CA0040',
+              '#EB144F']
+
+    # ent_coeff in [0, 0.001, 0.01]
+    # lr in [5e-6, 5e-5, 5e-4]
+
+    ent_range = [0, 1e-3, 1e-2]
+    lr_range = [5e-6, 5e-5, 5e-4]
+    experiments = [*itertools.product(ent_range, lr_range)]
+
+    x = np.array([*range(len(experiments))])
+    xlabels = [f'[{p[0]},{p[1]}]' for p in experiments]
+    y = \
+        [0.41, 0.428, 0.432,  # ent=0
+         0.43, 0.454, 0.455,  # ent=1e-3
+         0.47, 0.501, 0.49]  # ent=1e-2
+    y_err \
+        = [0.03, 0.019, 0.022,  # ent=0
+           0.019, 0.011, 0.02,  # ent=1e-3
+           0.02, 0.009, 0.015]  # ent=1e-2
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=colors)
+    plt.title('')
+    plt.xticks(x, xlabels, fontsize=16, rotation=90)
+    plt.subplots_adjust(bottom=0.4)
+    plt.yticks(np.arange(0, 0.6, 0.1), fontsize=16)
+
+    plt.ylabel("Score(S)", fontsize=16)
+    plt.savefig('plots/rl_tune.pdf')
+    plt.savefig('plots/rl_tune.png')
+    plt.show()
+
+
+def plot_query_sampling():
+    y = [0.12539, 0.03324, 0.01446, 0.01195, 0.01686, 0.00542, 0.00394, 0.00985, 0.00503, 0.00487, 0.00499, 0.00451,
+         0.00350, 0.00230, 0.00352, 0.00364, 0.00405, 0.00416, 0.00444, 0.00369, 0.00225, 0.00358, 0.00262, 0.00222,
+         0.00243, 0.00326, 0.00150, 0.00219, 0.00257, 0.00137, 0.00127, 0.00123, 0.00155, 0.00183, 0.00155, 0.00106,
+         0.00138, 0.00098, 0.00106, 0.00089, 0.00142, 0.00109, 0.00097, 0.00076, 0.00207, 0.00085, 0.00122, 0.00071,
+         0.00117, 0.00101, 0.00129, 0.00064, 0.00071, 0.00088]
+    x = 5 * np.array([*range(len(y))])
+
+    plt.figure(figsize=(8, 6))
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    # plt.minorticks_on()
+    plt.tick_params(axis=u'x', which=u'major', length=0)
+    plt.bar(x, y, align='center', alpha=1., capsize=10, width=2.5)
+    plt.title('')
+    xlabels = [str(xx) if xx % 100 == 0 else '' for xx in x]
+    plt.xticks(x, xlabels, fontsize=16)
+    plt.subplots_adjust(left=0.15)
+    plt.yticks(np.arange(0, 0.14, 0.01), fontsize=16)
+
+    plt.ylabel("difference", fontsize=16)
+    plt.savefig('plots/query_sampling.pdf')
+    plt.savefig('plots/query_sampling.png')
+    plt.show()
+
+
 if __name__ == '__main__':
     # plot_ray_avg_mas_results()
     # plot_ray_avg_imdb_results()
@@ -1398,6 +1530,8 @@ if __name__ == '__main__':
     # plot_view_size_array_results()
     # plot_imdb_rl_algos()
     # plot_mas_rl_algos()
-    # plot_flights_aqp_results2()
+    # plot_flights_aqp_results3()
     # plot_query_answer_time()
-    plot_drop1_extended_results()
+    # plot_drop1_extended_results()
+    plot_rl_tune()
+    plot_query_sampling()
