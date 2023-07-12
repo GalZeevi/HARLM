@@ -45,7 +45,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--cpus", type=int, default=6, help="How many cpus to use for the algorithm."
+        "--cpus", type=int, default=1, help="How many cpus to use for the algorithm."
     )
 
     parser.add_argument(
@@ -53,7 +53,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--rollouts", type=int, default=3, help="How many rollout workers to use."
+        "--rollouts", type=int, default=1, help="How many rollout workers to use."
     )
 
     parser.add_argument(
@@ -102,6 +102,18 @@ def get_cli_args():
 
     parser.add_argument(
         "--ray_checkpoint", type=str, default='latest_checkpoint', help="Name of ray's checkpoint directory to use."
+    )
+
+    parser.add_argument(
+        "--ppo_ent_coeff", type=float, default=0, help="PPO Entropy coefficient to use."
+    )
+
+    parser.add_argument(
+        "--ppo_kl_coeff", type=float, default=0.2, help="PPO kl coefficient to use."
+    )
+
+    parser.add_argument(
+        "--ppo_lr", type=float, default=5e-5, help="PPO lr to use."
     )
 
     parser.add_argument('--test', action='store_true', default=False)
@@ -456,7 +468,7 @@ def get_algorithm():
     elif ALG == AlgorithmNames.PPO:
         alg_config = ppo.PPOConfig() \
             .environment(env=env_class, render_env=False, env_config=env_config) \
-            .training(model=model_config, entropy_coeff=0.01) \
+            .training(model=model_config, entropy_coeff=cli_args.ppo_ent_coeff, kl_coeff=cli_args.ppo_kl_coeff, lr=cli_args.ppo_lr) \
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
             .framework('torch') \
@@ -592,12 +604,14 @@ def _get_sample_from_model(model, env):
     prev_action = None
     prev_reward = None
 
-    while not done:  # TODO add tqdm here?
+    pbar = tqdm(total=cli_args.k if cli_args.env == EnvNames.CHOOSE_K else cli_args.horizon)
+    while not done:
         action = model.compute_single_action(observation=obs, prev_action=prev_action, prev_reward=prev_reward)
         next_obs, reward, done, _, _ = env.step(action)
         prev_action = action
         prev_reward = reward
         obs = next_obs
+        pbar.update()
 
     sample_ids = env.get_sample_ids()
     scores = env.get_episode_scores()
