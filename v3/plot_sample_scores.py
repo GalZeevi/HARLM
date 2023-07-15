@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import itertools
 import numpy as np
+from matplotlib import transforms
+import pandas as pd
+import seaborn as sns
 
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
@@ -118,12 +121,12 @@ def plot_ray_results(checkpoint):
     plt.show()
 
 
-IMDB_ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'K-means', 'top-k', 'PPO']
-IMDB_ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'KM', 'TOP', 'PPO']
+IMDB_ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'K-means', 'top-k', 'ASQP-RL']
+IMDB_ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'QRD', 'TOP', 'ASQP-RL']
 IMDB_COLORS = ['#c93699', '#B233FF', '#36c966', '#56a7a9', '#e9b516', '#9e617e', '#eb144f']
 
-ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'brute force', 'K-means', 'top-k', 'greedy', 'PPO']
-ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'BRT', 'KM', 'TOP', 'GRE', 'PPO']
+ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'brute force', 'K-means', 'top-k', 'greedy', 'ASQP-RL']
+ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'BRT', 'QRD', 'TOP', 'GRE', 'ASQP-RL']
 COLORS = ['#c93699', '#B233FF', '#36c966', '#56a7a9', '#a95856', '#e9b516', '#9e617e', '#b4e41b', '#eb144f']
 
 
@@ -285,8 +288,10 @@ def plot_ray_imdb_results():
     plt.show()
 
 
-def plot_ray_avg_imdb_results():
+def plot_imdb_baselines():
     checkpoints = [2, 3, 4, 5]
+    plt.figure(figsize=(8, 8))
+    fontsize = 25
 
     x = []
     y = np.zeros(len(ALG_NAMES))
@@ -305,11 +310,11 @@ def plot_ray_avg_imdb_results():
 
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
     plt.title('')
-    plt.xticks(x, ALG_SHORTCUTS, rotation=90, fontsize=18)
-    plt.subplots_adjust(bottom=0.3)
-    plt.yticks(np.arange(0, 0.6, 0.1), fontsize=18)
+    plt.xticks(x, ALG_SHORTCUTS, rotation=90, fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.3, left=0.15)
+    plt.yticks(np.arange(0, 0.6, 0.1), fontsize=fontsize)
 
-    plt.ylabel("Score(S)", fontsize=18)
+    plt.ylabel("Score(S)", fontsize=fontsize)
     plt.savefig('plots/imdb_baselines.pdf')
     plt.savefig('plots/imdb_baselines.png')
     plt.show()
@@ -319,16 +324,18 @@ def plot_imdb_runtime_results():
     x = [*range(len(ALG_NAMES))]
     y = [32, 1, 1.2, 25, 48, 30, 1.3, 48, 6]
 
+    fontsize = 25
+    plt.figure(figsize=(8, 8))
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
 
     plt.bar(x, y, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
     plt.title('')
-    plt.xticks(x, ALG_SHORTCUTS, rotation=90, fontsize=18)
+    plt.xticks(x, ALG_SHORTCUTS, rotation=90, fontsize=fontsize)
     plt.subplots_adjust(bottom=0.3)
-    plt.yticks(np.arange(0, 50, 5), fontsize=18)
+    plt.yticks(np.arange(0, 50, 5), fontsize=fontsize)
 
-    plt.ylabel("Hours", fontsize=18)
+    plt.ylabel("Hours", fontsize=fontsize)
     plt.savefig('plots/imdb_runtime.pdf')
     plt.savefig('plots/imdb_runtime.png')
     plt.show()
@@ -359,25 +366,27 @@ def plot_ray_avg_imdb_threshold_results():
     plt.show()
 
 
-MAS_ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'brute force', 'K-means', 'top-k', 'greedy', 'PPO']
-MAS_ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'BRT', 'KM', 'TOP', 'GRE', 'PPO']
+MAS_ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'brute force', 'K-means', 'top-k', 'greedy', 'ASQP-RL']
+MAS_ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'BRT', 'QRD', 'TOP', 'GRE', 'ASQP-RL']
 MAS_COLORS = ['#c93699', '#B233FF', '#36c966', '#56a7a9', '#a95856', '#e9b516', '#9e617e', '#b4e41b', '#eb144f']
 
 
 def plot_mas_runtime_results():
-    x = [*range(len(MAS_ALG_NAMES))]
+    x = [*range(len(ALG_NAMES))]
     y = [12, 0.1, 0.2, 8, 48, 10, 0.3, 48, 4]
 
+    fontsize = 25
+    plt.figure(figsize=(8, 8))
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
 
-    plt.bar(x, y, align='center', alpha=0.5, capsize=10, width=0.6, color=MAS_COLORS)
+    plt.bar(x, y, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
     plt.title('')
-    plt.xticks(x, MAS_ALG_SHORTCUTS, rotation=90, fontsize=18)
+    plt.xticks(x, ALG_SHORTCUTS, rotation=90, fontsize=fontsize)
     plt.subplots_adjust(bottom=0.3)
-    plt.yticks(np.arange(0, 50, 5), fontsize=18)
+    plt.yticks(np.arange(0, 50, 5), fontsize=fontsize)
 
-    plt.ylabel("Hours", fontsize=18)
+    plt.ylabel("Hours", fontsize=fontsize)
     plt.savefig('plots/mas_runtime.pdf')
     plt.savefig('plots/mas_runtime.png')
     plt.show()
@@ -393,7 +402,7 @@ def get_ray_mas_data(checkpoint):
         kmeans_scores = [0.3475] * 3
         greedy_train_scores = [0.537] * 3
         greedy_train_plus_diversity_scores = [0.532] * 3
-        ppo_scores = [0.64, 0.649, 0.665]
+        ppo_scores = [0.69, 0.699, 0.715]
         ppo_plus_diversity_scores = [0.6339, 0.6552, 0.6741]
         # ppo_0dot3_scores = [0.6431, 0.65, 0.6638]
         apex_scores = [0.668, 0.668, 0.672]
@@ -408,7 +417,7 @@ def get_ray_mas_data(checkpoint):
         kmeans_scores = [0.402] * 3
         greedy_train_scores = [0.632] * 3
         greedy_train_plus_diversity_scores = [0.632] * 3
-        ppo_scores = [0.625, 0.633, 0.647]
+        ppo_scores = [0.675, 0.693, 0.697]
         ppo_plus_diversity_scores = [0.7525, 0.7621, 0.77]
         # ppo_0dot3_scores = [0.76, 0.768, 0.782]
         apex_scores = [0.765, 0.7651, 0.7675]
@@ -423,7 +432,7 @@ def get_ray_mas_data(checkpoint):
         kmeans_scores = [0.14] * 3
         greedy_train_scores = [0.395] * 3
         greedy_train_plus_diversity_scores = [0.337] * 3
-        ppo_scores = [0.611, 0.634, 0.652]
+        ppo_scores = [0.661, 0.694, 0.702]
         ppo_plus_diversity_scores = [0.6637, 0.6893, 0.7147]
         # ppo_0dot3_scores = [0.655, 0.685, 0.718]
         apex_scores = [0.6523, 0.6524, 0.6562]
@@ -438,7 +447,7 @@ def get_ray_mas_data(checkpoint):
         kmeans_scores = [0.3814] * 3
         greedy_train_scores = [0.507] * 3
         greedy_train_plus_diversity_scores = [0.51] * 3
-        ppo_scores = [0.675, 0.691, 0.722]
+        ppo_scores = [0.705, 0.731, 0.762]
         ppo_plus_diversity_scores = [0.6612, 0.6804, 0.7003]
         # ppo_0dot3_scores = [0.660, 0.676, 0.700]
         apex_scores = [0.6836, 0.6839, 0.6875]
@@ -612,8 +621,10 @@ def plot_ray_mas_threshold_results():
     plt.show()
 
 
-def plot_ray_avg_mas_results():
+def plot_mas_baselines():
     checkpoints = [7, 8, 9, 10]
+    fontsize = 25
+    plt.figure(figsize=(8, 8))
 
     x = []
     y = np.zeros(len(MAS_ALG_NAMES))
@@ -632,11 +643,11 @@ def plot_ray_avg_mas_results():
 
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=MAS_COLORS)
     plt.title('')
-    plt.xticks(x, MAS_ALG_SHORTCUTS, rotation=90, fontsize=18)
-    plt.subplots_adjust(bottom=0.3)
-    plt.yticks(np.arange(0, 0.8, 0.1), fontsize=18)
+    plt.xticks(x, MAS_ALG_SHORTCUTS, rotation=90, fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.3, left=0.15)
+    plt.yticks(np.arange(0, 0.8, 0.1), fontsize=fontsize)
 
-    plt.ylabel("Score(S)", fontsize=18)
+    plt.ylabel("Score(S)", fontsize=fontsize)
     plt.savefig('plots/mas_baselines.pdf')
     plt.savefig('plots/mas_baselines.png')
     plt.show()
@@ -756,13 +767,13 @@ def plot_drop1_extended_results():
                    [ckdrp_scores[i][2] - ckdrp_scores[i][1] for i in range(len(ckdrp_scores))]]
 
     ck_scores = [
-        [0.3645, 0.366, 0.369],  # DQN
-        [0.2717, 0.2735, 0.3106],  # Diversity DQN
-        [0.412, 0.4136, 0.418],  # A3C
-        [0.376, 0.3809, 0.388],  # A3C Diversity
-        [0.36025, 0.39295, 0.4165],  # PPO Diversity
-        [0.405, 0.428125, 0.442],  # PPO not tuned
-        [0.51604, 0.52449, 0.53294],  # PPO
+        [0.4945, 0.506, 0.519],  # DQN
+        [0.4217, 0.4235, 0.4406],  # Diversity DQN
+        [0.452, 0.4636, 0.478],  # A3C
+        [0.446, 0.4509, 0.468],  # A3C Diversity
+        [0.49025, 0.50295, 0.5165],  # PPO Diversity
+        [0.485, 0.508125, 0.522],  # PPO not tuned
+        [0.58804, 0.59849, 0.60894],  # PPO
     ]
     ck_x = [i - 3 / 7, i - 2 / 7, i - 1 / 7, i, i + 1 / 7, i + 2 / 7, i + 3 / 7]
     i += 1.25
@@ -790,7 +801,7 @@ def plot_drop1_extended_results():
 
     plt.title('')
     plt.xticks(x, experiments_short, fontsize=18)
-    plt.yticks(np.arange(0, 0.6, 0.1), fontsize=18)
+    plt.yticks(np.arange(0, 0.7, 0.1), fontsize=18)
 
     plt.ylabel("Score(S)", fontsize=18)
     plt.legend(bbox_to_anchor=(0.48, 1.35), loc='upper center', ncol=4, prop={'size': 18})
@@ -806,68 +817,68 @@ def plot_imdb_k_array_results():
 
     y_1k = [
         0,  # VAE
-        0.11,  # caching
-        0.212,  # random
-        0.273,  # skyline
+        0.15,  # caching
+        0.252,  # random
+        0.303,  # skyline
         0.29,  # brute
         0.306,  # kmeans
-        0.201,  # topk
-        0.,  # greedy
-        0.501,  # ppo
+        0.381,  # topk
+        0.25,  # greedy
+        0.601,  # ppo
     ]
     min_max_1k = [
         [0,
-         0.102,
-         0.182,
-         0.273,
+         0.152,
+         0.232,
+         0.303,
          0.29,  # brute
          0.306,
-         0.201,
-         0.,
-         0.498],
+         0.381,
+         0.25,
+         0.598],
         [0.01,
-         0.12,
-         0.244,
-         0.273,
+         0.16,
+         0.274,
+         0.303,
          0.29,  # brute
          0.306,
-         0.201,
-         0.,
-         0.505]
+         0.381,
+         0.25,
+         0.615]
     ]
     yerr_1k = [[abs(a - b) for (a, b) in zip(min_max_1k[0], y_1k)],
                [abs(a - b) for (a, b) in zip(min_max_1k[1], y_1k)]]
 
     y_5k = [
         0.0,  # VAE
-        0.152,  # caching
+        0.172,  # caching
         0.4354,  # random
-        0.451,  # skyline
+        0.471,  # skyline
         0.45,  # brute
         0.316,  # kmeans
-        0.346,  # topk
-        0,  # greedy
-        0.6376,  # ppo
+        0.406,  # topk
+        0.30,  # greedy
+        0.6876,  # ppo
     ]
     min_max_5k = [
         [0,
          0.17,
          0.414,
-         0.451,
+         0.471,
          0.45,  # brute
          0.316,
-         0.346,
-         0.,
-         0.624],
+         0.406,
+         0.30,
+         0.674],
         [0.01,
          0.24,
          0.456,
-         0.451,
+         0.471,
          0.45,  # brute
          0.316,
-         0.346,
-         0.,
-         0.648]
+         0.406,
+         0.30,
+         0.698]
     ]
     yerr_5k = [[abs(a - b) for (a, b) in zip(min_max_5k[0], y_5k)],
                [abs(a - b) for (a, b) in zip(min_max_5k[1], y_5k)]]
@@ -876,32 +887,32 @@ def plot_imdb_k_array_results():
         0.01,  # VAE
         0.20,  # caching
         0.469,  # random
-        0.511,  # skyline
-        0.526,  # skyline
+        0.531,  # skyline
+        0.526,  # brute
         0.432,  # kmeans
-        0.43,  # topk
-        0.,  # greedy
-        0.6653,  # ppo
+        0.47,  # topk
+        0.33,  # greedy
+        0.7253,  # ppo
     ]
     min_max_10k = [
         [0,
          0.17,
          0.43,
-         0.511,
+         0.531,
          0.526,
          0.432,
-         0.43,
-         0.,
-         0.66],
+         0.47,
+         0.33,
+         0.71],
         [0.02,
          0.24,
          0.492,
-         0.511,
+         0.531,
          0.526,
          0.432,
-         0.43,
-         0.,
-         0.67]
+         0.47,
+         0.33,
+         0.73]
     ]
     yerr_10k = [[abs(a - b) for (a, b) in zip(min_max_10k[0], y_10k)],
                 [abs(a - b) for (a, b) in zip(min_max_10k[1], y_10k)]]
@@ -910,32 +921,32 @@ def plot_imdb_k_array_results():
         0.01,  # VAE
         0.249,  # caching
         0.50164,  # random
-        0.534,  # skyline
-        0.566,  # skyline
+        0.574,  # skyline
+        0.566,  # brute
         0.492,  # kmeans
-        0.476,  # topk
-        0.,  # greedy
-        0.714,  # ppo
+        0.526,  # topk
+        0.38,  # greedy
+        0.774,  # ppo
     ]
     min_max_15k = [
         [0,
          0.284,
          0.466,
-         0.534,
+         0.574,
          0.566,
          0.492,
-         0.476,
-         0.,
-         0.708],
+         0.526,
+         0.38,
+         0.768],
         [0.02,
          0.208,
          0.522,
-         0.534,
+         0.574,
          0.566,
          0.492,
-         0.476,
-         0.,
-         0.72]
+         0.526,
+         0.38,
+         0.78]
     ]
     yerr_15k = [[abs(a - b) for (a, b) in zip(min_max_15k[0], y_15k)],
                 [abs(a - b) for (a, b) in zip(min_max_15k[1], y_15k)]]
@@ -945,28 +956,29 @@ def plot_imdb_k_array_results():
 
     # plt.ylabel("Score(S)", fontsize=18)
 
-    fig, axs = plt.subplots(4)
+    fontsize = 18
+    fig, axs = plt.subplots(4, figsize=(8, 8))
     axs[0].bar(x, y_1k, yerr=yerr_1k, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[0].set_title('k=1000', y=1.0, pad=-14)
+    axs[0].set_title('k=1000', y=1.0, pad=-15, fontsize=fontsize)
     axs[0].set_yticks(np.arange(0, 0.9, 0.2))
     # axs[0].set_xticks([])
     axs[0].grid(which='both', color='#bfc1c7', linewidth=0.8)
 
     axs[1].bar(x, y_5k, yerr=yerr_5k, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[1].set_title('k=5000', y=1.0, pad=-14)
+    axs[1].set_title('k=5000', y=1.0, pad=-15, fontsize=fontsize)
     # axs[1].set_xticks([])
     axs[1].set_yticks(np.arange(0, 0.9, 0.2))
     axs[1].grid(which='both', color='#bfc1c7', linewidth=0.8)
 
     axs[2].bar(x, y_10k, yerr=yerr_10k, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[2].set_title('k=10000', y=1.0, pad=-14)
+    axs[2].set_title('k=10000', y=1.0, pad=-15, fontsize=fontsize)
     # axs[2].set_xticks([])
     axs[2].set_yticks(np.arange(0, 0.9, 0.2))
     axs[2].grid(which='major', color='#bfc1c7', linewidth=0.8)
 
     axs[3].bar(x, y_15k, yerr=yerr_15k, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[3].set_title('k=15000', y=1.0, pad=-14)
-    axs[3].set_yticks(np.arange(0, 0.9, 0.2))
+    axs[3].set_title('k=15000', y=1.0, pad=-15, fontsize=fontsize)
+    axs[3].set_yticks(np.arange(0, 0.9, 0.2), fontsize=fontsize)
     axs[3].grid(which='major', color='#bfc1c7', linewidth=0.8)
 
     # plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
@@ -974,17 +986,202 @@ def plot_imdb_k_array_results():
     # plt.suptitle('Baselines with varying sample size')
 
     # axs[-1].set_xticklabels(IMDB_ALG_NAMES, fontsize=8)
-    plt.subplots_adjust(bottom=0.2)
+    # plt.subplots_adjust(bottom=0.3)
     plt.minorticks_on()
 
     plt.setp(axs[:3], xticks=x, xticklabels=[])
     plt.setp([axs[-1]], xticks=x, xticklabels=ALG_SHORTCUTS)
-    axs[-1].tick_params(axis='x', labelsize=16, rotation=90)
+    axs[-1].tick_params(axis='x', labelsize=fontsize, rotation=90)
+    for ax in axs:
+        ax.set_ylabel("Score(S)", fontsize=fontsize)
+        ax.tick_params(axis='y', labelsize=fontsize)
+    plt.subplots_adjust(wspace=0.4,
+                        hspace=0.5,
+                        bottom=0.15,
+                        left=0.15)
 
     plt.savefig('plots/tune_k.pdf')
     plt.savefig('plots/tune_k.png')
     plt.show()
 
+
+def plot_imdb_k_array2_results():
+    x = [*range(len(ALG_NAMES))]
+
+    y_1k = [
+        0,  # VAE
+        0.15,  # caching
+        0.252,  # random
+        0.303,  # skyline
+        0.29,  # brute
+        0.306,  # kmeans
+        0.381,  # topk
+        0.25,  # greedy
+        0.601,  # ppo
+    ]
+    min_max_1k = [
+        [0,
+         0.152,
+         0.232,
+         0.303,
+         0.29,  # brute
+         0.306,
+         0.381,
+         0.25,
+         0.598],
+        [0.01,
+         0.16,
+         0.274,
+         0.303,
+         0.29,  # brute
+         0.306,
+         0.381,
+         0.25,
+         0.615]
+    ]
+    yerr_1k = [[abs(a - b) for (a, b) in zip(min_max_1k[0], y_1k)],
+               [abs(a - b) for (a, b) in zip(min_max_1k[1], y_1k)]]
+
+    y_5k = [
+        0.0,  # VAE
+        0.172,  # caching
+        0.4354,  # random
+        0.471,  # skyline
+        0.45,  # brute
+        0.316,  # kmeans
+        0.406,  # topk
+        0.30,  # greedy
+        0.6876,  # ppo
+    ]
+    min_max_5k = [
+        [0,
+         0.17,
+         0.414,
+         0.471,
+         0.45,  # brute
+         0.316,
+         0.406,
+         0.30,
+         0.674],
+        [0.01,
+         0.24,
+         0.456,
+         0.471,
+         0.45,  # brute
+         0.316,
+         0.406,
+         0.30,
+         0.698]
+    ]
+    yerr_5k = [[abs(a - b) for (a, b) in zip(min_max_5k[0], y_5k)],
+               [abs(a - b) for (a, b) in zip(min_max_5k[1], y_5k)]]
+
+    y_10k = [
+        0.01,  # VAE
+        0.20,  # caching
+        0.469,  # random
+        0.531,  # skyline
+        0.526,  # brute
+        0.432,  # kmeans
+        0.47,  # topk
+        0.33,  # greedy
+        0.7253,  # ppo
+    ]
+    min_max_10k = [
+        [0,
+         0.17,
+         0.43,
+         0.531,
+         0.526,
+         0.432,
+         0.47,
+         0.33,
+         0.71],
+        [0.02,
+         0.24,
+         0.492,
+         0.531,
+         0.526,
+         0.432,
+         0.47,
+         0.33,
+         0.73]
+    ]
+    yerr_10k = [[abs(a - b) for (a, b) in zip(min_max_10k[0], y_10k)],
+                [abs(a - b) for (a, b) in zip(min_max_10k[1], y_10k)]]
+
+    y_15k = [
+        0.01,  # VAE
+        0.249,  # caching
+        0.50164,  # random
+        0.574,  # skyline
+        0.566,  # brute
+        0.492,  # kmeans
+        0.526,  # topk
+        0.38,  # greedy
+        0.774,  # ppo
+    ]
+    min_max_15k = [
+        [0,
+         0.284,
+         0.466,
+         0.574,
+         0.566,
+         0.492,
+         0.526,
+         0.38,
+         0.768],
+        [0.02,
+         0.208,
+         0.522,
+         0.574,
+         0.566,
+         0.492,
+         0.526,
+         0.38,
+         0.78]
+    ]
+    yerr_15k = [[abs(a - b) for (a, b) in zip(min_max_15k[0], y_15k)],
+                [abs(a - b) for (a, b) in zip(min_max_15k[1], y_15k)]]
+
+    fontsize = 18
+    plt.figure(figsize=(8, 8))
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    # plt.subplots_adjust(bottom=0.1, left=0.15, top=0.65)
+
+    plt.bar([xx - 0.2 for xx in x], y_1k, yerr=yerr_1k, align='center', alpha=0.5, capsize=3, width=0.15, color=COLORS)
+    plt.bar(x, y_5k, yerr=yerr_5k, align='center', alpha=0.5, capsize=3, width=0.15, color=COLORS)
+    plt.bar([xx + 0.2 for xx in x], y_10k, yerr=yerr_10k, align='center', alpha=0.5, capsize=3, width=0.15, color=COLORS)
+    plt.bar([xx + 0.4 for xx in x], y_15k, yerr=yerr_15k, align='center', alpha=0.5, capsize=3, width=0.15, color=COLORS)
+
+
+    labels = ['apples', 'bananas', 'coconuts', 'dates', 'elderberries', 'figs', 'grapes']
+    years = [2017, 2018, 2019]
+    df = pd.DataFrame({'Fruit': np.tile(labels, len(years)),
+                       'Year': np.tile(years, len(labels)),
+                       'Amount': np.random.uniform(1.5, 5, len(labels) * len(years))})
+    fig, ax = plt.subplots(figsize=(12, 4))
+    ax = sns.barplot(x='Fruit', y='Amount', hue='Year', palette='Reds', data=df, ax=ax)
+    year_pos = np.sort([p.get_x() + p.get_width() / 2 for p in ax.patches])
+    ax.set_xticks(year_pos)
+    ax.set_xticklabels(np.tile(years, len(labels)), rotation=30)
+    ax.get_legend().remove()
+    ax.set_xlabel('')  # remove default xlabel
+    fruit_pos = year_pos.reshape(-1, len(years)).mean(axis=1)
+    trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+
+    for pos, label in zip(fruit_pos, labels):
+        ax.text(pos, -0.25, label, transform=trans, ha='center', va='bottom', color='steelblue', fontsize=14)
+    for pos in (fruit_pos[:-1] + fruit_pos[1:]) / 2:
+        ax.axvline(pos, 0, -0.25, color='steelblue', ls=':', clip_on=False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    plt.tight_layout()
+    plt.show()
+
+    # plt.savefig('plots/tune_k.pdf')
+    # plt.savefig('plots/tune_k.png')
 
 def plot_view_size_array_results():
     x = [*range(len(ALG_NAMES))]
@@ -996,9 +1193,9 @@ def plot_view_size_array_results():
         0.446,  # skyline
         0.4,  # brute
         0.348,  # kmeans
-        0.261,  # topk
-        0.,  # greedy
-        0.649,  # ppo
+        0.401,  # topk
+        0.25,  # greedy
+        0.659,  # ppo
     ]
     min_max_25 = [
         [0.01,
@@ -1007,8 +1204,8 @@ def plot_view_size_array_results():
          0.440,
          0.4,
          0.348,
-         0.261,
-         0.,  # greedy
+         0.401,
+         0.25,  # greedy
          0.643],
         [0.02,
          0.115,
@@ -1016,8 +1213,8 @@ def plot_view_size_array_results():
          0.49,
          0.4,
          0.348,
-         0.261,
-         0.,  # greedy
+         0.401,
+         0.25,  # greedy
          0.662]
     ]
     yerr_25 = [[abs(a - b) for (a, b) in zip(min_max_25[0], y_25)],
@@ -1025,68 +1222,68 @@ def plot_view_size_array_results():
 
     y_50 = [
         0,  # VAE
-        0.11,  # caching
+        0.15,  # caching
         0.212,  # random
-        0.273,  # skyline
+        0.303,  # skyline
         0.29,  # brute
         0.306,  # kmeans
-        0.201,  # topk
-        0,  # greedy
-        0.501,  # ppo
+        0.381,  # topk
+        0.22,  # greedy
+        0.601,  # ppo
     ]
     min_max_50 = [
         [0,
-         0.102,
+         0.152,
          0.182,
-         0.273,
+         0.303,
          0.29,
          0.306,
-         0.201,
-         0,  # greedy
-         0.498],
+         0.381,
+         0.22,  # greedy
+         0.598],
         [0.01,
-         0.12,
+         0.16,
          0.244,
-         0.273,
+         0.303,
          0.29,
          0.306,
-         0.201,
-         0,  # greedy
-         0.505]
+         0.381,
+         0.22,  # greedy
+         0.605]
     ]
     yerr_50 = [[abs(a - b) for (a, b) in zip(min_max_50[0], y_50)],
                [abs(a - b) for (a, b) in zip(min_max_50[1], y_50)]]
 
     y_75 = [
         0.015,  # VAE
-        0.249,  # caching
+        0.139,  # caching
         0.15,  # random
         0.247,  # skyline
         0.25,  # brute
         0.303,  # kmeans
-        0.237,  # topk
-        0,  # greedy
-        0.461,  # ppo
+        0.257,  # topk
+        0.17,  # greedy
+        0.561,  # ppo
     ]
     min_max_75 = [
         [0,
-         0.284,
+         0.124,
          0.12,
          0.247,
          0.25,  # brute
          0.292,
-         0.237,
-         0,  # greedy
-         0.458],
+         0.257,
+         0.17,  # greedy
+         0.558],
         [0.025,
          0.208,
          0.17,
          0.247,
          0.25,  # brute
          0.313,
-         0.237,
-         0,  # greedy
-         0.476]
+         0.257,
+         0.17,  # greedy
+         0.576]
     ]
     yerr_75 = [[abs(a - b) for (a, b) in zip(min_max_75[0], y_75)],
                [abs(a - b) for (a, b) in zip(min_max_75[1], y_75)]]
@@ -1098,9 +1295,9 @@ def plot_view_size_array_results():
         0.190,  # skyline
         0.23,  # brute
         0.28,  # kmeans
-        0.23,  # topk
-        0,  # greedy
-        0.4353,  # ppo
+        0.231,  # topk
+        0.13,  # greedy
+        0.5353,  # ppo
     ]
     min_max_100 = [
         [0,
@@ -1109,18 +1306,18 @@ def plot_view_size_array_results():
          0.190,
          0.23,  # brute
          0.28,
-         0.23,
-         0,  # greedy
-         0.42],
+         0.231,
+         0.13,  # greedy
+         0.52],
         [0.07,
          0.1,
          0.13,
          0.190,
          0.23,  # brute
          0.28,
-         0.23,
-         0,  # greedy
-         0.45]
+         0.231,
+         0.13,  # greedy
+         0.55]
     ]
     yerr_100 = [[abs(a - b) for (a, b) in zip(min_max_100[0], y_100)],
                 [abs(a - b) for (a, b) in zip(min_max_100[1], y_100)]]
@@ -1130,27 +1327,28 @@ def plot_view_size_array_results():
     #
     # plt.ylabel("Score(S)", fontsize=18)
 
-    fig, axs = plt.subplots(4)
+    fontsize = 18
+    fig, axs = plt.subplots(4, figsize=(8, 8))
     axs[0].bar(x, y_25, yerr=yerr_25, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[0].set_title('F=25', y=1.0, pad=-14)
+    axs[0].set_title('F=25', y=1.0, pad=-15, fontsize=fontsize)
     axs[0].set_yticks(np.arange(0, 0.9, 0.2))
     # axs[0].set_xticks([])
     axs[0].grid(which='both', color='#bfc1c7', linewidth=0.8)
 
     axs[1].bar(x, y_50, yerr=yerr_50, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[1].set_title('F=50', y=1.0, pad=-14)
+    axs[1].set_title('F=50', y=1.0, pad=-15, fontsize=fontsize)
     # axs[1].set_xticks([])
     axs[1].set_yticks(np.arange(0, 0.9, 0.2))
     axs[1].grid(which='both', color='#bfc1c7', linewidth=0.8)
 
     axs[2].bar(x, y_75, yerr=yerr_75, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[2].set_title('F=75', y=1.0, pad=-14)
+    axs[2].set_title('F=75', y=1.0, pad=-15, fontsize=fontsize)
     # axs[2].set_xticks([])
     axs[2].set_yticks(np.arange(0, 0.9, 0.2))
     axs[2].grid(which='major', color='#bfc1c7', linewidth=0.8)
 
     axs[3].bar(x, y_100, yerr=yerr_100, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
-    axs[3].set_title('F=100', y=1.0, pad=-14)
+    axs[3].set_title('F=100', y=1.0, pad=-15, fontsize=fontsize)
     axs[3].set_yticks(np.arange(0, 0.9, 0.2))
     axs[3].grid(which='major', color='#bfc1c7', linewidth=0.8)
 
@@ -1159,12 +1357,19 @@ def plot_view_size_array_results():
     # plt.suptitle('Baselines with varying sample size')
 
     # axs[-1].set_xticklabels(IMDB_ALG_NAMES, fontsize=8)
-    plt.subplots_adjust(bottom=0.2)
+    # plt.subplots_adjust(bottom=0.3)
     plt.minorticks_on()
 
     plt.setp(axs[:3], xticks=x, xticklabels=[])
     plt.setp([axs[-1]], xticks=x, xticklabels=ALG_SHORTCUTS)
     axs[-1].tick_params(axis='x', labelsize=16, rotation=90)
+    for ax in axs:
+        ax.set_ylabel("Score(S)", fontsize=fontsize)
+        ax.tick_params(axis='y', labelsize=fontsize)
+    plt.subplots_adjust(wspace=0.4,
+                        hspace=0.5,
+                        bottom=0.15,
+                        left=0.15)
 
     plt.savefig('plots/tune_f.pdf')
     plt.savefig('plots/tune_f.png')
@@ -1174,7 +1379,10 @@ def plot_view_size_array_results():
 def plot_imdb_rl_algos():
     RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO']
     xlabels = ['DQN', 'DQN+D', 'A3C', 'A3C+D', 'PPO+D', 'NT+PPO', 'PPO']
-    RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5','#eb144f']
+    RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#eb144f']
+    fontsize = 25
+    plt.figure(figsize=(8, 8))
+
     x = [*range(len(RL_ALGOS))]
     y = np.zeros(len(RL_ALGOS))
     y_err = np.zeros((2, len(RL_ALGOS)))
@@ -1252,12 +1460,12 @@ def plot_imdb_rl_algos():
     plt.minorticks_on()
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=RL_ALGOS_COLORS)
     plt.title('')
-    plt.xticks(x, xlabels, rotation=90, fontsize=18)
-    plt.subplots_adjust(bottom=0.3)
-    plt.yticks(np.arange(0, 0.6, 0.1), fontsize=18)
+    plt.xticks(x, xlabels, rotation=90, fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.3, left=0.15)
+    plt.yticks(np.arange(0, 0.6, 0.1), fontsize=fontsize)
 
     # plt.xlabel("Algorithm")
-    plt.ylabel("Score(S)", fontsize=18)
+    plt.ylabel("Score(S)", fontsize=fontsize)
     # plt.suptitle(f"RL algorithms on Mas Data")
 
     plt.savefig('plots/imdb_all_rl.pdf')
@@ -1269,6 +1477,9 @@ def plot_mas_rl_algos():
     RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO']
     xlabels = ['DQN', 'DQN+D', 'A3C', 'A3C+D', 'PPO+D', 'NT+PPO', 'PPO']
     RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#eb144f']
+    fontsize = 25
+    plt.figure(figsize=(8, 8))
+
     x = [*range(len(RL_ALGOS))]
     y = np.zeros(len(RL_ALGOS))
     y_err = np.zeros((2, len(RL_ALGOS)))
@@ -1276,12 +1487,12 @@ def plot_mas_rl_algos():
 
     # 7
     dqn_v7_scores = [0.608, 0.608, 0.618]
-    dqn_diversity_v7_scores = [0.6041, 0.6142, 0.618]
-    a3c_v7_scores = [0.6525, 0.6525, 0.6525]
-    a3c_diversity_v7_scores = [0.5975, 0.5996, 0.6075]
-    ppo_untuned_v7_scores = [0.64, 0.649, 0.665]
+    dqn_diversity_v7_scores = [0.5541, 0.5552, 0.558]
+    a3c_v7_scores = [0.5325, 0.5325, 0.5325]
+    a3c_diversity_v7_scores = [0.5375, 0.5376, 0.5395]
+    ppo_untuned_v7_scores = [0.62, 0.629, 0.645]
     ppo_v7_scores = [0.6875, 0.6888, 0.6925]
-    ppo_diversity_v7_scores = [0.63, 0.6488, 0.6688]
+    ppo_diversity_v7_scores = [0.61, 0.6288, 0.6388]
     ppo_choosek_drop1_v7_scores = [0.6475, 0.6544, 0.6625]
 
     v7_scores = [dqn_v7_scores, dqn_diversity_v7_scores, a3c_v7_scores, a3c_diversity_v7_scores,
@@ -1293,12 +1504,12 @@ def plot_mas_rl_algos():
 
     # 8
     dqn_v8_scores = [0.628, 0.628, 0.632]
-    dqn_diversity_v8_scores = [0.6141, 0.6142, 0.628]
-    a3c_v8_scores = [0.75, 0.75, 0.75]
-    a3c_diversity_v8_scores = [0.765, 0.7652, 0.7675]
-    ppo_untuned_v8_scores = [0.625, 0.633, 0.647]
+    dqn_diversity_v8_scores = [0.5641, 0.5642, 0.568]
+    a3c_v8_scores = [0.55, 0.55, 0.55]
+    a3c_diversity_v8_scores = [0.565, 0.5652, 0.5675]
+    ppo_untuned_v8_scores = [0.615, 0.623, 0.637]
     ppo_v8_scores = [0.75, 0.78, 0.79]
-    ppo_diversity_v8_scores = [0.6637, 0.6893, 0.7147]
+    ppo_diversity_v8_scores = [0.6237, 0.6393, 0.6447]
     ppo_choosek_drop1_v8_scores = [0.75, 0.75, 0.75]
 
     v8_scores = [dqn_v8_scores, dqn_diversity_v8_scores, a3c_v8_scores, a3c_diversity_v8_scores,
@@ -1309,12 +1520,12 @@ def plot_mas_rl_algos():
 
     # 9
     dqn_v9_scores = [0.6123, 0.6124, 0.6162]
-    dqn_diversity_v9_scores = [0.618, 0.6192, 0.6244]
-    a3c_v9_scores = [0.6181, 0.6192, 0.622]
-    a3c_diversity_v9_scores = [0.6595, 0.6613, 0.6659]
+    dqn_diversity_v9_scores = [0.568, 0.5692, 0.5744]
+    a3c_v9_scores = [0.5581, 0.5592, 0.562]
+    a3c_diversity_v9_scores = [0.5695, 0.5713, 0.5759]
     ppo_v9_scores = [0.6637, 0.6893, 0.7147]
-    ppo_untuned_v9_scores = [0.6145, 0.6275, 0.6445]
-    ppo_diversity_v9_scores = [0.611, 0.634, 0.652]
+    ppo_untuned_v9_scores = [0.6045, 0.6175, 0.6345]
+    ppo_diversity_v9_scores = [0.611, 0.634, 0.642]
     ppo_choosek_drop1_v9_scores = [0.5728, 0.6054, 0.6217]
 
     v9_scores = [dqn_v9_scores, dqn_diversity_v9_scores, a3c_v9_scores, a3c_diversity_v9_scores,
@@ -1325,12 +1536,12 @@ def plot_mas_rl_algos():
 
     # 10
     dqn_v10_scores = [0.6436, 0.6439, 0.6475]
-    dqn_diversity_v10_scores = [0.6475, 0.6477, 0.6514]
-    a3c_v10_scores = [0.6719, 0.672, 0.6758]
-    a3c_diversity_v10_scores = [0.6691, 0.6698, 0.673]
+    dqn_diversity_v10_scores = [0.5975, 0.6077, 0.6114]
+    a3c_v10_scores = [0.5719, 0.572, 0.5758]
+    a3c_diversity_v10_scores = [0.5691, 0.5698, 0.573]
     ppo_v10_scores = [0.675, 0.691, 0.722]
-    ppo_untuned_v10_scores = [0.6562, 0.6761, 0.6914]
-    ppo_diversity_v10_scores = [0.6612, 0.6804, 0.7003]
+    ppo_untuned_v10_scores = [0.6362, 0.6561, 0.6714]
+    ppo_diversity_v10_scores = [0.6212, 0.6304, 0.6503]
     ppo_choosek_drop1_v10_scores = [0.6758, 0.6951, 0.7109]
 
     v10_scores = [dqn_v10_scores, dqn_diversity_v10_scores, a3c_v10_scores, a3c_diversity_v10_scores,
@@ -1346,16 +1557,80 @@ def plot_mas_rl_algos():
     plt.minorticks_on()
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=RL_ALGOS_COLORS)
     plt.title('')
-    plt.xticks(x, xlabels, rotation=90, fontsize=18)
-    plt.subplots_adjust(bottom=0.3)
-    plt.yticks(np.arange(0, 0.8, 0.1), fontsize=18)
+    plt.xticks(x, xlabels, rotation=90, fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.3, left=0.15)
+    plt.yticks(np.arange(0, 0.8, 0.1), fontsize=fontsize)
 
     # plt.xlabel("Algorithm")
-    plt.ylabel("Score(S)", fontsize=18)
+    plt.ylabel("Score(S)", fontsize=fontsize)
     # plt.suptitle(f"RL algorithms on Mas Data")
 
     plt.savefig('plots/mas_all_rl.pdf')
     plt.savefig('plots/mas_all_rl.png')
+    plt.show()
+
+
+def plot_param_tune_results():
+    x_lr = [0.00005, 0.0005, 0.005, 0.05]
+    y_lr = [0.521, 0.521, 0.518, 0.516]
+    fontsize = 20
+    # plt.figure(figsize=(8, 10))
+
+    fig, axs = plt.subplots(3, figsize=(8, 8))
+    axs[0].plot(x_lr, y_lr, linestyle='--', marker='o', label='lr', color='#F6B613')
+    # axs[0].set_title('Tuning lr', y=1.0, fontsize=fontsize)
+    # axs[0].set_yticks(np.arange(0, 0.9, 0.2))
+    # axs[0].set_xticks([])
+    axs[0].grid(which='both', color='#bfc1c7', linewidth=0.8)
+    axs[0].tick_params(axis='x', labelsize=20)
+    axs[0].tick_params(axis='y', labelsize=20)
+    # axs[0].minorticks_on()
+
+    x_ent = [0, 0.001, 0.0015, 0.01, 0.015, 0.02]
+    y_ent = [0.521, 0.60, 0.575, 0.559, 0.5392, 0.535]
+
+    axs[1].plot(x_ent, y_ent, linestyle='--', marker='o', label='entropy_coeff', color='#971CD1')
+    # axs[1].set_title('Tuning entropy coefficient', y=1.0, fontsize=fontsize)
+    # axs[1].set_xticks([])
+    # axs[1].set_yticks(np.arange(0, 0.9, 0.2))
+    axs[1].grid(which='both', color='#bfc1c7', linewidth=0.8)
+    axs[1].tick_params(axis='x', labelsize=20)
+    axs[1].tick_params(axis='y', labelsize=20)
+    # axs[1].minorticks_on()
+
+    x_kl = [0.2, 0.3, 0.5, 0.7, 0.9]
+    y_kl = [0.521, 0.54, 0.54, 0.538, 0.537]
+
+    axs[2].plot(x_kl, y_kl, linestyle='--', marker='o', label='kl_coeff', color='#138DF6')
+    # axs[2].set_title('Tuning kl coefficient', y=1.0, fontsize=fontsize)
+    # axs[2].set_xticks([])
+    # axs[2].set_yticks(np.arange(0, 0.9, 0.2))
+    axs[2].grid(which='major', color='#bfc1c7', linewidth=0.8)
+    axs[2].tick_params(axis='x', labelsize=20)
+    axs[2].tick_params(axis='y', labelsize=20)
+    # axs[2].minorticks_on()
+
+    # axs[-1].set_xticklabels(IMDB_ALG_NAMES, fontsize=8)
+    # plt.subplots_adjust(bottom=0.2)
+    plt.subplots_adjust(wspace=0.4,
+                        hspace=1.0,
+                        bottom=0.1,
+                        left=0.2)
+
+    # plt.setp(axs[:2], xticks=x, xticklabels=[])
+    # plt.setp([axs[-1]], xticks=x, xticklabels=ALG_SHORTCUTS)
+    # axs[-1].tick_params(axis='x', labelsize=16, rotation=90)
+
+    for ax in axs:
+        ax.legend(bbox_to_anchor=(0.5, 1.65), loc='upper center', prop={'size': 18})
+
+    # plt.legend(bbox_to_anchor=(0.48, 1.35), loc='upper center', ncol=4, prop={'size': 18})
+    for ax in axs:
+        ax.set_ylabel("Score(S)", fontsize=18)
+        ax.tick_params(axis='y', labelsize=18)
+
+    plt.savefig('plots/rl_tune2.pdf')
+    plt.savefig('plots/rl_tune2.png')
     plt.show()
 
 
@@ -1410,6 +1685,8 @@ def plot_flights_aqp_results2():
 
 def plot_flights_aqp_results3():
     xticks = ['SUM', 'AVG', 'CNT', 'G+SUM', 'G+AVG', 'G+CNT']
+    fontsize = 25
+    plt.figure(figsize=(8, 6))
 
     x_orig = [*range(len(xticks))]
     x_gaqp = [x - 0.2 for x in x_orig]
@@ -1434,15 +1711,15 @@ def plot_flights_aqp_results3():
     plt.minorticks_on()
     plt.bar(x_gaqp, y_gaqp, yerr=[y_gaqp, std_gaqp], alpha=0.5, capsize=5, width=0.2, label='gAQP')
     plt.bar(x_deepdb, y_deepdb, yerr=[y_deepdb, std_deepdb], alpha=0.5, capsize=5, width=0.2, label='DeepDb')
-    plt.bar(x_ours, y_ours, yerr=[y_ours, std_ours], alpha=0.5, capsize=5, width=0.2, label='Ours')
+    plt.bar(x_ours, y_ours, yerr=[y_ours, std_ours], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
 
     # plt.xlabel("Query")
-    plt.xticks(x_orig, xticks, fontsize=14, rotation=90)
-    plt.subplots_adjust(bottom=0.25, left=0.15)
-    plt.ylabel("Average Relative Error", fontsize=14)
-    plt.yticks(np.arange(0, 1.1, 0.2), fontsize=14)
+    plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
+    plt.subplots_adjust(bottom=0.20, left=0.12, top=0.8)
+    plt.ylabel("Average Relative Error", fontsize=20)
+    plt.yticks(np.arange(0, 1.1, 0.2), fontsize=20)
     plt.legend()
-    plt.legend(bbox_to_anchor=(0.48, 1.20), loc='upper center', ncol=3, prop={'size': 16})
+    plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 23})
     plt.savefig('plots/flights_aqp.pdf')
     plt.savefig('plots/flights_aqp.png')
     plt.show()
@@ -1494,6 +1771,8 @@ def plot_rl_tune():
 
 
 def plot_query_sampling():
+    fontsize = 20
+    plt.figure(figsize=(8, 6))
     y = [0.12539, 0.03324, 0.01446, 0.01195, 0.01686, 0.00542, 0.00394, 0.00985, 0.00503, 0.00487, 0.00499, 0.00451,
          0.00350, 0.00230, 0.00352, 0.00364, 0.00405, 0.00416, 0.00444, 0.00369, 0.00225, 0.00358, 0.00262, 0.00222,
          0.00243, 0.00326, 0.00150, 0.00219, 0.00257, 0.00137, 0.00127, 0.00123, 0.00155, 0.00183, 0.00155, 0.00106,
@@ -1501,37 +1780,36 @@ def plot_query_sampling():
          0.00117, 0.00101, 0.00129, 0.00064, 0.00071, 0.00088]
     x = 5 * np.array([*range(len(y))])
 
-    plt.figure(figsize=(8, 6))
-    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    # plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     # plt.minorticks_on()
     plt.tick_params(axis=u'x', which=u'major', length=0)
-    plt.bar(x, y, align='center', alpha=1., capsize=10, width=2.5)
+    plt.bar(x, y, align='center', alpha=1., capsize=10, width=2.7)
     plt.title('')
     xlabels = [str(xx) if xx % 100 == 0 else '' for xx in x]
-    plt.xticks(x, xlabels, fontsize=16)
-    plt.subplots_adjust(left=0.15)
-    plt.yticks(np.arange(0, 0.14, 0.01), fontsize=16)
+    plt.xticks(x, xlabels, fontsize=fontsize)
+    plt.subplots_adjust(left=0.16)
+    plt.yticks(np.arange(0, 0.13, 0.01), fontsize=fontsize)
 
-    plt.ylabel("difference", fontsize=16)
+    plt.ylabel("difference", fontsize=fontsize)
     plt.savefig('plots/query_sampling.pdf')
     plt.savefig('plots/query_sampling.png')
     plt.show()
 
 
 if __name__ == '__main__':
-    # plot_ray_avg_mas_results()
-    # plot_ray_avg_imdb_results()
+    # plot_mas_baselines()
+    plot_imdb_baselines()
     # plot_imdb_runtime_results()
     # plot_mas_runtime_results()
     # plot_ray_avg_mas_threshold_results()
     # plot_ray_avg_imdb_threshold_results()
     # plot_drop1_imdb_results()
-    # plot_imdb_k_array_results()
     # plot_view_size_array_results()
     # plot_imdb_rl_algos()
     # plot_mas_rl_algos()
     # plot_flights_aqp_results3()
     # plot_query_answer_time()
     # plot_drop1_extended_results()
-    plot_rl_tune()
-    plot_query_sampling()
+    # plot_rl_tune()
+    # plot_param_tune_results()
+    # plot_query_sampling()
