@@ -1,4 +1,2 @@
-/v2/lightning_logs/
-/v2/checkpoints/
-/v3/checkpoints
-/v3/lightning_logs/
+checkpoints
+/datasets/flights/
