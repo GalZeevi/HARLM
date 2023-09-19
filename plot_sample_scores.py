@@ -1547,6 +1547,94 @@ def plot_flights_aqp_results3():
     plt.show()
 
 
+def plot_flights_aqp_results4():
+    xticks = ['SUM', 'CNT', 'AVG']
+    fontsize = 25
+    plt.figure(figsize=(8, 6))
+
+    x_orig = [*range(len(xticks))]
+    x_asqp_hist = [x - 0.2 for x in x_orig]
+    x_asqp_no_hist = [x for x in x_orig]
+    x_deepdb = [x + 0.2 for x in x_orig]
+
+    y_asqp_hist = [0.8498179403, 0.3947707937, 0.7934275]
+    y_asqp_hist_min = [0.001501, 0, 0.000146]
+    y_asqp_hist_max = [1.54, 1, 2.020912]
+    y_asqp_hist_err = [[y_asqp_hist[i] - y_asqp_hist_min[i] for i in range(len(y_asqp_hist))],
+                       [y_asqp_hist_max[i] - y_asqp_hist[i] for i in range(len(y_asqp_hist))]]
+
+    y_asqp_no_hist = [0.9999982836, 0.9999942857, 0.7934275]
+    y_asqp_no_hist_min = [0.999818, 0.999847, 0.000146]
+    y_asqp_no_hist_max = [1.000456, 1, 2.020912]
+    y_asqp_no_hist_err = [[y_asqp_no_hist[i] - y_asqp_no_hist_min[i] for i in range(len(y_asqp_no_hist))],
+                          [y_asqp_no_hist_max[i] - y_asqp_no_hist[i] for i in range(len(y_asqp_no_hist))]]
+
+    y_deepdb = [1.969731448, 4.58461747, 0.97192375]
+    y_deepdb_min = [0.178153, 0.000123, 0.2168]
+    y_deepdb_max = [9.3082, 9.24396, 2.214728]
+    y_deepdb_err = [[y_deepdb[i] - y_deepdb_min[i] for i in range(len(y_deepdb))],
+                          [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    plt.bar(x_asqp_hist, y_asqp_hist, yerr=y_asqp_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL+HIST')
+    plt.bar(x_asqp_no_hist, y_asqp_no_hist, yerr=y_asqp_no_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
+    plt.bar(x_deepdb, y_deepdb, yerr=y_deepdb_err, alpha=0.5, capsize=5, width=0.2, label='DeepDB')
+
+    plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
+    plt.subplots_adjust(bottom=0.20, left=0.12, top=0.8)
+    plt.ylabel("Average Relative Error", fontsize=20)
+    plt.yticks(np.arange(0, 10, 2), fontsize=20)
+    plt.legend()
+    plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 18})
+    # plt.savefig('plots/flights_aqp.pdf')
+    # plt.savefig('plots/flights_aqp.png')
+    plt.show()
+
+def plot_flights_aqp_results5():
+    xticks = ['SUM', 'AVG', 'CNT', 'G-SUM', 'G-AVG', 'G-CNT']
+    fontsize = 25
+    plt.figure(figsize=(8, 6))
+
+    x_orig = [*range(len(xticks))]
+    x_asqp_hist = [x - 0.2 for x in x_orig]
+    x_asqp_no_hist = [x for x in x_orig]
+    x_deepdb = [x + 0.2 for x in x_orig]
+
+    y_asqp_hist = [0.668, 0.465, 0.129, 0.937, 0.006, 0.013]
+    y_asqp_hist_min = [0.31, 0.04, 0, 0.71, 0., 0.]
+    y_asqp_hist_max = [1, 0.88, 0.4, 1., 0.036, 0.043]
+    y_asqp_hist_err = [[y_asqp_hist[i] - y_asqp_hist_min[i] for i in range(len(y_asqp_hist))],
+                       [y_asqp_hist_max[i] - y_asqp_hist[i] for i in range(len(y_asqp_hist))]]
+
+    y_asqp_no_hist = [0.89, 0.22, 0.99, 0.99, 0.979, 0.99]
+    y_asqp_no_hist_min = [0.44, 0, 0., 0., 0.8, 0.]
+    y_asqp_no_hist_max = [1, 0.84, 2.1, 2.3, 1.14, 2.]
+    y_asqp_no_hist_err = [[y_asqp_no_hist[i] - y_asqp_no_hist_min[i] for i in range(len(y_asqp_no_hist))],
+                          [y_asqp_no_hist_max[i] - y_asqp_no_hist[i] for i in range(len(y_asqp_no_hist))]]
+
+    y_deepdb = [0.919, 0.94, 0.275, 0.9, 0.96, 0.1]
+    y_deepdb_min = [0.73, 0.88, 0., 0.77, 0.91, 0.]
+    y_deepdb_max = [1.06, 1., 0.65, 1.03, 1.01, 0.33]
+    y_deepdb_err = [[y_deepdb[i] - y_deepdb_min[i] for i in range(len(y_deepdb))],
+                          [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    plt.bar(x_asqp_hist, y_asqp_hist, yerr=y_asqp_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL+HIST')
+    plt.bar(x_asqp_no_hist, y_asqp_no_hist, yerr=y_asqp_no_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
+    plt.bar(x_deepdb, y_deepdb, yerr=y_deepdb_err, alpha=0.5, capsize=5, width=0.2, label='DeepDB')
+
+    plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
+    plt.subplots_adjust(bottom=0.20, left=0.12, top=0.8)
+    plt.ylabel("Average Relative Error", fontsize=20)
+    plt.yticks(np.arange(0, 2.5, 0.5), fontsize=20)
+    plt.legend()
+    plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 18})
+    # plt.savefig('plots/flights_aqp.pdf')
+    # plt.savefig('plots/flights_aqp.png')
+    plt.show()
+
 def plot_rl_tune():
     RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO+DropOne', 'PPO']
     RL_ALGOS_COLORS = ['#21A428', '#17D580', '#615FB1', '#9290CA', '#ed8ad3', '#ed8aa5', '#a1153b', '#eb144f']
@@ -1620,7 +1708,7 @@ def plot_query_sampling():
 
 if __name__ == '__main__':
     # plot_mas_baselines()
-    plot_imdb_baselines()
+    # plot_imdb_baselines()
     # plot_imdb_runtime_results()
     # plot_mas_runtime_results()
     # plot_ray_avg_mas_threshold_results()
@@ -1635,3 +1723,4 @@ if __name__ == '__main__':
     # plot_rl_tune()
     # plot_param_tune_results()
     # plot_query_sampling()
+    plot_flights_aqp_results5()

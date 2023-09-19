@@ -37,7 +37,8 @@ class QueryGenerator:
                                     f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                     f"AND data_type IN ({' , '.join(db_formatted_data_types)}) " +
                                     f"AND column_name <> '{self.pivot}'")
-        return columns
+        # return columns
+        return ['dep_delay', 'distance', 'arr_delay', 'year_date', 'air_time']
 
     def init_categorical_cols(self):
         textual_data_types = ['character varying%%', 'varchar%%', '%%text', 'char%%', 'character%%']
@@ -45,7 +46,8 @@ class QueryGenerator:
         columns = DataAccess.select(f"SELECT column_name AS col FROM information_schema.columns " +
                                     f"WHERE table_schema='{self.schema}' AND table_name='{self.table}' " +
                                     f"AND ({' OR '.join([f'data_type LIKE {data_type}' for data_type in db_formatted_data_types])})")
-        return columns
+        # return columns
+        return ['unique_carrier', 'origin', 'dest']
 
     def init_numerical_vals(self, numerical_cols):
         # build a dict mapping col -> [min, max]
@@ -86,8 +88,9 @@ class QueryGenerator:
 
         free_columns = [col for col in (self.categorical_cols + self.numerical_cols) if col not in list(chosen_columns)]
 
-        chosen_columns = np.concatenate([chosen_columns,
-                                         random.sample(free_columns, num_of_columns)])
+        if num_of_columns > 0:
+            chosen_columns = np.concatenate([chosen_columns,
+                                             random.sample(free_columns, num_of_columns)])
 
         # table_size = DataAccess.select_one(f'SELECT COUNT(1) AS table_size FROM {self.schema}.{self.table}')
         view_size = ConfigManager.get_config('samplerConfig.viewSize')
@@ -101,9 +104,9 @@ class QueryGenerator:
                 frequency = random.uniform(0, 0.05) * len(self.categorical_vals[col])
                 values = random.sample(self.categorical_vals[col], max(int(frequency), 1))
                 values = [val.replace("'", "''") for val in values]
-                db_formatted_values = " , ".join([f"\'{value}\'" for value in values])
+                db_formatted_values = ", ".join([f"\'{value}\'" for value in values])
 
-                where_clause.append(f'{col} IN ({db_formatted_values})')
+                where_clause.append(f'({col} IN ({db_formatted_values}))')
 
             elif col in self.numerical_cols:
                 # numerical column
@@ -115,11 +118,11 @@ class QueryGenerator:
 
                 coin = np.random.choice([0, 1, 2], size=1).item()
                 if coin == 0:
-                    where_clause.append(f'{col} > {lb}')
+                    where_clause.append(f'({col} > {lb})')
                 elif coin == 1:
-                    where_clause.append(f'{col} < {ub}')
+                    where_clause.append(f'({col} < {ub})')
                 else:
-                    where_clause.append(f'{col} BETWEEN {lb} AND {ub}')
+                    where_clause.append(f'({col} BETWEEN {lb} AND {ub})')
 
         where_clause_str = ''
         if len(where_clause) > 0:
@@ -135,9 +138,7 @@ class QueryGenerator:
             return f"SELECT {agg_func}({agg_col}) AS agg FROM {self.schema}.{self.table} {where_clause_str};"
 
 
-def generate_batch(num_queries_to_generate, checkpoint, agg, outdir='queries'):
-    batch_size = 200
-    CheckpointManager.start_new_version()
+def generate_batch(num_queries_to_generate, checkpoint, agg, batch_size=100, outdir='queries'):
     pbar = tqdm(total=num_queries_to_generate)
     query_generator = QueryGenerator()
 
@@ -153,7 +154,6 @@ def generate_batch(num_queries_to_generate, checkpoint, agg, outdir='queries'):
             query_result = np.array(DataAccess.select(query))
 
             if (query_result is not None) and (len(query_result) > 0) and (all(x is not None for x in query_result)):
-                # print(f'#### num results: {len(query_result)}')
                 queries.append(query)
                 results.append(query_result)
                 queries_generated += 1
@@ -169,9 +169,9 @@ def generate_batch(num_queries_to_generate, checkpoint, agg, outdir='queries'):
         first_query_id += queries_generated
 
 
-def read_all_queries(ver, outdir, outfile_name):
-    filenames = os.listdir(f'checkpoints/{vers}/{outdir}')
-    with open(f'checkpoints/{vers}/{outfile_name}.sql', 'w') as outfile:
+def write_queries_to_file(ver, outdir, outfile_name):
+    filenames = os.listdir(f'checkpoints/{ver}/{outdir}')
+    with open(f'checkpoints/{ver}/{outfile_name}.sql', 'w') as outfile:
         for fname in filenames:
             if 'queries' not in fname:
                 continue
@@ -181,6 +181,8 @@ def read_all_queries(ver, outdir, outfile_name):
 
 
 if __name__ == '__main__':
-    vers = 20
-    generate_batch(500, vers, False)
-    read_all_queries(vers, outdir='queries_min', outfile_name='flights_select_queries_min')
+    vers = 21
+    generate_batch(100, vers, False, outdir='workload')
+    # write_queries_to_file(vers, outdir='queries', outfile_name='flights_aqp_queries')
+    # q = QueryGenerator().get_query(0, True)
+    # print(q)
