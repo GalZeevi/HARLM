@@ -428,7 +428,7 @@ TRIAL_NAME = f'{K}_{cli_args.env}_{ALG}_{datetime.datetime.now().strftime("%Y-%m
     if cli_args.trial_name is None else cli_args.trial_name
 OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
 RECORD_RAW_TRAIN_RESULTS = True
-SAVE_RESULT_STEP = 5
+SAVE_RESULT_STEP = 10
 SAVE_MODEL_STEP = 15
 
 
