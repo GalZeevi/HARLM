@@ -5,8 +5,8 @@ from tqdm import tqdm
 from random import shuffle
 
 
-def start():
-    with open('datasets/mas/queries.sql') as file:
+def start(version, path='checkpoints/22/queries.txt'):
+    with open(path) as file:
         queries = [line.rstrip() for line in file]
 
     pbar = tqdm(total=len(queries))
@@ -23,11 +23,11 @@ def start():
                 if len(query_result) > 0:
                     results.append(query_result)
                     queries.append(query)
-            except:
-                print(f'error in query: [{query}]')
+            except Exception as e:
+                print(f'error in query: [{query}] [{str(e)}]')
             pbar.update(1)
-        CheckpointManager.save(f'queries_{saved_results}-{saved_results + len(queries)}', queries)
-        CheckpointManager.save(f'results_{saved_results}-{saved_results + len(queries)}', results)
+        CheckpointManager.save(f'queries_{saved_results}-{saved_results + len(queries)}', queries, version=version)
+        CheckpointManager.save(f'results_{saved_results}-{saved_results + len(queries)}', results, version=version)
         saved_results += len(queries)
 
 

@@ -176,7 +176,7 @@ class ChooseKEnv(gym.Env):
 
         self.current_score = new_score
         done = (self.step_count == self.k)
-        info = {} if not done else self.get_episode_scores()
+        info = self.get_episode_scores()  # info = {} if not done else self.get_episode_scores()
         # (self.iter_num % self.save_sample_step == 0) and self.save_sample()
 
         return {'observations': self.selected_tuples_numpy, 'action_mask': self.action_mask}, reward, done, False, info
