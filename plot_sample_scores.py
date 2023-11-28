@@ -143,6 +143,7 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.562, 0.564, 0.566]
         greedy_scores = [0] * 3
         ppo_scores = [0.472, 0.482, 0.494]
+        ppo2_scores = [0.432, 0.464, 0.483]
     elif checkpoint == 3:
         vae_scores = [0.01] * 3
         cache_scores = [0.102, 0.11, 0.12]
@@ -155,6 +156,7 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.32, 0.322, 0.324]
         greedy_scores = [0] * 3
         ppo_scores = [0.498, 0.501, 0.505]
+        ppo2_scores = [0.22, 0.26, 0.316]
     elif checkpoint == 4:
         vae_scores = [0] * 3
         cache_scores = [0, 0.001, 0.004]
@@ -167,6 +169,7 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.374, 0.374, 0.378]
         greedy_scores = [0] * 3
         ppo_scores = [0.633, 0.635, 0.638]
+        ppo2_scores = [0.54, 0.61, 0.66]
     elif checkpoint == 5:
         vae_scores = [0] * 3
         cache_scores = [0.208, 0.22, 0.242]
@@ -179,11 +182,12 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.202, 0.204, 0.208]
         greedy_scores = [0] * 3
         ppo_scores = [0.418, 0.426, 0.432]
+        ppo2_scores = [0.182, 0.21, 0.252]
     else:
         raise Exception('checkpoint not recognized!')
 
     all_scores = [vae_scores, cache_scores, random_scores, skyline_scores, brute_force,
-                  kmeans_scores, topk_scores, greedy_scores, ppo_scores]
+                  kmeans_scores, topk_scores, greedy_scores, ppo_scores, ppo2_scores]
     x = np.arange(len(all_scores))
     y = np.array([scores[1] for scores in all_scores])
     yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
@@ -317,6 +321,96 @@ def plot_imdb_baselines():
     plt.ylabel("Score(S)", fontsize=fontsize)
     plt.savefig('plots/imdb_baselines.pdf')
     plt.savefig('plots/imdb_baselines.png')
+    plt.show()
+
+
+METHODS = ['UNIVERS', 'VERDICT', 'QUICKR']
+
+
+def plot_imdb_initial_sample():
+    plt.figure(figsize=(8, 8))
+    fontsize = 25
+
+    x = [*range(len(METHODS))]
+    y = np.zeros(range(len(ALG_NAMES)))
+    y_min = np.zeros(range(len(ALG_NAMES)))
+    y_max = np.zeros(range(len(ALG_NAMES)))
+
+    # universal table
+    # checkpoint 22, 23, 24, 25
+    y = np.append(y, np.average([0.489, 0.501, 0.635, 0.426]))
+    y_min = np.append(y_min, np.average([0.477, 0.498, 0.633, 0.418]))
+    y_max = np.append(y_max, np.average([0.5, 0.505, 0.638, 0.432]))
+
+    # verdict
+    # checkpoint 22, 23, 24, 25
+    y = np.append(y, np.average([0.464, 0.26, 0.61, 0.21]))
+    y_min = np.append(y_min, np.average([0.432, 0.22, 0.54, 0.182]))
+    y_max = np.append(y_max, np.average([0.483, 0.316, 0.66, 0.252]))
+
+    # quickr # TODO: complete
+    # checkpoint 22, 23, 24, 25
+    y = np.append(y, np.average([0, 0, 0, 0]))
+    y_min = np.append(y_min, np.average([0, 0, 0, 0]))
+    y_max = np.append(y_max, np.average([0, 0, 0, 0]))
+
+    y_err = [[y[i] - y_min[i] for i in range(len(y))], [y_max[i] - y[i] for i in range(len(y))]]
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=['#e74c3c', '#1abc9c', '#34495e'])
+    plt.title('')
+    plt.xticks(x, METHODS, rotation=90, fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.3, left=0.15)
+    plt.yticks(np.arange(0, 0.6, 0.1), fontsize=fontsize)
+
+    plt.ylabel("Score(S)", fontsize=fontsize)
+    plt.savefig('plots/imdb_initial_sample.pdf')
+    plt.savefig('plots/imdb_initial_sample.png')
+    plt.show()
+
+def plot_mas_initial_sample():
+    plt.figure(figsize=(8, 8))
+    fontsize = 25
+
+    x = [*range(len(METHODS))]
+    y = np.zeros(range(len(ALG_NAMES)))
+    y_min = np.zeros(range(len(ALG_NAMES)))
+    y_max = np.zeros(range(len(ALG_NAMES)))
+
+    # universal table
+    # checkpoint 27, 28, 29, 30
+    y = np.append(y, np.average([0.6544, 0.75, 0.6893, 0.6804]))
+    y_min = np.append(y_min, np.average([0.6475, 0.75, 0.6637, 0.6612]))
+    y_max = np.append(y_max, np.average([0.6625, 0.75, 0.7147, 0.7003]))
+
+    # verdict
+    # checkpoint 27, 28, 29, 30
+    y = np.append(y, np.average([0.63, 0.5015, 0.39, 0.555]))
+    y_min = np.append(y_min, np.average([0.617, 0.47, 0.375, 0.5128125]))
+    y_max = np.append(y_max, np.average([0.66, 0.515, 0.41, 0.585]))
+
+    # quickr # TODO: complete
+    # checkpoint 27, 28, 29, 30
+    y = np.append(y, np.average([0, 0, 0, 0]))
+    y_min = np.append(y_min, np.average([0, 0, 0, 0]))
+    y_max = np.append(y_max, np.average([0, 0, 0, 0]))
+
+    y_err = [[y[i] - y_min[i] for i in range(len(y))], [y_max[i] - y[i] for i in range(len(y))]]
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=['#e74c3c', '#1abc9c', '#34495e'])
+    plt.title('')
+    plt.xticks(x, METHODS, rotation=90, fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.3, left=0.15)
+    plt.yticks(np.arange(0, 0.8, 0.1), fontsize=fontsize)
+
+    plt.ylabel("Score(S)", fontsize=fontsize)
+    plt.savefig('plots/mas_initial_sample.pdf')
+    plt.savefig('plots/mas_initial_sample.png')
     plt.show()
 
 
@@ -1573,7 +1667,7 @@ def plot_flights_aqp_results4():
     y_deepdb_min = [0.178153, 0.000123, 0.2168]
     y_deepdb_max = [9.3082, 9.24396, 2.214728]
     y_deepdb_err = [[y_deepdb[i] - y_deepdb_min[i] for i in range(len(y_deepdb))],
-                          [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
+                    [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
@@ -1590,6 +1684,7 @@ def plot_flights_aqp_results4():
     # plt.savefig('plots/flights_aqp.pdf')
     # plt.savefig('plots/flights_aqp.png')
     plt.show()
+
 
 def plot_flights_aqp_results5():
     xticks = ['SUM', 'AVG', 'CNT', 'G-SUM', 'G-AVG', 'G-CNT']
@@ -1617,7 +1712,7 @@ def plot_flights_aqp_results5():
     y_deepdb_min = [0.73, 0.88, 0., 0.77, 0.91, 0.]
     y_deepdb_max = [1.06, 1., 0.65, 1.03, 1.01, 0.33]
     y_deepdb_err = [[y_deepdb[i] - y_deepdb_min[i] for i in range(len(y_deepdb))],
-                          [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
+                    [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
@@ -1634,6 +1729,42 @@ def plot_flights_aqp_results5():
     # plt.savefig('plots/flights_aqp.pdf')
     # plt.savefig('plots/flights_aqp.png')
     plt.show()
+
+
+def plot_initial_sample_exp1():
+    xticks = ['SAMPL', 'UNI']
+    fontsize = 25
+    plt.figure(figsize=(8, 6))
+
+    x = [*range(len(xticks))]
+
+    y_sample = [0.26, 0.3]
+    y_sample_min = [0.25, 0.3]
+    y_sample_max = [0.27, 0.3]
+    y_sample_err = [[y_sample[i] - y_sample_min[i] for i in range(len(y_sample))],
+                    [y_sample_max[i] - y_sample[i] for i in range(len(y_sample))]]
+
+    y_universal = [0.3]
+    y_universal_min = [0.3]
+    y_universal_max = [0.3]
+    y_universal_err = [[y_universal[i] - y_universal_min[i] for i in range(len(y_universal))],
+                       [y_universal_max[i] - y_universal[i] for i in range(len(y_universal))]]
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    plt.bar(x, y_sample, yerr=y_sample_err, alpha=0.5, capsize=5, width=0.2, label='Initial Sample')
+    # plt.bar(x, y_universal, yerr=y_universal_err, alpha=0.5, capsize=5, width=0.2, label='Universal Table')
+
+    plt.xticks(x, xticks, fontsize=20, rotation=90)
+    plt.subplots_adjust(bottom=0.20, left=0.12, top=0.8)
+    plt.ylabel("Score", fontsize=20)
+    plt.yticks(np.arange(0, 0.5, 0.2), fontsize=20)
+    # plt.legend()
+    # plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 18})
+    # plt.savefig('plots/flights_aqp.pdf')
+    # plt.savefig('plots/flights_aqp.png')
+    plt.show()
+
 
 def plot_rl_tune():
     RL_ALGOS = ['DQN', 'DQN+diverse', 'A3C', 'A3C+diverse', 'PPO+diverse', 'PPO (not tuned)', 'PPO+DropOne', 'PPO']
@@ -1708,7 +1839,7 @@ def plot_query_sampling():
 
 if __name__ == '__main__':
     # plot_mas_baselines()
-    # plot_imdb_baselines()
+    plot_imdb_baselines()
     # plot_imdb_runtime_results()
     # plot_mas_runtime_results()
     # plot_ray_avg_mas_threshold_results()
@@ -1723,4 +1854,7 @@ if __name__ == '__main__':
     # plot_rl_tune()
     # plot_param_tune_results()
     # plot_query_sampling()
-    plot_flights_aqp_results5()
+    # plot_flights_aqp_results5()
+    # plot_initial_sample_exp1()
+    plot_imdb_initial_sample()
+    plot_mas_initial_sample()
