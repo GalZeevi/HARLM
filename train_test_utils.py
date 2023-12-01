@@ -21,7 +21,7 @@ def get_test_queries(checkpoint_version=CheckpointManager.get_max_version()):
         results_read += (interval[1] - interval[0])
         file_num += 1
 
-    return results[:test_size]
+    return [r for r in results[:test_size] if len(r) > 0]
 
 
 def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), validation_size=0):
@@ -43,8 +43,9 @@ def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), va
             results += CheckpointManager.load(file.replace('.pkl', ''), checkpoint_version)
 
     if validation_size > 0:
-        return results[validation_size:], results[:validation_size]  # return train_set, validation_set
-    return results  # return train_set
+        return [r for r in results[validation_size:] if len(r) > 0], \
+               [r for r in results[:validation_size] if len(r) > 0]  # return train_set, validation_set
+    return [r for r in results if len(r) > 0]  # return train_set
 
 
 if __name__ == '__main__':

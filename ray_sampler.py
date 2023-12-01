@@ -37,7 +37,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--alg", type=str, default=AlgorithmNames.PPO, help="The RLlib-registered algorithm to use."
+        "--alg", type=str, default=AlgorithmNames.A3C, help="The RLlib-registered algorithm to use."
     )
 
     parser.add_argument(
@@ -57,7 +57,11 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--steps", type=int, default=300, help="How many train steps to run."
+        "--steps", type=int, default=20, help="How many train steps to run."
+    )
+
+    parser.add_argument(
+        "--accuracy_delta", type=float, default=0.0001, help="Stop after reaching a change in accuracy lower then this."
     )
 
     parser.add_argument(
@@ -276,7 +280,7 @@ class MyEnv(gym.Env):
             self.train_set, self.validation_set = results, None
 
         if ACTION_SPACE_SIZE < table_size:
-            self.actions = MyEnv.__get_actions__(self.k, table_size, cli_args.random_actions_coeff,
+            self.actions = MyEnv.__get_actions__(self.k, table_size, args.random_actions_coeff,
                                                  self.checkpoint_version)
             self.num_actions = len(self.actions)
         else:
@@ -326,7 +330,14 @@ class MyEnv(gym.Env):
 
     @staticmethod
     def __get_queries_actions__(num_actions):
-        return get_queried_tuples(num_actions, verbose=False)
+        # return get_queried_tuples(num_actions, verbose=False)
+        actions = np.array([])
+        train_queries = get_train_queries(CHECKPOINT_VER)
+        num_tuples_to_select_from_query = int(num_actions / len(train_queries))
+        for results in train_queries:
+            np.random.shuffle(results)
+            actions = np.concatenate([actions, results[:num_tuples_to_select_from_query]])
+        return actions
 
     @staticmethod
     def __get_sampled_actions__(num_actions, max_action_id, excluded_actions, method='random'):
@@ -386,7 +397,7 @@ class MyEnv(gym.Env):
             # new_score = get_score2(self.get_sample_ids(), queries=self.train_set,
             #                        checkpoint_version=self.checkpoint_version)
             new_score = get_combined_score(self.get_sample_tuples(), queries=self.train_set,
-                                           alpha=(1 - cli_args.diversity_coeff),
+                                           alpha=(1 - args.diversity_coeff),
                                            checkpoint_version=self.checkpoint_version)
 
         reward = new_score
@@ -412,20 +423,20 @@ class MyEnv(gym.Env):
         return self.selected_tuples
 
 
-cli_args = get_cli_args()
+args = get_cli_args()
 
-K = cli_args.k
+K = args.k
 schema, table, pivot, table_size = __init_table_details__()
-ACTION_SPACE_SIZE = table_size if cli_args.num_actions < 0 else cli_args.num_actions
-MAX_ITERS = cli_args.steps
-NUM_GPUS = cli_args.gpus
-NUM_CPUS = cli_args.cpus
-ALG = cli_args.alg
-NUM_ROLLOUT_WORKERS = cli_args.rollouts
-CHECKPOINT_VER = cli_args.checkpoint
+ACTION_SPACE_SIZE = table_size if args.num_actions < 0 else args.num_actions
+MAX_ITERS = args.steps
+NUM_GPUS = args.gpus
+NUM_CPUS = args.cpus
+ALG = args.alg
+NUM_ROLLOUT_WORKERS = args.rollouts
+CHECKPOINT_VER = args.checkpoint
 
-TRIAL_NAME = f'{K}_{cli_args.env}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}' \
-    if cli_args.trial_name is None else cli_args.trial_name
+TRIAL_NAME = f'{K}_{args.env}_{ALG}_{datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}' \
+    if args.trial_name is None else args.trial_name
 OUTPUT_DIR = f'{CheckpointManager.basePath}/{CHECKPOINT_VER}/{TRIAL_NAME}'
 RECORD_RAW_TRAIN_RESULTS = True
 SAVE_RESULT_STEP = 10
@@ -435,18 +446,18 @@ SAVE_MODEL_STEP = 15
 def get_env_config():
     config = {'k': K,
               'checkpoint_version': CHECKPOINT_VER,
-              'marginal_reward': cli_args.margin_reward,  # ChooseK specific
-              'large_reward': cli_args.margin_reward,
+              'marginal_reward': args.margin_reward,  # ChooseK specific
+              'large_reward': args.margin_reward,
               'table_details': {'schema': schema, 'table': table, 'pivot': pivot, 'table_size': table_size},
               'action_space_size': ACTION_SPACE_SIZE,
-              'random_actions_coeff': cli_args.random_actions_coeff,
-              'diversity_coeff': cli_args.diversity_coeff,
+              'random_actions_coeff': args.random_actions_coeff,
+              'diversity_coeff': args.diversity_coeff,
               'trial_name': TRIAL_NAME,
-              'horizon': cli_args.horizon,  # DropOne specific
-              'reset_state_method': cli_args.reset_state_method  # DropOne specific
+              'horizon': args.horizon,  # DropOne specific
+              'reset_state_method': args.reset_state_method  # DropOne specific
               }
-    if cli_args.reset_state_method == 'custom':
-        config['existing_sample'] = cli_args.existing_sample  # DropOne specific
+    if args.reset_state_method == 'custom':
+        config['existing_sample'] = args.existing_sample  # DropOne specific
     return config
 
 
@@ -467,7 +478,8 @@ def get_algorithm():
     elif ALG == AlgorithmNames.PPO:
         alg_config = ppo.PPOConfig() \
             .environment(env=env_class, render_env=False, env_config=env_config) \
-            .training(model=model_config, entropy_coeff=cli_args.ppo_ent_coeff, kl_coeff=cli_args.ppo_kl_coeff, lr=cli_args.ppo_lr) \
+            .training(model=model_config, entropy_coeff=args.ppo_ent_coeff, kl_coeff=args.ppo_kl_coeff,
+                      lr=args.ppo_lr) \
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
             .framework('torch') \
@@ -549,9 +561,9 @@ def get_algorithm():
 
 
 def get_environment():
-    if cli_args.env == EnvNames.CHOOSE_K:
+    if args.env == EnvNames.CHOOSE_K:
         return ChooseKEnv
-    elif cli_args.env == EnvNames.DROP_ONE:
+    elif args.env == EnvNames.DROP_ONE:
         return DropOneEnv
     else:
         raise NotImplementedError
@@ -564,7 +576,18 @@ def init_output_dir():
 
 def save_namespace():
     with open(f'{OUTPUT_DIR}/namespace.txt', "w") as f:
-        f.write(str(cli_args))
+        f.write(str(args))
+
+
+def should_stop_training(acc, prev_acc, delta, min_iter, max_iter, curr_iter):
+    if curr_iter >= max_iter:
+        print(f'############### Stopping training due to max iterations reached ###############', flush=True)
+        return True
+    if (curr_iter > min_iter) and (abs(prev_acc - acc) < delta):
+        print(f' ############### Stopping training due to consecutive accuracy delta reached ###############',
+              flush=True)
+        return True
+    return False
 
 
 def train_model():
@@ -579,9 +602,13 @@ def train_model():
     print(f'Building algorithm: {ALG} took: {round(time.time() - start, 2)} sec', flush=True)
 
     i = 0
+    prev_acc = 0.
+    acc = 0.
     pbar = tqdm(total=MAX_ITERS)
-    while i < MAX_ITERS:
+    while not should_stop_training(acc, prev_acc, args.accuracy_delta, 2 * SAVE_RESULT_STEP, MAX_ITERS, i):
+        prev_acc = acc
         res = algo.train()
+        acc = res.get('custom_metrics', {'test_score_mean': 0}).get('test_score_mean', 0)
         i += 1
         if i > 0 and i % SAVE_MODEL_STEP == 0:
             path_to_checkpoint = algo.save(checkpoint_dir=OUTPUT_DIR)
@@ -603,7 +630,7 @@ def _get_sample_from_model(model, env):
     prev_action = None
     prev_reward = None
 
-    pbar = tqdm(total=cli_args.k if cli_args.env == EnvNames.CHOOSE_K else cli_args.horizon)
+    pbar = tqdm(total=args.k if args.env == EnvNames.CHOOSE_K else args.horizon)
     while not done:
         action = model.compute_single_action(observation=obs, prev_action=prev_action, prev_reward=prev_reward)
         next_obs, reward, done, _, _ = env.step(action)
@@ -617,7 +644,7 @@ def _get_sample_from_model(model, env):
     return sample_ids, scores
 
 
-def test_model(ray_checkpoint_path=None, algo=None, num_trials=cli_args.eval_steps):
+def test_model(ray_checkpoint_path=None, algo=None, num_trials=args.eval_steps):
     if ray_checkpoint_path is None and algo is None:
         raise Exception('One of \'ray_checkpoint_path\' or \'model\' must not be None!')
     algo = algo if algo is not None else algorithm.Algorithm.from_checkpoint(ray_checkpoint_path)
@@ -662,9 +689,9 @@ def test_model(ray_checkpoint_path=None, algo=None, num_trials=cli_args.eval_ste
 if __name__ == '__main__':
     DataAccess()
     print(f'############### Starting trial: {TRIAL_NAME} ###############', flush=True)
-    if cli_args.test:
+    if args.test:
         test_model(
-            ray_checkpoint_path=f'{OUTPUT_DIR}/{cli_args.ray_checkpoint}')
+            ray_checkpoint_path=f'{OUTPUT_DIR}/{args.ray_checkpoint}')
     else:
         init_output_dir()
         save_namespace()

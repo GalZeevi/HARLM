@@ -32,7 +32,10 @@ def sample_tables(table_names, join_cols, percentage, return_dict):
         join_col = join_cols[i]
         print(f'========= sampling df: {table_names[i]} on col: {join_col} =========', flush=True)
         print(f'========= len before sample: {len(df.index)} =========', flush=True)
-        sample = df[df[join_col].apply(lambda value: my_hash(value) % 100 <= percentage)]
+        if len(df.index) > 500_000:
+            sample = df[df[join_col].apply(lambda value: my_hash(value) % 100 <= percentage)]
+        else:
+            sample = df
         print(f'========= len after sample: {len(sample.index)} =========', flush=True)
         samples.append(sample)
     return_dict[tuple(table_names)] = samples

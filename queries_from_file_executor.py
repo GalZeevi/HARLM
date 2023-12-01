@@ -5,7 +5,7 @@ from tqdm import tqdm
 from random import shuffle
 
 
-def start(version, path='checkpoints/22/queries.txt'):
+def start(version, path='checkpoints/22/queries.txt', allow_empty=False):
     with open(path) as file:
         queries = [line.rstrip() for line in file]
 
@@ -20,7 +20,7 @@ def start(version, path='checkpoints/22/queries.txt'):
         for query in batch:
             try:
                 query_result = DataAccess.select(query)
-                if len(query_result) > 0:
+                if allow_empty or len(query_result) > 0:
                     results.append(query_result)
                     queries.append(query)
             except Exception as e:
@@ -62,4 +62,9 @@ def shuffle_queries2(version=11, steps=(0, 11)):
 
 
 if __name__ == '__main__':
-    start()
+    paths = ['checkpoints/22/queries.txt', 'checkpoints/23/queries.txt',
+             'checkpoints/24/queries.txt', 'checkpoints/25/queries.txt']
+    versions = [32]
+    for v in versions:
+        start(v, f'checkpoints/{v}/queries.txt')
+
