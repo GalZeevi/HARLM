@@ -48,8 +48,12 @@ def get_tables_csv_paths():
             'movie_keyword': 'datasets\\imdb-job\\table1\\csv\\movie_keyword.csv',
             'movie_companies': 'datasets\\imdb-job\\table1\\csv\\movie_companies.csv'
         }
+    if args.schema == "imdb2":
+        return {
+            'imdb_t_mk_mc_data': 'datasets\\imdb-job\\table2\\join_title_companies_keyword.csv'
+        }
     if args.schema == "mas":
-        return {'mas_full_data': 'datasets\\mas\\initial_sample\\mas_full_data2.csv'}
+        return {'mas_full_data': 'datasets\\mas\\mas_full_data2.csv'}
     return {}
 
 
@@ -62,6 +66,10 @@ def get_tables_pk():
         }
     if args.schema == "mas":
         return {'mas_full_data': '_id'}
+    if args.schema == "imdb2":
+        return {
+            'imdb_t_mk_mc_data': '_id'
+        }
     return {}
 
 
@@ -70,10 +78,13 @@ def get_joinable_tables_data():
         return [(['title', 'movie_keyword', 'movie_companies'], ['id', 'movie_id', 'movie_id'])]
     if args.schema == "mas":
         return [(['mas_full_data'], ['publication$pid'])]
+    if args.schema == "imdb2":
+        return [(['imdb_t_mk_mc_data'], ['id'])]  # TODO: not _id to simulate the real thing
     return []
 
 
 def join_return_dict(return_dict):
+    print(f'joining results: {return_dict.keys()}', flush=True)
     names_to_all_samples = {}
     for table_names, samples in [*return_dict.items()]:
         names_to_sample = [*zip(table_names, samples)]
@@ -108,20 +119,22 @@ def join_samples(return_dict):
              'episode_nr', 'series_years', 'company_id', 'company_type_id', 'note', 'keyword_id']]
 
         print(f'Num of rows: {len(result_df.index)}')
-        result_df.to_csv(f'datasets\\imdb-job\\initial_sample\\quickr\\initial_sample_{args.p}.csv', index=True,
+        result_df.to_csv(f'datasets\\imdb-job\\initial_sample\\quickr\\quickr_initial_sample_{args.p}.csv', index=True,
                          index_label='_id')
 
     if args.schema == 'imdb2':
-        result_df = return_dict['join_title_companies_keyword']
+        result_df = return_dict['imdb_t_mk_mc_data'][
+            ['_id', 'id', 'title', 'imdb_index', 'kind_id', 'production_year', 'phonetic_code', 'episode_of_id', 'season_nr',
+             'episode_nr', 'series_years', 'company_id', 'company_type_id', 'note', 'keyword_id']]
         print(f'Num of rows: {len(result_df.index)}')
         result_df.to_csv(
-            f'datasets\\imdb-job\\table2\\join_title_companies_keyword_{args.p}.csv', index=False)
+            f'datasets\\imdb-job\\initial_sample\\quickr\\quickr_initial_sample2_{args.p}.csv', index=False)
 
     if args.schema == 'mas':
         result_df = return_dict['mas_full_data']
         print(f'Num of rows: {len(result_df.index)}')
         result_df.to_csv(
-            f'datasets\\mas\\initial_sample\\mas_full_data2_{args.p}.csv', index=False)
+            f'datasets\\mas\\initial_sample\\quickr\\quickr_mas_full_data2_{args.p}.csv', index=False)
 
 
 def start():
