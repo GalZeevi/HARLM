@@ -121,13 +121,10 @@ def plot_ray_results(checkpoint):
     plt.show()
 
 
-IMDB_ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'K-means', 'top-k', 'ASQP-RL']
-IMDB_ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'QRD', 'TOP', 'ASQP-RL']
-IMDB_COLORS = ['#c93699', '#B233FF', '#36c966', '#56a7a9', '#e9b516', '#9e617e', '#eb144f']
-
-ALG_NAMES = ['VAE', 'caching', 'random', 'skyline', 'brute force', 'K-means', 'top-k', 'greedy', 'ASQP-RL']
-ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'SKY', 'BRT', 'QRD', 'TOP', 'GRE', 'ASQP-RL']
-COLORS = ['#c93699', '#B233FF', '#36c966', '#56a7a9', '#a95856', '#e9b516', '#9e617e', '#b4e41b', '#eb144f']
+ALG_NAMES = ['VAE', 'caching', 'random', 'quickr', 'verdict', 'skyline', 'brute force', 'K-means', 'top-k', 'greedy', 'ASQP-RL']
+ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'QUIK', 'VERD', 'SKY', 'BRT', 'QRD', 'TOP', 'GRE', 'ASQP-RL']
+# TOOD: choose two new colors for verdict and quickr
+COLORS = ['#c93699', '#B233FF', '#36c966', '#E46D08', '#E4DB08', '#56a7a9', '#a95856', '#e9b516', '#9e617e', '#b4e41b', '#eb144f']
 
 
 def get_ray_imdb_data(checkpoint):
@@ -135,6 +132,8 @@ def get_ray_imdb_data(checkpoint):
         vae_scores = [0] * 3
         cache_scores = [0, 0.00528, 0.014]
         random_scores = [0.285, 0.333, 0.382]
+        verdict_scores = [0.284, 0.36184, 0.39184]
+        quickr_scores = [0.296, 0.31, 0.33]
         skyline_scores = [0.394] * 3
         brute_force = [0.284] * 3
         kmeans_scores = [0.376] * 3
@@ -143,11 +142,13 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.562, 0.564, 0.566]
         greedy_scores = [0] * 3
         ppo_scores = [0.472, 0.482, 0.494]
-        ppo2_scores = [0.432, 0.464, 0.483]
+        # ppo2_scores = [0.432, 0.464, 0.483]
     elif checkpoint == 3:
         vae_scores = [0.01] * 3
         cache_scores = [0.102, 0.11, 0.12]
         random_scores = [0.182, 0.212, 0.244]
+        verdict_scores = [0.192, 0.22, 0.26]
+        quickr_scores = [0.212, 0.24, 0.27]
         skyline_scores = [0.273] * 3
         brute_force = [0.274] * 3
         kmeans_scores = [0.306] * 3
@@ -156,11 +157,13 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.32, 0.322, 0.324]
         greedy_scores = [0] * 3
         ppo_scores = [0.498, 0.501, 0.505]
-        ppo2_scores = [0.22, 0.26, 0.316]
+        # ppo2_scores = [0.22, 0.26, 0.316]
     elif checkpoint == 4:
         vae_scores = [0] * 3
         cache_scores = [0, 0.001, 0.004]
         random_scores = [0.32, 0.353, 0.385]
+        verdict_scores = [0.335, 0.37, 0.4]
+        quickr_scores = [0.34, 0.39, 0.41]
         skyline_scores = [0.47] * 3
         brute_force = [0.32] * 3
         kmeans_scores = [0.404] * 3
@@ -169,11 +172,13 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.374, 0.374, 0.378]
         greedy_scores = [0] * 3
         ppo_scores = [0.633, 0.635, 0.638]
-        ppo2_scores = [0.54, 0.61, 0.66]
+        # ppo2_scores = [0.54, 0.61, 0.66]
     elif checkpoint == 5:
         vae_scores = [0] * 3
         cache_scores = [0.208, 0.22, 0.242]
         random_scores = [0.217, 0.258, 0.301]
+        verdict_scores = [0.274, 0.3014, 0.33]
+        quickr_scores = [0.186, 0.22, 0.262]
         skyline_scores = [0.251] * 3
         brute_force = [0.31] * 3
         kmeans_scores = [0.2] * 3
@@ -182,12 +187,13 @@ def get_ray_imdb_data(checkpoint):
         apex_scores = [0.202, 0.204, 0.208]
         greedy_scores = [0] * 3
         ppo_scores = [0.418, 0.426, 0.432]
-        ppo2_scores = [0.182, 0.21, 0.252]
+        # ppo2_scores = [0.182, 0.21, 0.252]
     else:
         raise Exception('checkpoint not recognized!')
 
-    all_scores = [vae_scores, cache_scores, random_scores, skyline_scores, brute_force,
-                  kmeans_scores, topk_scores, greedy_scores, ppo_scores, ppo2_scores]
+    all_scores = [vae_scores, cache_scores, random_scores, quickr_scores,
+                  verdict_scores, skyline_scores, brute_force, kmeans_scores,
+                  topk_scores, greedy_scores, ppo_scores]
     x = np.arange(len(all_scores))
     y = np.array([scores[1] for scores in all_scores])
     yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
@@ -200,6 +206,8 @@ def get_ray_imdb_threshold_data(checkpoint):
         vae_scores = [0.01] * 3
         cache_scores = [0, 0, 0]
         random_scores = [0.285, 0.333, 0.382]
+        verdict_scores = [0.3, 0.47, 0.5]
+        quickr_scores = [0.3, 0.455, 0.5]
         skyline_scores = [0.394] * 3
         brute_force = [0.4] * 3
         kmeans_scores = [0.376] * 3
@@ -212,6 +220,8 @@ def get_ray_imdb_threshold_data(checkpoint):
         vae_scores = [0.01] * 3
         cache_scores = [0.1, 0.1, 0.1]
         random_scores = [0.182, 0.212, 0.244]
+        verdict_scores = [0.2, 0.37, 0.4]
+        quickr_scores = [0.3, 0.39, 0.4]
         skyline_scores = [0.273] * 3
         brute_force = [0.4] * 3
         kmeans_scores = [0.306] * 3
@@ -224,6 +234,8 @@ def get_ray_imdb_threshold_data(checkpoint):
         vae_scores = [0.01] * 3
         cache_scores = [0, 0, 0]
         random_scores = [0.32, 0.353, 0.385]
+        verdict_scores = [0.5, 0.58, 0.6]
+        quickr_scores = [0.5, 0.58, 0.6]
         skyline_scores = [0.47] * 3
         brute_force = [0.4] * 3
         kmeans_scores = [0.404] * 3
@@ -236,6 +248,8 @@ def get_ray_imdb_threshold_data(checkpoint):
         vae_scores = [0.01] * 3
         cache_scores = [0.2, 0.244, 0.3]
         random_scores = [0.217, 0.258, 0.301]
+        verdict_scores = [0.2, 0.292, 0.4]
+        quickr_scores = [0.3, 0.303, 0.4]
         skyline_scores = [0.251] * 3
         brute_force = [0.4] * 3
         kmeans_scores = [0.2] * 3
@@ -247,8 +261,9 @@ def get_ray_imdb_threshold_data(checkpoint):
     else:
         raise Exception('checkpoint not recognized!')
 
-    all_scores = [vae_scores, cache_scores, random_scores, skyline_scores, brute_force,
-                  kmeans_scores, topk_scores, greedy_scores, ppo_scores]
+    all_scores = [vae_scores, cache_scores, random_scores, quickr_scores,
+                  verdict_scores, skyline_scores, brute_force, kmeans_scores,
+                  topk_scores, greedy_scores, ppo_scores]
     x = np.arange(len(all_scores))
     y = np.array([scores[1] for scores in all_scores])
     yerr_max = np.array([scores[-1] - scores[1] for scores in all_scores])
@@ -319,8 +334,8 @@ def plot_imdb_baselines():
     plt.yticks(np.arange(0, 0.6, 0.1), fontsize=fontsize)
 
     plt.ylabel("Score(S)", fontsize=fontsize)
-    plt.savefig('plots/imdb_baselines.pdf')
-    plt.savefig('plots/imdb_baselines.png')
+    plt.savefig('plots/imdb_baselines2.pdf')
+    plt.savefig('plots/imdb_baselines2.png')
     plt.show()
 
 
@@ -369,6 +384,7 @@ def plot_imdb_initial_sample():
     plt.savefig('plots/imdb_initial_sample.pdf')
     plt.savefig('plots/imdb_initial_sample.png')
     plt.show()
+
 
 def plot_mas_initial_sample():
     plt.figure(figsize=(8, 8))
@@ -491,6 +507,8 @@ def get_ray_mas_data(checkpoint):
         cache_scores = [0.324, 0.341, 0.375]
         topk_scores = [0.625] * 3
         random_scores = [0.182, 0.203, 0.230]
+        verdict_scores = [0.177, 0.204, 0.24]
+        quickr_scores = [0.15, 0.179, 0.215]
         skyline_scores = [0.265] * 3
         brute_force_scores = [0.27] * 3
         kmeans_scores = [0.3475] * 3
@@ -506,6 +524,8 @@ def get_ray_mas_data(checkpoint):
         cache_scores = [0.4, 0.4171, 0.455]
         topk_scores = [0.455] * 3
         random_scores = [0.25, 0.283, 0.324]
+        verdict_scores = [0.235, 0.289, 0.3475]
+        quickr_scores = [0.152, 0.186, 0.217]
         skyline_scores = [0.3125] * 3
         brute_force_scores = [0.405] * 3
         kmeans_scores = [0.402] * 3
@@ -521,6 +541,8 @@ def get_ray_mas_data(checkpoint):
         cache_scores = [0.125] * 3
         topk_scores = [0.25] * 3
         random_scores = [0.165, 0.205, 0.24]
+        verdict_scores = [0.139, 0.204, 0.241]
+        quickr_scores = [0.13, 0.160, 0.21]
         skyline_scores = [0.217] * 3
         brute_force_scores = [0.305] * 3
         kmeans_scores = [0.14] * 3
@@ -536,6 +558,8 @@ def get_ray_mas_data(checkpoint):
         cache_scores = [0] * 3
         topk_scores = [0.507] * 3
         random_scores = [0.075, 0.120, 0.157]
+        verdict_scores = [0.08, 0.121, 0.162]
+        quickr_scores = [0.042, 0.076, 0.126]
         skyline_scores = [0.14] * 3
         brute_force_scores = [0.21] * 3
         kmeans_scores = [0.3814] * 3
@@ -550,7 +574,8 @@ def get_ray_mas_data(checkpoint):
     else:
         raise Exception('checkpoint not recognized!')
 
-    all_scores = [vae_scores, cache_scores, random_scores, skyline_scores, brute_force_scores, kmeans_scores,
+    all_scores = [vae_scores, cache_scores, random_scores, quickr_scores,
+                  verdict_scores, skyline_scores, brute_force_scores, kmeans_scores,
                   topk_scores, greedy_train_scores, ppo_scores]
     x = np.arange(len(all_scores))
     y = np.array([scores[1] for scores in all_scores])
@@ -564,6 +589,8 @@ def get_ray_mas_threshold_data(checkpoint):
         cache_scores = [0.375] * 3
         topk_scores = [0.625] * 3
         random_scores = [0.125, 0.16, 0.25]
+        verdict_scores = [0.125, 0.175, 0.25]
+        quickr_scores = [0.125, 0.1325, 0.25]
         skyline_scores = [0.25] * 3
         brute_force_scores = [0.25] * 3
         kmeans_scores = [0.5] * 3
@@ -579,6 +606,8 @@ def get_ray_mas_threshold_data(checkpoint):
         cache_scores = [0.5] * 3
         topk_scores = [0.5] * 3
         random_scores = [0.25, 0.342, 0.625]
+        verdict_scores = [0.25, 0.325, 0.5]
+        quickr_scores = [0.125, 0.17, 0.25]
         skyline_scores = [0.375] * 3
         brute_force_scores = [0.5] * 3
         kmeans_scores = [0.375] * 3
@@ -594,6 +623,8 @@ def get_ray_mas_threshold_data(checkpoint):
         cache_scores = [0.125] * 3
         topk_scores = [0.25] * 3
         random_scores = [0.125, 0.242, 0.375]
+        verdict_scores = [0.125, 0.2125, 0.5]
+        quickr_scores = [0.125, 0.23, 0.25]
         skyline_scores = [0.125] * 3
         brute_force_scores = [0.375] * 3
         kmeans_scores = [0.25] * 3
@@ -609,6 +640,8 @@ def get_ray_mas_threshold_data(checkpoint):
         cache_scores = [0] * 3
         topk_scores = [0.5] * 3
         random_scores = [0.125, 0.13, 0.25]
+        verdict_scores = [0.125, 0.1275, 0.25]
+        quickr_scores = [0.0, 0.0925, 0.25]
         skyline_scores = [0.125] * 3
         brute_force_scores = [0.375] * 3
         kmeans_scores = [0.5] * 3
@@ -623,7 +656,8 @@ def get_ray_mas_threshold_data(checkpoint):
     else:
         raise Exception('checkpoint not recognized!')
 
-    all_scores = [vae_scores, cache_scores, random_scores, skyline_scores, brute_force_scores, kmeans_scores,
+    all_scores = [vae_scores, cache_scores, random_scores, quickr_scores,
+                  verdict_scores, skyline_scores, brute_force_scores, kmeans_scores,
                   topk_scores, greedy_train_scores, ppo_scores]
     x = np.arange(len(all_scores))
     y = np.array([scores[1] for scores in all_scores])
@@ -656,7 +690,7 @@ def plot_ray_mas_results():
     plt.setp([axs[1, 0], axs[1, 1]], xticks=x)
     for ax in [axs[1, 0], axs[1, 1]]:
         ax.tick_params(labelrotation=45)
-        ax.set_xticklabels(MAS_ALG_NAMES, fontsize=8)
+        ax.set_xticklabels(ALG_NAMES, fontsize=8)
 
     plt.setp([axs[0, 0], axs[0, 1]], xticks=[], xticklabels=[])
 
@@ -697,7 +731,7 @@ def plot_ray_mas_threshold_results():
     plt.setp([axs[1, 0], axs[1, 1]], xticks=x)
     for ax in [axs[1, 0], axs[1, 1]]:
         ax.tick_params(labelrotation=45)
-        ax.set_xticklabels(MAS_ALG_NAMES, fontsize=8)
+        ax.set_xticklabels(ALG_NAMES, fontsize=8)
 
     plt.setp([axs[0, 0], axs[0, 1]], xticks=[], xticklabels=[])
 
@@ -721,8 +755,8 @@ def plot_mas_baselines():
     plt.figure(figsize=(8, 8))
 
     x = []
-    y = np.zeros(len(MAS_ALG_NAMES))
-    y_err = np.zeros((2, len(MAS_ALG_NAMES)))
+    y = np.zeros(len(ALG_NAMES))
+    y_err = np.zeros((2, len(ALG_NAMES)))
     for c in checkpoints:
         data = get_ray_mas_data(c)
         y += data[1]
@@ -735,15 +769,15 @@ def plot_mas_baselines():
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
 
-    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=MAS_COLORS)
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
     plt.title('')
-    plt.xticks(x, MAS_ALG_SHORTCUTS, rotation=90, fontsize=fontsize)
+    plt.xticks(x, ALG_SHORTCUTS, rotation=90, fontsize=fontsize)
     plt.subplots_adjust(bottom=0.3, left=0.15)
     plt.yticks(np.arange(0, 0.8, 0.1), fontsize=fontsize)
 
     plt.ylabel("Score(S)", fontsize=fontsize)
-    plt.savefig('plots/mas_baselines.pdf')
-    plt.savefig('plots/mas_baselines.png')
+    plt.savefig('plots/mas_baselines2.pdf')
+    plt.savefig('plots/mas_baselines2.png')
     plt.show()
 
 
@@ -751,8 +785,8 @@ def plot_ray_avg_mas_threshold_results():
     checkpoints = [7, 8, 9, 10]
 
     x = []
-    y = np.zeros(len(MAS_ALG_NAMES))
-    y_err = np.zeros((2, len(MAS_ALG_NAMES)))
+    y = np.zeros(len(ALG_NAMES))
+    y_err = np.zeros((2, len(ALG_NAMES)))
     for c in checkpoints:
         data = get_ray_mas_threshold_data(c)
         y += data[1]
@@ -764,7 +798,7 @@ def plot_ray_avg_mas_threshold_results():
 
     plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10)
     plt.title('')
-    plt.xticks(x, MAS_ALG_NAMES, rotation=45, fontsize=8)
+    plt.xticks(x, ALG_NAMES, rotation=45, fontsize=8)
 
     plt.xlabel("Algorithm")
     plt.ylabel("0.25-Score")
@@ -1837,8 +1871,39 @@ def plot_query_sampling():
     plt.show()
 
 
+def plot_imdb_query_runtimes():
+    plt.figure(figsize=(8, 8))
+    fontsize = 25
+
+    y_5GB = [5.39313734, 10.66066888, 14.84205509, 22.19051647,
+             26.40728937, 30.41188118, 33.23452928, 35.97544255]
+    error_5GB = [10.07983989, 12.98557407, 12.93814557, 17.14440698,
+                 16.02186715, 15.82418906, 15.49202439, 14.98376604]
+
+    y_20GB = [9.12538028, 16.80709085, 21.15697188, 27.96361342,
+              31.60289612, 35.34696328, 39.05663365, 45.73312915]
+    error_20GB = [4.69315427, 6.79849444, 7.22088862, 9.77672638,
+                  9.2807193, 11.5866428, 14.10600016, 8.63300464]
+
+    x = [*range(len(y_5GB))]
+
+    plt.errorbar(x, y_5GB, yerr=error_5GB, marker='o', color='#3498db', label='5GB', capsize=10)
+    plt.errorbar(x, y_20GB, yerr=error_20GB, marker='o', color='#ff7f50', label='20GB', capsize=10)
+    plt.xticks(x, fontsize=fontsize)
+    plt.yticks(np.arange(0, 60, 5), fontsize=fontsize)
+    plt.xlabel('Num queries', fontsize=fontsize)
+    plt.ylabel('Hours (total)', fontsize=fontsize)
+    # plt.title('Line Plot with Shaded Error Area')
+    plt.legend()
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    plt.savefig(f'plots/imdb_query_runtimes.png')
+    plt.savefig(f'plots/imdb_query_runtimes.pdf')
+    plt.show()
+
+
 if __name__ == '__main__':
-    # plot_mas_baselines()
+    plot_mas_baselines()
     plot_imdb_baselines()
     # plot_imdb_runtime_results()
     # plot_mas_runtime_results()
@@ -1856,5 +1921,6 @@ if __name__ == '__main__':
     # plot_query_sampling()
     # plot_flights_aqp_results5()
     # plot_initial_sample_exp1()
-    plot_imdb_initial_sample()
-    plot_mas_initial_sample()
+    # plot_imdb_initial_sample()
+    # plot_mas_initial_sample()
+    # plot_imdb_query_runtimes()

@@ -28,7 +28,7 @@ from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
 
 
-def get_cli_args():
+def get_args():
     """Create CLI parser and return parsed arguments"""
     parser = argparse.ArgumentParser()
 
@@ -73,7 +73,7 @@ def get_cli_args():
     )
 
     parser.add_argument(
-        "--num_actions", type=int, default=100, help="How many actions to use for the model."
+        "--num_actions", type=int, default=10000, help="How many actions to use for the model."
     )
 
     parser.add_argument(
@@ -330,14 +330,7 @@ class MyEnv(gym.Env):
 
     @staticmethod
     def __get_queries_actions__(num_actions):
-        # return get_queried_tuples(num_actions, verbose=False)
-        actions = np.array([])
-        train_queries = get_train_queries(CHECKPOINT_VER)
-        num_tuples_to_select_from_query = int(num_actions / len(train_queries))
-        for results in train_queries:
-            np.random.shuffle(results)
-            actions = np.concatenate([actions, results[:num_tuples_to_select_from_query]])
-        return actions
+        return get_queried_tuples(num_actions, verbose=False)
 
     @staticmethod
     def __get_sampled_actions__(num_actions, max_action_id, excluded_actions, method='random'):
@@ -423,7 +416,7 @@ class MyEnv(gym.Env):
         return self.selected_tuples
 
 
-args = get_cli_args()
+args = get_args()
 
 K = args.k
 schema, table, pivot, table_size = __init_table_details__()
@@ -481,7 +474,7 @@ def get_algorithm():
             .training(model=model_config, entropy_coeff=args.ppo_ent_coeff, kl_coeff=args.ppo_kl_coeff,
                       lr=args.ppo_lr) \
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
-            .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS) \
+            .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=5) \
             .framework('torch') \
             .callbacks(callbacks_class=MyCallbacks)
         alg = ppo.PPO(config=alg_config)
