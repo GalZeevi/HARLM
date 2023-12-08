@@ -1,5 +1,5 @@
 CREATE TABLE aka_name (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     person_id integer NOT NULL,
     name varchar(5000),
     imdb_index varchar(3),
@@ -10,7 +10,7 @@ CREATE TABLE aka_name (
 );
 
 CREATE TABLE aka_title (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     movie_id integer NOT NULL,
     title varchar(5000),
     imdb_index varchar(4),
@@ -25,7 +25,7 @@ CREATE TABLE aka_title (
 );
 
 CREATE TABLE cast_info (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     person_id integer NOT NULL,
     movie_id integer NOT NULL,
     person_role_id integer,
@@ -35,7 +35,7 @@ CREATE TABLE cast_info (
 );
 
 CREATE TABLE char_name (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name varchar(5000) NOT NULL,
     imdb_index varchar(2),
     imdb_id integer,
@@ -45,12 +45,12 @@ CREATE TABLE char_name (
 );
 
 CREATE TABLE comp_cast_type (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     kind varchar(32) NOT NULL
 );
 
 CREATE TABLE company_name (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name varchar(5000) NOT NULL,
     country_code varchar(6),
     imdb_id integer,
@@ -60,40 +60,40 @@ CREATE TABLE company_name (
 );
 
 CREATE TABLE company_type (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     kind varchar(32)
 );
 
 CREATE TABLE complete_cast (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     movie_id integer,
     subject_id integer NOT NULL,
     status_id integer NOT NULL
 );
 
 CREATE TABLE info_type (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     info varchar(32) NOT NULL
 );
 
 CREATE TABLE keyword (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     keyword varchar(5000) NOT NULL,
     phonetic_code varchar(5)
 );
 
 CREATE TABLE kind_type (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     kind varchar(15)
 );
 
 CREATE TABLE link_type (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     link varchar(32) NOT NULL
 );
 
 CREATE TABLE movie_companies (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     movie_id integer NOT NULL,
     company_id integer NOT NULL,
     company_type_id integer NOT NULL,
@@ -101,7 +101,7 @@ CREATE TABLE movie_companies (
 );
 
 CREATE TABLE movie_info_idx (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     movie_id integer NOT NULL,
     info_type_id integer NOT NULL,
     info varchar(25) NOT NULL,
@@ -109,20 +109,20 @@ CREATE TABLE movie_info_idx (
 );
 
 CREATE TABLE movie_keyword (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     movie_id integer NOT NULL,
     keyword_id integer NOT NULL
 );
 
 CREATE TABLE movie_link (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     movie_id integer NOT NULL,
     linked_movie_id integer NOT NULL,
     link_type_id integer NOT NULL
 );
 
 CREATE TABLE name (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name varchar(5000) NOT NULL,
     imdb_index varchar(9),
     imdb_id integer,
@@ -134,12 +134,12 @@ CREATE TABLE name (
 );
 
 CREATE TABLE role_type (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     role varchar(32) NOT NULL
 );
 
 CREATE TABLE title (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     title varchar(500) NOT NULL,
     imdb_index varchar(5),
     kind_id integer NOT NULL,
@@ -154,7 +154,7 @@ CREATE TABLE title (
 );
 
 CREATE TABLE movie_info (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     movie_id integer NOT NULL,
     info_type_id integer NOT NULL,
     info varchar(5000) NOT NULL,
@@ -162,7 +162,7 @@ CREATE TABLE movie_info (
 );
 
 CREATE TABLE person_info (
-    id integer NOT NULL PRIMARY KEY,
+    id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
     person_id integer NOT NULL,
     info_type_id integer NOT NULL,
     info varchar(5000) NOT NULL,

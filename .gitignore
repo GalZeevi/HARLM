@@ -1,2 +1,4 @@
 checkpoints
 /datasets/flights/
+/datasets/imdb-job/imdb
+/datasets/imdb-job/imdb/sql
