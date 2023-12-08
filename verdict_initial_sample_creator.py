@@ -12,7 +12,6 @@ args = parser.parse_args()
 print(f"Running with following args: {args}")
 
 
-# TODO: This is verdictDB
 def get_tables_data():
     if args.schema == "imdb":
         return [
@@ -59,7 +58,7 @@ def start():
     join_samples(return_dict)
 
 
-def join_samples(return_dict):  # TODO: complete
+def join_samples(return_dict):
     if args.schema == 'imdb':
         title = return_dict['title'][
             ['id', 'title', 'imdb_index', 'kind_id', 'production_year', 'phonetic_code', 'episode_of_id', 'season_nr',
