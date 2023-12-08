@@ -5,7 +5,7 @@ from checkpoint_manager_v3 import CheckpointManager
 from data_access_v3 import DataAccess
 # from tuple_distance_calculator_v3 import TupleDistanceCalculator
 from train_test_utils import get_test_queries, get_train_queries
-from preprocessing import Preprocessing, Column
+from preprocessing import Preprocessing, Column, NULL_VALUE
 from typing import Dict
 
 
@@ -29,6 +29,7 @@ def get_score2(sample,
     Preprocessing.init(checkpoint_version)
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     results = __get_results(queries, checkpoint_version)
+    results = [result for result in results if len(result) > 0]
     target_sizes = np.array([min(view_size, len(result)) for result in results])
     sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
     attained_result_fraction = np.divide(sampled_sizes, target_sizes)
@@ -70,14 +71,15 @@ def get_diversity_score(sample_tuples, checkpoint_version=CheckpointManager.get_
     for col_name, col_data in columns.items():
         if col_data.is_pivot:
             continue
-        col_values = np.array([tup[col_name] for tup in sample_tuples])
         if col_data.is_categorical:
             # diversity ratio
+            col_values = np.array([tup[col_name] if tup[col_name] is not None else NULL_VALUE
+                                   for tup in sample_tuples])
             num_uniq_vals = len(np.unique(col_values))
             score += num_uniq_vals / len(col_data.encodings.keys())
         else:
             # variance
-            col_values = col_values.astype(float)
+            col_values = np.array([tup[col_name] for tup in sample_tuples]).astype(float)
             if col_data.min_val != col_data.max_val:  # column is not fixed
                 col_values = (col_values - col_data.min_val) / (col_data.max_val - col_data.min_val)
                 sample_col_std = 2.0 * np.std(col_values)

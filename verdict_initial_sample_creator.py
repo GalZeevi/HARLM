@@ -26,7 +26,7 @@ def get_tables_data():
              'datasets\\imdb-job\\table2\\join_title_companies_keyword.csv', args.r)
         ]
     if args.schema == "mas":
-        return [('mas_full_data', 'datasets\\mas\\initial_sample\\mas_full_data2.csv', args.r)]
+        return [('mas_full_data', 'datasets\\mas\\mas_full_data2.csv', args.r)]
     return []
 
 
@@ -81,7 +81,9 @@ def join_samples(return_dict):  # TODO: complete
         result_df.to_csv(f'datasets\\imdb-job\\table1\\csv\\initial_sample.csv', index=True, index_label='_id')
 
     if args.schema == 'imdb2':
-        result_df = return_dict['join_title_companies_keyword']
+        result_df = return_dict['join_title_companies_keyword'][
+            ['id', 'title', 'imdb_index', 'kind_id', 'production_year', 'phonetic_code', 'episode_of_id', 'season_nr',
+             'episode_nr', 'series_years', 'company_id', 'company_type_id', 'note', 'keyword_id']]
         print(f'Num of rows: {len(result_df.index)}')
         result_df.to_csv(
             f'datasets\\imdb-job\\table2\\join_title_companies_keyword_{args.r}.csv', index=False)
@@ -90,7 +92,7 @@ def join_samples(return_dict):  # TODO: complete
         result_df = return_dict['mas_full_data']
         print(f'Num of rows: {len(result_df.index)}')
         result_df.to_csv(
-            f'datasets\\mas\\initial_sample\\mas_full_data2_{args.r}.csv', index=False)
+            f'datasets\\mas\\initial_sample\\verdict\\verdict_mas_full_data2_{args.r}.csv', index=False)
 
 
 if __name__ == "__main__":

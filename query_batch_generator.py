@@ -150,9 +150,8 @@ class QueryGenerator:
         for col in chosen_columns:
             if col in self.categorical_cols:
                 # categorical column
-                frequency = random.uniform(0, 0.00025) * len(self.categorical_vals[col])
-                if frequency > 5:  # Col has many values
-                    frequency = random.randint(1, 5)
+                # frequency = random.uniform(0, 0.00025) * len(self.categorical_vals[col])
+                frequency = random.randint(1, 5)
                 values = random.sample(self.categorical_vals[col], max(int(frequency), 1))
                 values = [val.replace("'", "''") for val in values]
                 db_formatted_values = ", ".join([f"\'{value}\'" for value in values])
