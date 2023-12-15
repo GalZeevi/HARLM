@@ -22,19 +22,23 @@ def __get_results(queries, checkpoint_version):
     else:
         raise Exception('queries should be either a string from ["train", "test"] or a list/array of results!')
 
+    #  TODO: suggestion - should we replace np.instersect1d with wasserstein to get something between 0 and 1?
+
 
 def get_score2(sample,
                queries='train',
-               checkpoint_version=CheckpointManager.get_max_version()):
+               checkpoint_version=CheckpointManager.get_max_version(),
+               average=True):
     Preprocessing.init(checkpoint_version)
     view_size = ConfigManager.get_config('samplerConfig.viewSize')
     results = __get_results(queries, checkpoint_version)
     results = [result for result in results if len(result) > 0]
-    target_sizes = np.array([min(view_size, len(result)) for result in results])
-    sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in results])
-    attained_result_fraction = np.divide(sampled_sizes, target_sizes)
+    target_sizes = np.array([min(view_size, len(result)) for result in results], dtype='int64')
+    sampled_sizes = np.array([len(np.intersect1d(result, sample)) for result in results], dtype='int64')
+    attained_result_fraction = np.divide(sampled_sizes, target_sizes, out=np.ones_like(target_sizes, dtype='float64'),
+                                         where=target_sizes != 0.)
     score = np.minimum(attained_result_fraction, 1.)
-    return np.average(score)
+    return np.average(score) if average else score
 
 
 def get_combined_score(sample_tuples, alpha=0.5, queries='train',

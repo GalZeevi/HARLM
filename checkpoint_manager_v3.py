@@ -77,6 +77,7 @@ class CheckpointManager:
     def start_new_version():
         max_version = CheckpointManager.get_max_version()
         os.mkdir(f"./{CheckpointManager.basePath}/{max_version + 1}")
+        return max_version + 1
 
     @staticmethod
     def get_checkpoint_path(version=None):
