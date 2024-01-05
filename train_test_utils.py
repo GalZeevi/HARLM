@@ -21,7 +21,7 @@ def get_test_queries(checkpoint_version=CheckpointManager.get_max_version()):
         results_read += (interval[1] - interval[0])
         file_num += 1
 
-    return [r for r in results[:test_size] if len(r) > 0]
+    return results[:test_size]
 
 
 def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), validation_size=0):

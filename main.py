@@ -4,6 +4,7 @@ import multiprocessing
 import numpy as np
 from tqdm import tqdm
 
+import train_test_utils
 from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
@@ -30,6 +31,7 @@ def get_args():
         "--num_queries_to_execute", type=int, default=ConfigManager.get_config('samplerConfig.testSize'),
         help="How many queries to execute (train only)"
     )
+    parser.add_argument('--all_queries', action='store_true', default=False)
 
     parser.add_argument(
         "--sample_path", type=str, default=None,
@@ -66,7 +68,10 @@ def choose_queries_and_execute(queries_file_path, num_train_queries_to_choose, c
     results = []
     test_queries = queries[:ConfigManager.get_config('samplerConfig.testSize')]
     train_queries = queries[ConfigManager.get_config('samplerConfig.testSize'):]
-    chosen_queries = test_queries + qs.k_means(train_queries, num_train_queries_to_choose)
+    if num_train_queries_to_choose == 'all':
+        chosen_queries = [*test_queries, *train_queries]
+    else:
+        chosen_queries = test_queries + qs.k_means(train_queries, num_train_queries_to_choose)
 
     for query in tqdm(chosen_queries):
         try:
@@ -77,6 +82,7 @@ def choose_queries_and_execute(queries_file_path, num_train_queries_to_choose, c
             print(f'Error in query: [{query}]. Error: [{str(e)}]')
 
     CheckpointManager.save(f'results_0-{len(chosen_queries)}', results, version=checkpoint)
+    CheckpointManager.save(f'queries_0-{len(chosen_queries)}', chosen_queries, version=checkpoint)
     # Writing the list to a file line by line
     with open(executed_queries_path(checkpoint), 'w') as file:
         for q in chosen_queries:
@@ -96,31 +102,37 @@ if __name__ == "__main__":
     else:
         checkpoint = int(args.checkpoint)
 
-    assert args.num_queries_to_execute > 0
-    process1 = multiprocessing.Process(target=choose_queries_and_execute, args=(args.queries_file,
-                                                                                args.num_queries_to_execute,
-                                                                                checkpoint))
-    process2 = multiprocessing.Process(target=init_preprocessing, args=(checkpoint,))
+    if not args.evaluate:
+        assert args.num_queries_to_execute > 0 or args.num_queries_to_execute == 'all'
+        process1 = multiprocessing.Process(target=choose_queries_and_execute, args=(args.queries_file,
+                                                                                    'all' if args.all_queries else
+                                                                                    args.num_queries_to_execute,
+                                                                                    checkpoint))
+        process2 = multiprocessing.Process(target=init_preprocessing, args=(checkpoint,))
 
-    # Start both processes
-    process1.start()
-    process2.start()
+        # Start both processes
+        process1.start()
+        process2.start()
 
-    # Wait for both processes to finish
-    process1.join()
-    process2.join()
+        # Wait for both processes to finish
+        process1.join()
+        process2.join()
 
     # TODO: here you should go and use ray_sampler and measure the train time (for example) - for now it is manually
 
     # Evaluate
     if args.evaluate and args.sample_path:
-        sample_ids = CheckpointManager.load(args.sample_path, args.checkpoint)
+        sample_ids = CheckpointManager.load(args.sample_path, args.checkpoint)[0]
         train_query_scores = get_score2(sample_ids, 'train', checkpoint, average=False)
+        print(train_query_scores)
+        test_query_scores = get_score2(sample_ids, 'test', checkpoint, average=False)
+        print(test_query_scores)
+
+        test_results = train_test_utils.get_test_queries(checkpoint)
         qs = QuerySimilarity()
 
         for i, test_query in enumerate(get_test_sqls(checkpoint)):
             query_similarity_to_train = [qs.sim(test_query, train_query) for train_query in get_train_sqls(checkpoint)]
             predicted_score = max(query_similarity_to_train) * train_query_scores[np.argmax(query_similarity_to_train)]
-            query_results = DataAccess.select(test_query)
-            actual_score = get_score2(sample_ids, query_results, checkpoint)
+            actual_score = test_query_scores[i]
             print(f'TEST query no. {i}. Predicted score: {predicted_score}. Actual score: {actual_score}')

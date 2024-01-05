@@ -65,7 +65,7 @@ def get_args():
     )
 
     parser.add_argument(
-        "--eval_steps", type=int, default=25, help="How many evaluation steps to run."
+        "--eval_steps", type=int, default=5, help="How many evaluation steps to run."
     )
 
     parser.add_argument(
@@ -73,7 +73,7 @@ def get_args():
     )
 
     parser.add_argument(
-        "--num_actions", type=int, default=10000, help="How many actions to use for the model."
+        "--num_actions", type=int, default=100, help="How many actions to use for the model."
     )
 
     parser.add_argument(
@@ -86,6 +86,10 @@ def get_args():
 
     parser.add_argument(
         "--diversity_coeff", type=float, default=0.0, help="Weight to give diversity in score function."
+    )
+
+    parser.add_argument(
+        "--embedding_model", type=str, default='all-MiniLM-L6-v2', help="Language embedding model to use."
     )
 
     parser.add_argument(
@@ -447,6 +451,7 @@ def get_env_config():
               'diversity_coeff': args.diversity_coeff,
               'trial_name': TRIAL_NAME,
               'horizon': args.horizon,  # DropOne specific
+              'embedding_model': args.embedding_model,  # ChooseK specific
               'reset_state_method': args.reset_state_method  # DropOne specific
               }
     if args.reset_state_method == 'custom':
@@ -476,7 +481,7 @@ def get_algorithm():
             .resources(num_gpus=NUM_GPUS, num_cpus_per_worker=NUM_CPUS // NUM_ROLLOUT_WORKERS) \
             .rollouts(num_rollout_workers=NUM_ROLLOUT_WORKERS, num_envs_per_worker=5) \
             .framework('torch') \
-            .callbacks(callbacks_class=MyCallbacks)
+            .callbacks(callbacks_class=MyCallbacks).multi_agent()
         alg = ppo.PPO(config=alg_config)
     elif ALG == AlgorithmNames.A3C:
         alg_config = a3c.A3CConfig() \
@@ -598,7 +603,7 @@ def train_model():
     prev_acc = 0.
     acc = 0.
     pbar = tqdm(total=MAX_ITERS)
-    while not should_stop_training(acc, prev_acc, args.accuracy_delta, 2 * SAVE_RESULT_STEP, MAX_ITERS, i):
+    while not should_stop_training(acc, prev_acc, args.accuracy_delta, SAVE_RESULT_STEP, MAX_ITERS, i):
         prev_acc = acc
         res = algo.train()
         acc = res.get('custom_metrics', {'test_score_mean': 0}).get('test_score_mean', 0)

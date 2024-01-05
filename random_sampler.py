@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 from tqdm import trange
 
@@ -43,5 +45,15 @@ def get_sample(k, checkpoint_version=CheckpointManager.get_max_version()):
 
 
 if __name__ == '__main__':
-    for n in [7, 8, 9, 10]:
-        print(get_sample(1000, n)[1:])
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--checkpoint", type=int, default=CheckpointManager.get_max_version(), help="The Checkpoint to use."
+    )
+
+    parser.add_argument(
+        "--k", type=int, default=1000, help="Sample size."
+    )
+
+    args = parser.parse_args()
+    print(get_sample(args.k, args.checkpoint)[1:])

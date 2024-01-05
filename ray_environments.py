@@ -1,3 +1,5 @@
+import itertools
+
 import gymnasium as gym
 import numpy as np
 from gymnasium.spaces import Dict
@@ -8,10 +10,16 @@ from checkpoint_manager_v3 import CheckpointManager
 from config_manager_v3 import ConfigManager
 from data_access_v3 import DataAccess
 from preprocessing import Preprocessing
+from embedding import Embedding
 from score_calculator import get_combined_score, get_score2, get_threshold_score, get_diversity_score
 from top_queried_sampler import prepare_sample as get_queried_tuples
 from train_test_utils import get_train_queries
 from tqdm import tqdm
+
+
+def _select_tuples(schema, table, pivot, ids):
+    ids_db_format = ','.join([str(i) for i in ids])
+    return DataAccess.select(f'SELECT * FROM {schema}.{table} WHERE {pivot} IN ({ids_db_format})')
 
 
 class ChooseKEnv(gym.Env):
@@ -51,9 +59,13 @@ class ChooseKEnv(gym.Env):
             self.num_actions = self.table_size
             self.actions = np.arange(self.num_actions)
 
-        Preprocessing.init(self.checkpoint_version)
-        num_data_cols = len(Preprocessing.columns_repo.get_all_columns().keys()) - 1
-        self.state_shape = (self.k, num_data_cols)
+        # Preprocessing.init(self.checkpoint_version)
+        self.embedding = Embedding(self.checkpoint_version, model_name=env_config['embedding_model'],
+                                   use_preprocessing=False)
+
+        # num_data_cols = len(Preprocessing.columns_repo.get_all_columns().keys()) - 1
+        # self.state_shape = (self.k, num_data_cols)
+        self.state_shape = (self.k, self.embedding.embedding_size)
         self.step_count = 0
         self.selected_tuples = []
         self.selected_tuples_numpy = np.array([])
@@ -91,12 +103,20 @@ class ChooseKEnv(gym.Env):
         else:
             sampled_tuples_actions = self.__get_sampled_actions__(
                 self.action_space_size - len(queried_tuples_actions), queried_tuples_actions)
-            actions = np.concatenate((queried_tuples_actions, sampled_tuples_actions))
+            actions = np.concatenate((queried_tuples_actions, sampled_tuples_actions)).astype('int64')
         CheckpointManager.save(name=saved_actions_file_name, content=actions, version=checkpoint_ver)
         return actions
 
     def __get_queries_actions__(self, num_queries_actions):
-        return get_queried_tuples(num_queries_actions, verbose=False, checkpoint_version=self.checkpoint_version)
+        # return get_queried_tuples(num_queries_actions, verbose=False, checkpoint_version=self.checkpoint_version)
+
+        actions = np.array([])
+        train_queries = get_train_queries(self.checkpoint_version)
+        num_tuples_to_select_from_query = int(num_queries_actions / len(train_queries))
+        for results in train_queries:
+            np.random.shuffle(results)
+            actions = np.concatenate([actions, results[:num_tuples_to_select_from_query]])
+        return actions
 
     def __get_sampled_actions__(self, num_actions, excluded_actions, method='random'):
         if method == 'random':
@@ -153,7 +173,8 @@ class ChooseKEnv(gym.Env):
         selected_tuple = DataAccess.select_one(
             f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={tuple_num}')
         self.selected_tuples.append(selected_tuple)
-        self.selected_tuples_numpy[self.step_count] = Preprocessing.tuples2numpy([selected_tuple])[0]
+        # self.selected_tuples_numpy[self.step_count] = Preprocessing.tuples2numpy([selected_tuple])[0]
+        self.selected_tuples_numpy[self.step_count] = self.embedding.tuples2vector([selected_tuple])[0]
         self.step_count += 1
         self.action_mask[action] = 0.
 
@@ -161,8 +182,6 @@ class ChooseKEnv(gym.Env):
         if self.inference_mode:
             new_score = get_score2(self.get_sample_ids(), queries='test', checkpoint_version=self.checkpoint_version)
         else:
-            # new_score = get_score2(self.get_sample_ids(), queries=self.train_set,
-            #                        checkpoint_version=self.checkpoint_version)
             new_score = get_combined_score(self.get_sample_tuples(), queries=self.train_set,
                                            alpha=(1 - self.diversity_coeff),
                                            checkpoint_version=self.checkpoint_version)
@@ -333,17 +352,6 @@ class DropOneEnv(gym.Env):
             initial_tuples = DataAccess.select(
                 f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot} IN ({initial_k_ids_db_fmt})')
         return initial_tuples
-
-    # def get_next_tuple(self):
-    #     # TODO make this faster somehow? what if we just select a random tuple from the database?
-    #     #  need to update the mask accordingly
-    #     #  OR
-    #     # TODO we should add back the action_space thing and then select tuples from there
-    #     taken_ids = [tup[self.pivot] for tup in self.selected_tuples]
-    #     available_ids = np.setdiff1d(np.arange(self.table_size), taken_ids)
-    #     next_id = np.random.choice(a=available_ids, size=1, replace=True)[0]
-    #     next_tuple = DataAccess.select_one(f'SELECT * FROM {self.schema}.{self.table} WHERE {self.pivot}={next_id}')
-    #     return next_tuple
 
     def get_next_tuple(self):
         idx = self.k + 1 + self.step_count

@@ -101,7 +101,7 @@ def get_scores(sample_ids, sample_tuples):
 def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), validation_size=0):
     results = []
     path = f'{CheckpointManager.basePath}/{checkpoint_version}'
-    results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'queries' in f]
+    results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'queries_' in f]
     results_files.sort(key=lambda name: int(re.findall(r'\d+', name)[0]))
 
     test_size = ConfigManager.get_config('samplerConfig.testSize')

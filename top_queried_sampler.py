@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 from tqdm import tqdm
 
@@ -49,7 +51,18 @@ def get_sample(k, verbose=True, checkpoint_version=CheckpointManager.get_max_ver
 
 if __name__ == '__main__':
     # prepare_weights_for_sample()
-    print(get_sample(100)[1])
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--checkpoint", type=int, default=CheckpointManager.get_max_version(), help="The Checkpoint to use."
+    )
+
+    parser.add_argument(
+        "--k", type=int, default=1000, help="Sample size."
+    )
+
+    args = parser.parse_args()
+    print(get_sample(args.k, checkpoint_version=args.checkpoint)[1])
     # prepare_sample(100)
     # k_list = [10 * 10**3, 50 * 10**3, 100 * 10**3, 200 * 10**3, 250 * 10**3]
     # for k in tqdm(k_list):

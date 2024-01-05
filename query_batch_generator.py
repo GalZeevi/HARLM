@@ -110,13 +110,13 @@ class QueryGenerator:
 
         operator = np.random.choice([e.value for e in NumericOperator], size=1).item()
         if operator == NumericOperator.GREATER_THEN:
-            return f'({col_name} > {lb})'
+            return f'{col_name} > {lb}'
         elif operator == NumericOperator.LESS_THEN:
-            return f'({col_name} < {ub})'
+            return f'{col_name} < {ub}'
         else:
-            return f'({col_name} BETWEEN {lb} AND {ub})'
+            return f'{col_name} BETWEEN {lb} AND {ub}'
 
-    def get_query(self, num_of_columns, agg=False, mode=Modes.RANDOM):
+    def get_query(self, num_of_columns, agg=False, mode=Modes.SCIENTIFIC):
         use_group_by = False
         group_by_col = None
         agg_func = None
@@ -156,7 +156,7 @@ class QueryGenerator:
                 values = [val.replace("'", "''") for val in values]
                 db_formatted_values = ", ".join([f"\'{value}\'" for value in values])
 
-                where_clause.append(f'({col} IN ({db_formatted_values}))')
+                where_clause.append(f'{col} IN ({db_formatted_values})')
 
             elif col in self.numerical_cols:
                 # numerical column
@@ -232,24 +232,24 @@ def write_queries_to_file(ver, outdir, outfile_name):
 
 if __name__ == '__main__':
     ### flights ###
-    # checkpoint = 36
-    # generate_batch(40,
-    #                checkpoint,
-    #                num_cols=['ARR_DELAY', 'AIR_TIME'],
-    #                categ_cols=['DEST', 'ORIGIN'],
-    #                agg=False,
-    #                outdir='workload')
-    # write_queries_to_file(checkpoint, outdir='workload', outfile_name='flights_queries')
-
-    ### instacart ###
-    checkpoint = 37
-    generate_batch(40,
+    checkpoint = 44
+    generate_batch(200,
                    checkpoint,
-                   num_cols=[],
-                   categ_cols=['product_name', 'aisle', 'department'],
+                   num_cols=['YEAR_DATE'],
+                   categ_cols=['UNIQUE_CARRIER'],
                    agg=False,
                    outdir='workload')
-    write_queries_to_file(checkpoint, outdir='workload', outfile_name='instacart_queries')
+    write_queries_to_file(checkpoint, outdir='workload', outfile_name='flights_queries')
+
+    ### instacart ###
+    # checkpoint = 37
+    # generate_batch(40,
+    #                checkpoint,
+    #                num_cols=[],
+    #                categ_cols=['product_name', 'aisle', 'department'],
+    #                agg=False,
+    #                outdir='workload')
+    # write_queries_to_file(checkpoint, outdir='workload', outfile_name='instacart_queries')
 
     # g = QueryGenerator(numerical_cols=['publication$citation_count', 'publication$importance'],
     #                    categorical_cols=['domain$name', 'CAST(publication$year AS CHAR(50))'])
