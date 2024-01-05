@@ -127,7 +127,7 @@ class Embedding:
 
     def tuples2vector(self, tuples):
         tuples_as_string = self.tuples2sentences(tuples)
-        embeddings = self.model.encode(tuples_as_string)
+        embeddings = self.model.encode(tuples_as_string, convert_to_tensor=True).numpy()
         return embeddings
 
 
