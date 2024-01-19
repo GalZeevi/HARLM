@@ -619,6 +619,12 @@ def train_model():
             f.write(str(res))
             f.close()
         pbar.update()
+
+    path_to_checkpoint = algo.save(checkpoint_dir=OUTPUT_DIR)
+    if os.path.exists(f'{OUTPUT_DIR}/latest_checkpoint'):
+        shutil.rmtree(f'{OUTPUT_DIR}/latest_checkpoint')
+    shutil.copytree(path_to_checkpoint, f'{OUTPUT_DIR}/latest_checkpoint')
+
     return algo
 
 

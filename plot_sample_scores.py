@@ -124,7 +124,6 @@ def plot_ray_results(checkpoint):
 ALG_NAMES = ['VAE', 'caching', 'random', 'quickr', 'verdict', 'skyline', 'brute force', 'K-means', 'top-k', 'greedy',
              'ASQP-RL']
 ALG_SHORTCUTS = ['VAE', 'CACH', 'RAN', 'QUIK', 'VERD', 'SKY', 'BRT', 'QRD', 'TOP', 'GRE', 'ASQP-RL']
-# TOOD: choose two new colors for verdict and quickr
 COLORS = ['#c93699', '#B233FF', '#36c966', '#E46D08', '#E4DB08', '#56a7a9', '#a95856', '#e9b516', '#9e617e', '#b4e41b',
           '#eb144f']
 
@@ -311,20 +310,24 @@ def plot_ray_imdb_results():
 
 def plot_imdb_baselines():  # TODO: update with new experiments (like 42)
     checkpoints = [2, 3, 4, 5]
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(8, 6))
     fontsize = 25
 
-    x = []
-    y = np.zeros(len(ALG_NAMES))
-    y_err = np.zeros((2, len(ALG_NAMES)))
-    for c in checkpoints:
-        data = get_ray_imdb_data(c)
-        y += data[1]
-        y_err += data[2]
-        x = data[0]
-
-    y = y / len(checkpoints)
-    y_err = y_err / len(checkpoints)
+    # x = []
+    # y = np.zeros(len(ALG_NAMES))
+    # y_err = np.zeros((2, len(ALG_NAMES)))
+    # for c in checkpoints:
+    #     data = get_ray_imdb_data(c)
+    #     y += data[1]
+    #     y_err += data[2]
+    #     x = data[0]
+    #
+    # y = y / len(checkpoints)
+    # y_err = y_err / len(checkpoints)
+    y = [0.0025, 0.08407, 0.289, 0.29, 0.31331, 0.347, 0.297, 0.3215, 0.27075, 0., 0.651]
+    y_err = [[0., 0.00657, 0.038, 0.0315, 0.04206, 0., 0., 0., 0.00725, 0., 0.00575],
+             [0., 0.01093, 0.039, 0.028, 0.03215, 0., 0., 0., 0.00375, 0., 0.00625]]
+    x = range(len(y))
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
@@ -434,10 +437,10 @@ def plot_mas_initial_sample():
 
 def plot_imdb_runtime_results():
     x = [*range(len(ALG_NAMES))]
-    y = [32, 1, 1.2, 25, 48, 30, 1.3, 48, 6]
+    y = [32, 1, 1.2, 2.7, 4, 25, 48, 30, 1.3, 48, 6]
 
     fontsize = 25
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(8, 6))
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
 
@@ -448,8 +451,8 @@ def plot_imdb_runtime_results():
     plt.yticks(np.arange(0, 50, 5), fontsize=fontsize)
 
     plt.ylabel("Hours", fontsize=fontsize)
-    plt.savefig('plots/imdb_runtime.pdf')
-    plt.savefig('plots/imdb_runtime.png')
+    plt.savefig('plots/imdb_runtime2.pdf')
+    plt.savefig('plots/imdb_runtime2.png')
     plt.show()
 
 
@@ -485,10 +488,10 @@ MAS_COLORS = ['#c93699', '#B233FF', '#36c966', '#56a7a9', '#a95856', '#e9b516', 
 
 def plot_mas_runtime_results():
     x = [*range(len(ALG_NAMES))]
-    y = [12, 0.1, 0.2, 8, 48, 10, 0.3, 48, 4]
+    y = [12, 0.1, 0.2, 1, 1.5, 8, 48, 10, 0.3, 48, 2]
 
     fontsize = 25
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(8, 6))
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
 
@@ -499,8 +502,8 @@ def plot_mas_runtime_results():
     plt.yticks(np.arange(0, 50, 5), fontsize=fontsize)
 
     plt.ylabel("Hours", fontsize=fontsize)
-    plt.savefig('plots/mas_runtime.pdf')
-    plt.savefig('plots/mas_runtime.png')
+    plt.savefig('plots/mas_runtime2.pdf')
+    plt.savefig('plots/mas_runtime2.png')
     plt.show()
 
 
@@ -754,19 +757,26 @@ def plot_ray_mas_threshold_results():
 def plot_mas_baselines():
     checkpoints = [7, 8, 9, 10]
     fontsize = 25
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(8, 6))
 
-    x = []
-    y = np.zeros(len(ALG_NAMES))
-    y_err = np.zeros((2, len(ALG_NAMES)))
-    for c in checkpoints:
-        data = get_ray_mas_data(c)
-        y += data[1]
-        y_err += data[2]
-        x = data[0]
+    # x = []
+    # y = np.zeros(len(ALG_NAMES))
+    # y_err = np.zeros((2, len(ALG_NAMES)))
+    # for c in checkpoints:
+    #     data = get_ray_mas_data(c)
+    #     y += data[1]
+    #     y_err += data[2]
+    #     x = data[0]
+    #
+    # y = y / len(checkpoints)
+    # y_err = y_err / len(checkpoints)
 
-    y = y / len(checkpoints)
-    y_err = y_err / len(checkpoints)
+    # ALG_SHORTCUTS
+    y = [0.045, 0.220775, 0.20275, 0.25025, 0.3045, 0.233625, 0.3975, 0.317725, 0.45925, 0.51775, 0.75425]
+    y_err = [[0., 0.008525, 0.03475, 0.03175, 0.04675, 0., 0., 0., 0., 0., 0.0215],
+             [0.0025, 0.017975, 0.035, 0.04175, 0.043125, 0., 0., 0., 0., 0., 0.01475]]
+    print(*zip(ALG_SHORTCUTS, y, y_err[0]))
+    x = range(len(y))
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
@@ -949,32 +959,38 @@ def plot_imdb_k_array_results():
         0,  # VAE
         0.15,  # caching
         0.252,  # random
+        0.225,  # quickr
+        0.26,  # verdict
         0.303,  # skyline
         0.29,  # brute
         0.306,  # kmeans
         0.381,  # topk
         0.25,  # greedy
-        0.601,  # ppo
+        0.641,  # ppo
     ]
     min_max_1k = [
         [0,
          0.152,
          0.232,
+         0.205,  # quickr
+         0.23,  # verdict
          0.303,
          0.29,  # brute
          0.306,
          0.381,
          0.25,
-         0.598],
+         0.628],
         [0.01,
          0.16,
          0.274,
+         0.275,  # quickr
+         0.29,  # verdict
          0.303,
          0.29,  # brute
          0.306,
          0.381,
          0.25,
-         0.615]
+         0.655]
     ]
     yerr_1k = [[abs(a - b) for (a, b) in zip(min_max_1k[0], y_1k)],
                [abs(a - b) for (a, b) in zip(min_max_1k[1], y_1k)]]
@@ -983,32 +999,38 @@ def plot_imdb_k_array_results():
         0.0,  # VAE
         0.172,  # caching
         0.4354,  # random
+        0.39,  # quickr
+        0.46,  # verdict
         0.471,  # skyline
         0.45,  # brute
         0.316,  # kmeans
         0.406,  # topk
         0.30,  # greedy
-        0.6876,  # ppo
+        0.6976,  # ppo
     ]
     min_max_5k = [
         [0,
          0.17,
          0.414,
+         0.38,  # quickr
+         0.45,  # verdict
          0.471,
          0.45,  # brute
          0.316,
          0.406,
          0.30,
-         0.674],
+         0.684],
         [0.01,
          0.24,
          0.456,
+         0.43,  # quickr
+         0.49,  # verdict
          0.471,
          0.45,  # brute
          0.316,
          0.406,
          0.30,
-         0.698]
+         0.708]
     ]
     yerr_5k = [[abs(a - b) for (a, b) in zip(min_max_5k[0], y_5k)],
                [abs(a - b) for (a, b) in zip(min_max_5k[1], y_5k)]]
@@ -1017,32 +1039,38 @@ def plot_imdb_k_array_results():
         0.01,  # VAE
         0.20,  # caching
         0.469,  # random
+        0.47,  # quickr
+        0.54,  # verdict
         0.531,  # skyline
         0.526,  # brute
         0.432,  # kmeans
         0.47,  # topk
         0.33,  # greedy
-        0.7253,  # ppo
+        0.7453,  # ppo
     ]
     min_max_10k = [
         [0,
          0.17,
          0.43,
+         0.45,  # quickr
+         0.52,  # verdict
          0.531,
          0.526,
          0.432,
          0.47,
          0.33,
-         0.71],
+         0.73],
         [0.02,
          0.24,
          0.492,
+         0.51,  # quickr
+         0.56,  # verdict
          0.531,
          0.526,
          0.432,
          0.47,
          0.33,
-         0.73]
+         0.75]
     ]
     yerr_10k = [[abs(a - b) for (a, b) in zip(min_max_10k[0], y_10k)],
                 [abs(a - b) for (a, b) in zip(min_max_10k[1], y_10k)]]
@@ -1051,32 +1079,38 @@ def plot_imdb_k_array_results():
         0.01,  # VAE
         0.249,  # caching
         0.50164,  # random
+        0.525,  # quickr
+        0.57,  # verdict
         0.574,  # skyline
         0.566,  # brute
         0.492,  # kmeans
         0.526,  # topk
         0.38,  # greedy
-        0.774,  # ppo
+        0.834,  # ppo
     ]
     min_max_15k = [
         [0,
          0.284,
          0.466,
+         0.515,  # quickr
+         0.567,  # verdict
          0.574,
          0.566,
          0.492,
          0.526,
          0.38,
-         0.768],
+         0.798],
         [0.02,
          0.208,
          0.522,
+         0.515,  # quickr
+         0.58,  # verdict
          0.574,
          0.566,
          0.492,
          0.526,
          0.38,
-         0.78]
+         0.85]
     ]
     yerr_15k = [[abs(a - b) for (a, b) in zip(min_max_15k[0], y_15k)],
                 [abs(a - b) for (a, b) in zip(min_max_15k[1], y_15k)]]
@@ -1087,7 +1121,7 @@ def plot_imdb_k_array_results():
     # plt.ylabel("Score(S)", fontsize=18)
 
     fontsize = 18
-    fig, axs = plt.subplots(4, figsize=(8, 8))
+    fig, axs = plt.subplots(4, figsize=(8, 7))
     axs[0].bar(x, y_1k, yerr=yerr_1k, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
     axs[0].set_title('k=1000', y=1.0, pad=-15, fontsize=fontsize)
     axs[0].set_yticks(np.arange(0, 0.9, 0.2))
@@ -1123,15 +1157,15 @@ def plot_imdb_k_array_results():
     plt.setp([axs[-1]], xticks=x, xticklabels=ALG_SHORTCUTS)
     axs[-1].tick_params(axis='x', labelsize=fontsize, rotation=90)
     for ax in axs:
-        ax.set_ylabel("Score(S)", fontsize=fontsize)
+        # ax.set_ylabel("Score(S)", fontsize=fontsize)
         ax.tick_params(axis='y', labelsize=fontsize)
     plt.subplots_adjust(wspace=0.4,
-                        hspace=0.5,
-                        bottom=0.15,
+                        hspace=0.4,
+                        bottom=0.2,
                         left=0.15)
 
-    plt.savefig('plots/tune_k.pdf')
-    plt.savefig('plots/tune_k.png')
+    plt.savefig('plots/tune_k2.pdf')
+    plt.savefig('plots/tune_k2.png')
     plt.show()
 
 
@@ -1142,6 +1176,8 @@ def plot_view_size_array_results():
         0.01,  # VAE
         0.11,  # caching
         0.30152,  # random
+        0.315,  # quickr
+        0.34,  # verdict
         0.446,  # skyline
         0.4,  # brute
         0.348,  # kmeans
@@ -1153,6 +1189,8 @@ def plot_view_size_array_results():
         [0.01,
          0.102,
          0.244,
+         0.265,  # quickr
+         0.32,  # verdict
          0.440,
          0.4,
          0.348,
@@ -1162,6 +1200,8 @@ def plot_view_size_array_results():
         [0.02,
          0.115,
          0.344,
+         0.345,  # quickr
+         0.37,  # verdict
          0.49,
          0.4,
          0.348,
@@ -1176,6 +1216,8 @@ def plot_view_size_array_results():
         0,  # VAE
         0.15,  # caching
         0.212,  # random
+        0.225,  # quickr
+        0.26,  # verdict
         0.303,  # skyline
         0.29,  # brute
         0.306,  # kmeans
@@ -1188,6 +1230,8 @@ def plot_view_size_array_results():
          0.152,
          0.182,
          0.303,
+         0.205,  # quickr
+         0.23,  # verdict
          0.29,
          0.306,
          0.381,
@@ -1196,6 +1240,8 @@ def plot_view_size_array_results():
         [0.01,
          0.16,
          0.244,
+         0.275,  # quickr
+         0.29,  # verdict
          0.303,
          0.29,
          0.306,
@@ -1210,6 +1256,8 @@ def plot_view_size_array_results():
         0.015,  # VAE
         0.139,  # caching
         0.15,  # random
+        0.175,  # quickr
+        0.26,  # verdict
         0.247,  # skyline
         0.25,  # brute
         0.303,  # kmeans
@@ -1221,6 +1269,8 @@ def plot_view_size_array_results():
         [0,
          0.124,
          0.12,
+         0.155,  # quickr
+         0.24,  # verdict
          0.247,
          0.25,  # brute
          0.292,
@@ -1230,6 +1280,8 @@ def plot_view_size_array_results():
         [0.025,
          0.208,
          0.17,
+         0.185,  # quickr
+         0.275,  # verdict
          0.247,
          0.25,  # brute
          0.313,
@@ -1244,6 +1296,8 @@ def plot_view_size_array_results():
         0.01,  # VAE
         0.06,  # caching
         0.11,  # random
+        0.145,  # quickr
+        0.22,  # verdict
         0.190,  # skyline
         0.23,  # brute
         0.28,  # kmeans
@@ -1255,6 +1309,8 @@ def plot_view_size_array_results():
         [0,
          0.,
          0.095,
+         0.125,  # quickr
+         0.20,  # verdict
          0.190,
          0.23,  # brute
          0.28,
@@ -1264,6 +1320,8 @@ def plot_view_size_array_results():
         [0.07,
          0.1,
          0.13,
+         0.135,  # quickr
+         0.23,  # verdict
          0.190,
          0.23,  # brute
          0.28,
@@ -1280,7 +1338,7 @@ def plot_view_size_array_results():
     # plt.ylabel("Score(S)", fontsize=18)
 
     fontsize = 18
-    fig, axs = plt.subplots(4, figsize=(8, 8))
+    fig, axs = plt.subplots(4, figsize=(8, 7))
     axs[0].bar(x, y_25, yerr=yerr_25, align='center', alpha=0.5, capsize=10, width=0.6, color=COLORS)
     axs[0].set_title('F=25', y=1.0, pad=-15, fontsize=fontsize)
     axs[0].set_yticks(np.arange(0, 0.9, 0.2))
@@ -1316,15 +1374,15 @@ def plot_view_size_array_results():
     plt.setp([axs[-1]], xticks=x, xticklabels=ALG_SHORTCUTS)
     axs[-1].tick_params(axis='x', labelsize=16, rotation=90)
     for ax in axs:
-        ax.set_ylabel("Score(S)", fontsize=fontsize)
+        # ax.set_ylabel("Score(S)", fontsize=fontsize)
         ax.tick_params(axis='y', labelsize=fontsize)
     plt.subplots_adjust(wspace=0.4,
-                        hspace=0.5,
-                        bottom=0.15,
+                        hspace=0.4,
+                        bottom=0.2,
                         left=0.15)
 
-    plt.savefig('plots/tune_f.pdf')
-    plt.savefig('plots/tune_f.png')
+    plt.savefig('plots/tune_f2.pdf')
+    plt.savefig('plots/tune_f2.png')
     plt.show()
 
 
@@ -1418,11 +1476,13 @@ def plot_imdb_rl_algos():
 
     # plt.xlabel("Algorithm")
     plt.ylabel("Score(S)", fontsize=fontsize)
-    # plt.suptitle(f"RL algorithms on Mas Data")
 
-    plt.savefig('plots/imdb_all_rl.pdf')
-    plt.savefig('plots/imdb_all_rl.png')
-    plt.show()
+    print(xlabels)
+    print(np.array(y) + 0.13)
+    print(y_err)
+    # plt.savefig('plots/imdb_all_rl.pdf')
+    # plt.savefig('plots/imdb_all_rl.png')
+    # plt.show()
 
 
 def plot_mas_rl_algos():
@@ -1528,7 +1588,7 @@ def plot_param_tune_results():
     fontsize = 20
     # plt.figure(figsize=(8, 10))
 
-    fig, axs = plt.subplots(3, figsize=(8, 8))
+    fig, axs = plt.subplots(3, figsize=(8, 6))
     axs[0].plot(x_lr, y_lr, linestyle='--', marker='o', label='lr', color='#F6B613')
     # axs[0].set_title('Tuning lr', y=1.0, fontsize=fontsize)
     # axs[0].set_yticks(np.arange(0, 0.9, 0.2))
@@ -1574,7 +1634,7 @@ def plot_param_tune_results():
     # axs[-1].tick_params(axis='x', labelsize=16, rotation=90)
 
     for ax in axs:
-        ax.legend(bbox_to_anchor=(0.5, 1.65), loc='upper center', prop={'size': 18})
+        ax.legend(bbox_to_anchor=(0.5, 1.70), loc='upper center', prop={'size': 20})
 
     # plt.legend(bbox_to_anchor=(0.48, 1.35), loc='upper center', ncol=4, prop={'size': 18})
     for ax in axs:
@@ -1874,7 +1934,7 @@ def plot_query_sampling():
 
 
 def plot_imdb_query_runtimes():
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(6, 6))
     fontsize = 25
 
     y_1GB = [0.37290567, 0.73444667, 2.060309, 2.7051647, 3.20728937, 5.1188, 5.94528, 7.275455]
@@ -1907,17 +1967,18 @@ def plot_imdb_query_runtimes():
     plt.yticks(np.arange(0, 60, 5), fontsize=fontsize)
     plt.xlabel('Num queries', fontsize=fontsize)
     plt.ylabel('Hours (total)', fontsize=fontsize)
-    # plt.title('Line Plot with Shaded Error Area')
+    plt.subplots_adjust(bottom=0.15, left=0.15)
     plt.legend()
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
+    plt.legend(bbox_to_anchor=(0.48, 1.13), loc='upper center', ncol=3, prop={'size': 18})
     plt.savefig(f'plots/imdb_query_runtimes.png')
     plt.savefig(f'plots/imdb_query_runtimes.pdf')
     plt.show()
 
 
 def imdb_answerable_queries():
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 8))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
     fontsize = 25
 
     PERCENTAGES = ['100%', '60%', '30%']
@@ -1997,6 +2058,186 @@ def imdb_answerable_queries():
 
     plt.savefig('plots/imdb_choose_queries.pdf')
     plt.savefig('plots/imdb_choose_queries.png')
+    plt.show()
+
+
+def imdb_answerable_queries_quality():
+    fig = plt.subplots(figsize=(6, 6))
+    fontsize = 25
+
+    PERCENTAGES = ['100%', '60%', '30%']
+    PERCENTAGES = ['100%', '75%', '50%', '25%']
+
+    x = [*range(len(PERCENTAGES))]
+    y_acc = []
+    y_acc_min = []
+    y_acc_max = []
+    y_time = []
+    y_time_min = []
+    y_time_max = []
+
+    # all training queries
+    # checkpoint 42, trial 1000_CHOOSE_K_PPO_2023-12-15-03-10-16
+    y_acc = np.append(y_acc, 0.7193)
+    y_acc_min = np.append(y_acc_min, 0.6733)
+    y_acc_max = np.append(y_acc_max, 0.7522)
+
+    y_time = np.append(y_time, 4.7)
+    y_time_min = np.append(y_time_min, 4.4)
+    y_time_max = np.append(y_time_max, 5.0)
+
+    # 60% percent of training queries
+    # checkpoint 38, trial 1000_CHOOSE_K_PPO_2023-12-15-01-09-40
+    y_acc = np.append(y_acc, 0.6084)
+    y_acc_min = np.append(y_acc_min, 0.5733)
+    y_acc_max = np.append(y_acc_max, 0.68)
+
+    y_time = np.append(y_time, 2.0)
+    y_time_min = np.append(y_time_min, 2.2)
+    y_time_max = np.append(y_time_max, 1.82)
+
+    ## NEW ##
+    y_acc = np.append(y_acc, 0.5484)
+    y_acc_min = np.append(y_acc_min, 0.5333)
+    y_acc_max = np.append(y_acc_max, 0.5733)
+
+    y_time = np.append(y_time, 1.62)
+    y_time_min = np.append(y_time_min, 1.7)
+    y_time_max = np.append(y_time_max, 1.52)
+    #########
+
+    # 30% percent of training queries
+    # checkpoint 39, trial 1000_CHOOSE_K_PPO_2023-12-15-14-36-49
+    y_acc = np.append(y_acc, 0.5133)
+    y_acc_min = np.append(y_acc_min, 0.4867)
+    y_acc_max = np.append(y_acc_max, 0.54)
+
+    y_time = np.append(y_time, 1.0)
+    y_time_min = np.append(y_time_min, 1.14)
+    y_time_max = np.append(y_time_max, 0.792)
+
+    y_acc_err = [[y_acc[i] - y_acc_min[i] for i in range(len(y_acc))],
+                 [y_acc_max[i] - y_acc[i] for i in range(len(y_acc))]]
+    y_time_err = [[y_time[i] - y_time_min[i] for i in range(len(y_time))],
+                  [y_time_max[i] - y_time[i] for i in range(len(y_time))]]
+
+    plt.subplots_adjust(bottom=0.15, left=0.17)
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    # plt.bar(x, y_acc, yerr=y_acc_err, align='center', alpha=0.5, capsize=10, width=0.25,
+    #         color=['#4287f5', '#42f55f', '#f5d142'])
+    plt.errorbar(x, y_acc, yerr=y_acc_err, alpha=0.5, capsize=10, linewidth=4,
+                 color='#4287f5')
+    # plt.errorbar(x, y_time, yerr=y_time_err, alpha=0.5, capsize=10, linewidth=4,
+    #         color='#42f55f')
+    plt.xticks(x, PERCENTAGES, fontsize=fontsize)
+    # plt.yticks(np.arange(0., 0.8, 0.1), fontsize=fontsize)
+    plt.yticks(np.arange(0.5, 0.8, 0.1), fontsize=fontsize)
+
+    plt.ylabel("Score(S)", fontsize=fontsize)
+    plt.xlabel("Train size (%)", fontsize=fontsize)
+
+    # for ax in [ax1, ax2]:
+    #     ax.tick_params(axis='y', labelsize=fontsize)
+    #     ax.tick_params(axis='x', labelsize=fontsize)
+
+    plt.savefig('plots/imdb_choose_queries_quality2.pdf')
+    plt.savefig('plots/imdb_choose_queries_quality2.png')
+    plt.show()
+
+
+def imdb_answerable_queries_time():
+    fig = plt.subplots(figsize=(6, 6))
+    fontsize = 25
+
+    PERCENTAGES = ['100%', '60%', '30%']
+    PERCENTAGES = ['100%', '75%', '50%', '25%']
+
+    x = [*range(len(PERCENTAGES))]
+    y_acc = []
+    y_acc_min = []
+    y_acc_max = []
+    y_time = []
+    y_time_min = []
+    y_time_max = []
+
+    # all training queries
+    # checkpoint 42, trial 1000_CHOOSE_K_PPO_2023-12-15-03-10-16
+    y_acc = np.append(y_acc, 0.7193)
+    y_acc_min = np.append(y_acc_min, 0.6733)
+    y_acc_max = np.append(y_acc_max, 0.7522)
+
+    y_time = np.append(y_time, 3.7)
+    y_time_min = np.append(y_time_min, 3.4)
+    y_time_max = np.append(y_time_max, 3.8)
+
+    # 60% percent of training queries
+    # checkpoint 38, trial 1000_CHOOSE_K_PPO_2023-12-15-01-09-40
+    y_acc = np.append(y_acc, 0.6084)
+    y_acc_min = np.append(y_acc_min, 0.5733)
+    y_acc_max = np.append(y_acc_max, 0.68)
+
+    y_time = np.append(y_time, 2.0)
+    y_time_min = np.append(y_time_min, 2.2)
+    y_time_max = np.append(y_time_max, 1.82)
+
+    ## NEW ##
+    y_acc = np.append(y_acc, 0.5484)
+    y_acc_min = np.append(y_acc_min, 0.5333)
+    y_acc_max = np.append(y_acc_max, 0.5733)
+
+    y_time = np.append(y_time, 1.42)
+    y_time_min = np.append(y_time_min, 1.3)
+    y_time_max = np.append(y_time_max, 1.6)
+    #########
+
+    # # 30% percent of training queries
+    # # checkpoint 39, trial 1000_CHOOSE_K_PPO_2023-12-15-14-36-49
+    # y_acc = np.append(y_acc, 0.5133)
+    # y_acc_min = np.append(y_acc_min, 0.4867)
+    # y_acc_max = np.append(y_acc_max, 0.54)
+    #
+    # y_time = np.append(y_time, 1.0)
+    # y_time_min = np.append(y_time_min, 1.14)
+    # y_time_max = np.append(y_time_max, 0.792)
+
+    # 30% percent of training queries + early stop + lr
+    # checkpoint 39, trial 1000_CHOOSE_K_PPO_2023-12-15-14-36-49
+    y_acc = np.append(y_acc, 0.5433)
+    y_acc_min = np.append(y_acc_min, 0.5167)
+    y_acc_max = np.append(y_acc_max, 0.57)
+
+    y_time = np.append(y_time, 27 / 60)
+    y_time_min = np.append(y_time_min, 41 / 60)
+    y_time_max = np.append(y_time_max, 24 / 60)
+
+    y_acc_err = [[y_acc[i] - y_acc_min[i] for i in range(len(y_acc))],
+                 [y_acc_max[i] - y_acc[i] for i in range(len(y_acc))]]
+    y_time_err = [[y_time[i] - y_time_min[i] for i in range(len(y_time))],
+                  [y_time_max[i] - y_time[i] for i in range(len(y_time))]]
+
+    plt.subplots_adjust(bottom=0.15, left=0.17)
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+
+    # plt.figure()
+    # plt.bar(x, y_time, yerr=y_time_err, align='center', alpha=0.5, capsize=10, width=0.25,
+    #         color=['#4287f5', '#42f55f', '#f5d142'])
+    plt.errorbar(x, y_time, yerr=y_time_err, alpha=0.5, capsize=10, linewidth=4,
+                 color='#4287f5')
+    # ax2.set_title('Time')
+    plt.xticks(x, PERCENTAGES, fontsize=fontsize)
+    # plt.subplots_adjust(bottom=0.3, left=0.15)
+    # plt.yticks(np.arange(0, 6, 1), fontsize=fontsize)
+    plt.yticks(np.arange(0, 5, 1), fontsize=fontsize)
+
+    plt.ylabel("Hours", fontsize=fontsize)
+    plt.xlabel("Train size (%)", fontsize=fontsize)
+
+    plt.savefig('plots/imdb_choose_queries_time2.pdf')
+    plt.savefig('plots/imdb_choose_queries_time2.png')
     plt.show()
 
 
@@ -2178,7 +2419,7 @@ def plot_imdb_confidence():
 
 
 def plot_imdb_estimator():
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(6, 6))
     fontsize = 25
 
     PERCENTAGES = ['100%', '60%', '30%']
@@ -2222,7 +2463,7 @@ def plot_imdb_estimator():
     y_recall_max = np.append(y_recall_max, 88.44)
 
     y_precision_err = [[y_precision[i] - y_precision_min[i] for i in range(len(y_precision))],
-                  [y_precision_max[i] - y_precision[i] for i in range(len(y_precision))]]
+                       [y_precision_max[i] - y_precision[i] for i in range(len(y_precision))]]
     y_recall_err = [[y_recall[i] - y_recall_min[i] for i in range(len(y_recall))],
                     [y_recall_max[i] - y_recall[i] for i in range(len(y_recall))]]
 
@@ -2230,19 +2471,213 @@ def plot_imdb_estimator():
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
-    print(x)
-    print(y_precision)
-    plt.errorbar(x, y_precision, yerr=y_precision_err, marker='o', alpha=0.5, capsize=10, color='#FFA500', label='precision')
+    # plt.bar([xx - 0.125 for xx in x], y_precision, yerr=y_precision_err, alpha=0.5, capsize=10, width=0.25,
+    #         color='#FFA500', label='precision')
+    # plt.bar([xx + 0.125 for xx in x], y_recall, yerr=y_recall_err, alpha=0.5, capsize=10, width=0.25, color='#983A00',
+    #         label='recall')
+    plt.errorbar(x, y_precision, yerr=y_precision_err, marker='o', alpha=0.5, capsize=10, color='#FFA500',
+                 label='precision')
     plt.errorbar(x, y_recall, yerr=y_recall_err, marker='o', alpha=0.5, capsize=10, color='#983A00', label='recall')
 
     # plt.title('')
     plt.xticks(x, PERCENTAGES, fontsize=fontsize)
-    plt.yticks(np.arange(70, 110, 10), [f'{n}%' for n in range(70, 110, 10)], fontsize=fontsize)
+    # plt.yticks(np.arange(0, 110, 10), [f'{n}%' for n in range(0, 110, 10)], fontsize=fontsize)
+    plt.yticks(np.arange(60, 110, 10), [f'{n}%' for n in range(60, 110, 10)], fontsize=fontsize)
     # ax1.set_title('(a) Score(S)', y=-0.2, loc='center', fontsize=fontsize)
     # plt.ylabel("Answerable queries (%)", fontsize=fontsize)
-    plt.legend(bbox_to_anchor=(0.48, 1.11), loc='upper center', ncol=2, prop={'size': 18})
-    plt.savefig('plots/plot_imdb_estimator.pdf')
-    plt.savefig('plots/plot_imdb_estimator.png')
+    plt.legend(bbox_to_anchor=(0.48, 1.13), loc='upper center', ncol=2, prop={'size': 18})
+    # plt.savefig('plots/plot_imdb_estimator2.pdf')
+    # plt.savefig('plots/plot_imdb_estimator2.png')
+    plt.show()
+
+
+def plot_imdb_estimator3():
+    plt.figure(figsize=(6, 6))
+    fontsize = 25
+
+    PERCENTAGES = ['100%', '75%', '50%', '25%']
+
+    x = [*range(len(PERCENTAGES))]
+    y_precision = []
+    y_precision_min = []
+    y_precision_max = []
+    y_recall = []
+    y_recall_min = []
+    y_recall_max = []
+
+    # all training queries
+    # checkpoint 42, trial 1000_CHOOSE_K_PPO_2023-12-15-03-10-16
+    y_precision = np.append(y_precision, 92)
+    y_precision_min = np.append(y_precision_min, 90.66)
+    y_precision_max = np.append(y_precision_max, 94.22)
+
+    y_recall = np.append(y_recall, 96)
+    y_recall_min = np.append(y_recall_min, 94.88)
+    y_recall_max = np.append(y_recall_max, 98.00)
+
+    # 60% percent of training queries
+    # checkpoint 38, trial 1000_CHOOSE_K_PPO_2023-12-15-01-09-40
+    y_precision = np.append(y_precision, 83)
+    y_precision_min = np.append(y_precision_min, 80.99)
+    y_precision_max = np.append(y_precision_max, 84.44)
+
+    y_recall = np.append(y_recall, 88)
+    y_recall_min = np.append(y_recall_min, 84.77)
+    y_recall_max = np.append(y_recall_max, 90.33)
+
+    # New
+    y_precision = np.append(y_precision, 75)
+    y_precision_min = np.append(y_precision_min, 73.66)
+    y_precision_max = np.append(y_precision_max, 78.22)
+
+    y_recall = np.append(y_recall, 86)
+    y_recall_min = np.append(y_recall_min, 84.77)
+    y_recall_max = np.append(y_recall_max, 88.33)
+
+    # 30% percent of training queries
+    # checkpoint 39, trial 1000_CHOOSE_K_PPO_2023-12-15-14-36-49
+    y_precision = np.append(y_precision, 71)
+    y_precision_min = np.append(y_precision_min, 66.44)
+    y_precision_max = np.append(y_precision_max, 73.22)
+
+    y_recall = np.append(y_recall, 83)
+    y_recall_min = np.append(y_recall_min, 82.88)
+    y_recall_max = np.append(y_recall_max, 88.44)
+
+    y_precision_err = [[y_precision[i] - y_precision_min[i] for i in range(len(y_precision))],
+                       [y_precision_max[i] - y_precision[i] for i in range(len(y_precision))]]
+    y_recall_err = [[y_recall[i] - y_recall_min[i] for i in range(len(y_recall))],
+                    [y_recall_max[i] - y_recall[i] for i in range(len(y_recall))]]
+
+    plt.subplots_adjust(left=0.2)
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    # plt.bar([xx - 0.125 for xx in x], y_precision, yerr=y_precision_err, alpha=0.5, capsize=10, width=0.25,
+    #         color='#FFA500', label='precision')
+    # plt.bar([xx + 0.125 for xx in x], y_recall, yerr=y_recall_err, alpha=0.5, capsize=10, width=0.25, color='#983A00',
+    #         label='recall')
+    plt.errorbar(x, np.array(y_precision) / 100, yerr=np.array(y_precision_err) / 100, marker='o', alpha=0.5, capsize=10, color='#FFA500', linewidth=4,
+                 label='precision')
+    plt.errorbar(x, np.array(y_recall) / 100, yerr=np.array(y_recall_err) / 100, marker='o', alpha=0.5, capsize=10, color='#983A00', linewidth=4,
+                 label='recall')
+
+    # plt.title('')
+    plt.xticks(x, PERCENTAGES, fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.15)
+    # plt.yticks(np.arange(0, 110, 10), [f'{n}%' for n in range(0, 110, 10)], fontsize=fontsize)
+    plt.yticks(np.arange(0.6, 1.01, 0.1), fontsize=fontsize)
+    # ax1.set_title('(a) Score(S)', y=-0.2, loc='center', fontsize=fontsize)
+    plt.xlabel("Train set (%)", fontsize=fontsize)
+    plt.ylabel("metric value", fontsize=fontsize)
+    plt.legend(bbox_to_anchor=(0.48, 1.15), loc='upper center', ncol=2, prop={'size': 18})
+    plt.savefig('plots/plot_imdb_estimator3.pdf')
+    plt.savefig('plots/plot_imdb_estimator3.png')
+    plt.show()
+
+
+def plot_flights_generated_workload():
+    plt.figure(figsize=(6, 6))
+    fontsize = 25
+
+    x = [46, 47, 48]
+
+    y_ppo = [0.68, 0.79, 0.88]
+    y_ppo_min = [0.671, 0.782, 0.873]
+    y_ppo_max = [0.691, 0.791, 0.901]
+    y_ppo_err = [[y_ppo[i] - y_ppo_min[i] for i in range(len(y_ppo))],
+                 [y_ppo_max[i] - y_ppo[i] for i in range(len(y_ppo))]]
+
+    y_rand = [0.2, 0.2, 0.18]
+    y_rand_min = [0.192, 0.183, 0.202]
+    y_rand_max = [0.23, 0.23, 0.242]
+    y_rand_err = [[y_rand[i] - y_rand_min[i] for i in range(len(y_rand))],
+                  [y_rand_max[i] - y_rand[i] for i in range(len(y_rand))]]
+
+    y_kmeans = [0.66, 0.61, 0.69]
+    y_kmeans_min = [0.64, 0.582, 0.652]
+    y_kmeans_max = [0.69, 0.63, 0.72]
+    y_kmeans_err = [[y_kmeans[i] - y_kmeans_min[i] for i in range(len(y_kmeans))],
+                    [y_kmeans_max[i] - y_kmeans[i] for i in range(len(y_kmeans))]]
+
+    y_topk = [0.15, 0.25, 0.5]
+    y_topk_min = [0.134, 0.223, 0.47]
+    y_topk_max = [0.172, 0.283, 0.52]
+    y_topk_err = [[y_topk[i] - y_topk_min[i] for i in range(len(y_topk))],
+                  [y_topk_max[i] - y_topk[i] for i in range(len(y_topk))]]
+    # plt.subplots_adjust(left=0.2)
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+
+    # plt.bar([xx for xx in x], y_rand, yerr=y_rand_err, alpha=0.5, capsize=10, width=0.125, color='#36c966',
+    #         label='RAN')
+    # plt.bar([xx + 0.125 for xx in x], y_kmeans, yerr=y_kmeans_err, alpha=0.5, capsize=10, width=0.125, color='#e9b516',
+    #         label='QRD')
+    # plt.bar([xx + 0.25 for xx in x], y_ppo, yerr=y_ppo_err, alpha=0.5, capsize=10, width=0.125, color='#eb144f',
+    #         label='ASQP-RL')
+    plt.errorbar(x, y_rand, yerr=y_rand_err, alpha=0.5, capsize=10, linewidth=4, color='#36c966',
+                 label='RAN')
+    plt.errorbar(x, y_kmeans, yerr=y_kmeans_err, alpha=0.5, capsize=10, linewidth=4, color='#e9b516',
+                 label='QRD')
+    plt.errorbar(x, y_ppo, yerr=y_ppo_err, alpha=0.5, capsize=10, linewidth=4, color='#eb144f',
+                 label='ASQP-RL')
+
+    # plt.title('')
+    plt.xticks(x, [10, 25, 50], fontsize=fontsize)
+    plt.yticks(np.arange(0, 1, 0.1), fontsize=fontsize)
+    # ax1.set_title('(a) Score(S)', y=-0.2, loc='center', fontsize=fontsize)
+    plt.ylabel("Score(S)", fontsize=fontsize)
+    plt.xlabel("Num generated queries", fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.15, left=0.17)
+    plt.legend(bbox_to_anchor=(0.48, 1.15), loc='upper center', ncol=3, prop={'size': 18})
+    plt.savefig('plots/flights_generated_queries_line.pdf')
+    plt.savefig('plots/flights_generated_queries_line.png')
+    plt.show()
+
+
+def plot_imdb_finetune():
+    plt.figure(figsize=(6, 6))
+    fontsize = 23
+
+    xlabels = ['NO\nFINETUNE', 'FINETUNE\n#1', 'FINETUNE\n#2']
+
+    x = [*range(len(xlabels))]
+    y = []
+    y_min = []
+    y_max = []
+
+    # no finetune
+    # checkpoint 49
+    y = np.append(y, 0.5919)
+    y_min = np.append(y_min, 0.567)
+    y_max = np.append(y_max, 0.623)
+
+    # finetune #1
+    # checkpoint 50
+    y = np.append(y, 0.644)
+    y_min = np.append(y_min, 0.637)
+    y_max = np.append(y_max, 0.656)
+
+    # finetune #2
+    # checkpoint 51
+    y = np.append(y, 0.684)
+    y_min = np.append(y_min, 0.662)
+    y_max = np.append(y_max, 0.7)
+
+    y_err = [[y[i] - y_min[i] for i in range(len(y))], [y_max[i] - y[i] for i in range(len(y))]]
+
+    plt.subplots_adjust(bottom=0.15, left=0.17)
+
+    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
+    plt.minorticks_on()
+    plt.bar(x, y, yerr=y_err, align='center', alpha=0.5, capsize=10, width=0.4, color='#7E57C2')
+
+    plt.xticks(x, xlabels, fontsize=fontsize)
+    plt.yticks(np.arange(0, 0.8, 0.1), fontsize=fontsize)
+    plt.ylabel("Score(S)", fontsize=fontsize)
+    plt.savefig('plots/plot_imdb_finetune.pdf')
+    plt.savefig('plots/plot_imdb_finetune.png')
     plt.show()
 
 
@@ -2254,13 +2689,13 @@ if __name__ == '__main__':
     # plot_ray_avg_mas_threshold_results()
     # plot_ray_avg_imdb_threshold_results()
     # plot_drop1_imdb_results()
+    # plot_imdb_k_array_results()
     # plot_view_size_array_results()
     # plot_imdb_rl_algos()
     # plot_mas_rl_algos()
     # plot_flights_aqp_results3()
     # plot_query_answer_time()
     # plot_drop1_extended_results()
-    # plot_rl_tune()
     # plot_param_tune_results()
     # plot_query_sampling()
     # plot_flights_aqp_results5()
@@ -2268,7 +2703,11 @@ if __name__ == '__main__':
     # plot_imdb_initial_sample()
     # plot_mas_initial_sample()
     # plot_imdb_query_runtimes()
-    # plot_imdb_choose_queries()
+    # imdb_answerable_queries()
+    # imdb_answerable_queries_quality()
+    # imdb_answerable_queries_time()
     # imdb_answerable_queries2()
     # plot_imdb_confidence()
-    plot_imdb_estimator()
+    plot_imdb_estimator3()
+    # plot_flights_generated_workload()
+    # plot_imdb_finetune()
