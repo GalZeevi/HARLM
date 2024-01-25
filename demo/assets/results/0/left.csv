@@ -1,53 +1,51 @@
-uncredited_voiced_character,russian_movie
-Blond Boy in Commercial,WALL·E
-Zakadrovyy golos,Dnevnoy dozor
-Newsreader,Diary of the Dead
-Egor,Dnevnoy dozor
-Radio announcer,Myortvye docheri
-Ring Announcer,The Wrestler
-Ivan the Terrible,Night at the Museum: Battle of the Smithsonian
-Zakadrovyy tekst,Dnevnoy dozor
-Rita's boyfriend,Myortvye docheri
-Golos za kardom,PiraMMMida
-Gangster,The Death and Life of Bobby Z
-Portuguese Radio Announcer,Blindness
-Creature,I Am Legend
-Narrator,Il silenzio di Pelesjan
-Fardart's Father,Homo Erectus
-Egor,Dnevnoy dozor
-Zakadrovyy golos,Dnevnoy dozor
-Lopo's right hand,The Forbidden Kingdom
-Indian,The Accidental Husband
-Misha,Mne ne bolno
-Misha,Mne ne bolno
-Romeo,The Twilight Saga: New Moon
-French,What Just Happened
-BURN-E,WALL·E
-Zakadrovyy tekst,Dnevnoy dozor
-Extras in bomb scene,Myortvye docheri
-Dodgers Announcer,Captain America: The First Avenger
-Rita's boyfriend,Myortvye docheri
-Other Russian Fly,Fly Me to the Moon
-Misha,Mne ne bolno
-Radio announcer,Myortvye docheri
-Egor,Dnevnoy dozor
-Brunette Boy in commercial,WALL·E
-Extras in bomb scene,Myortvye docheri
-Rita's boyfriend,Myortvye docheri
-Ring Announcer,The Wrestler
-Dancer,Hachi: A Dog's Tale
-Himself,The Rum Diary
-Student,Hachi: A Dog's Tale
-Arnie Klepper,Pilot
-Zakadrovyy tekst,Dnevnoy dozor
-Buenos Aires Cafe Patron,The Bourne Ultimatum
-Animals' vocal effects,Igor
-Additional Voices,City of Ember
-Ward Abbott,The Bourne Ultimatum
-Zakadrovyy tekst,Dnevnoy dozor
-Radio announcer,Myortvye docheri
-Additional Voices,Mini's First Time
-Newsreader,Diary of the Dead
-Extras in bomb scene,Myortvye docheri
-Announcer,Garfield: A Tail of Two Kitties
-Radio announcer,Myortvye docheri
+title,year,organization
+Managing General and Individual Knowledge in Crowd Mining Applications.,2015,Tel Aviv University
+Enabling Privacy in Provenance-Aware Workflow Systems.,2011,Tel Aviv University
+Caravan: Provisioning for What-If Analysis.,2013,Tel Aviv University
+Using Data for Systemic Financial Risk Management.,2011,University of Maryland
+Using Data for Systemic Financial Risk Management.,2011,University of Michigan
+Understanding Local Structure in Ranked Datasets.,2013,Tel Aviv University
+Diversification and refinement in collaborative filtering recommender.,2011,Tel Aviv University
+Uncertainty in Crowd Data Sourcing Under Structural Constraints.,2014,Tel Aviv University
+Object Semantics for XML Keyword Search.,2014,University of Michigan
+Making Collective Wisdom Wiser.,2013,Tel Aviv University
+Organic Databases.,2011,University of Michigan
+Crowd-Based Data Sourcing - (Abstract).,2011,Tel Aviv University
+In the Mood4: recommendation by examples.,2013,Tel Aviv University
+Dismantling Complicated Query Attributes with Crowd.,2015,Tel Aviv University
+Making interval-based clustering rank-aware.,2011,Tel Aviv University
+Mining the Crowd.,2014,Tel Aviv University
+Asking the Right Questions in Crowd Data Sourcing.,2012,Tel Aviv University
+Methods for boosting recommender systems.,2011,Tel Aviv University
+DiRec: Diversified recommendations for semantic-less Collaborative Filtering.,2011,Tel Aviv University
+Using Markov Chain Monte Carlo to play Trivia.,2011,Tel Aviv University
+CrowdPlanr: Planning made easy with crowd.,2013,Tel Aviv University
+SWST: A Disk Based Index for Sliding Window Spatio-Temporal Data.,2012,University of California San Diego
+SWST: A Disk Based Index for Sliding Window Spatio-Temporal Data.,2012,University of Michigan
+Deriving probabilistic databases with inference ensembles.,2011,Tel Aviv University
+Breaking out of the MisMatch trap.,2014,University of Michigan
+Revision provenance in text documents of asynchronous collaboration.,2013,University of Michigan
+Finding optimal probabilistic generators for XML collections.,2012,Tel Aviv University
+On the Complexity of Mining Itemsets from the Crowd Using Taxonomies.,2014,Tel Aviv University
+Using the crowd for top-k and group-by queries.,2013,Tel Aviv University
+A propagation model for provenance views of public/private workflows.,2013,Tel Aviv University
+Circuits for Datalog Provenance.,2014,Tel Aviv University
+Answering Conjunctive Queries with Inequalities.,2015,Tel Aviv University
+On provenance minimization.,2011,Tel Aviv University
+The ACM PODS Alberto O. Mendelzon test-of-time award 2013.,2013,Tel Aviv University
+Provenance views for module privacy.,2011,Tel Aviv University
+"A quest for beauty and wealth (or, business processes for database researchers).",2011,Tel Aviv University
+Auto-completion learning for XML.,2012,Tel Aviv University
+OASSIS: query driven crowd mining.,2014,Tel Aviv University
+Crowd mining.,2013,Tel Aviv University
+Labeling recursive workflow executions on-the-fly.,2011,Tel Aviv University
+Mob data sourcing.,2012,Tel Aviv University
+DSH: data sensitive hashing for high-dimensional k-nnsearch.,2014,University of Michigan
+NaLIR: an interactive natural language interface for querying relational databases.,2014,University of Michigan
+Schema-free SQL.,2014,University of Michigan
+Sample-driven schema mapping.,2012,University of Michigan
+Skimmer: rapid scrolling of relational query results.,2012,University of Michigan
+A sample-and-clean framework for fast and accurate query processing on dirty data.,2014,University of California Berkeley
+A sample-and-clean framework for fast and accurate query processing on dirty data.,2014,Tel Aviv University
+CrowdMatcher: crowd-assisted schema matching.,2014,University of Michigan
+On the optimality of top-k algorithms for Interactive Web Applications.,2011,Tel Aviv University

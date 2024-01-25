@@ -11,6 +11,20 @@ with open('assets/queries.sql', 'r') as queries_file:
     queries = [q.strip() for q in queries_file.readlines()]
 
 score = 0
+index = -1
+
+
+class AsqpInstance:
+    def __init__(self):
+        score = 0
+        index = -1
+
+
+def demonstrate_asqp_rl(sql):
+    global index
+    index += 1
+    df1, df2 = get_dfs()
+    display_side_by_side(df1, df2)
 
 
 def display_side_by_side(*args, titles=cycle([''])):
@@ -18,20 +32,21 @@ def display_side_by_side(*args, titles=cycle([''])):
     for df, title in zip(args, chain(titles, cycle(['</br>']))):
         html_str += '<th style="text-align:center"><td style="vertical-align:top">'
         html_str += f'<h2 style="text-align: center;">{title}</h2>'
-        html_str += df.head(20).to_html().replace('table', 'table style="display:inline"')
+        html_str += df.to_html(max_rows=20, index=False).replace('table', 'table style="display:inline"')
         html_str += '</td></th>'
     display_html(html_str, raw=True)
 
 
-def get_sql(index):
-    return sqlparse.format(queries[index], reindent=True, keyword_case='upper')
+def get_sql():
+    query = sqlparse.format(queries[index], reindent=True, keyword_case='upper')
+    return query
 
 
-def get_dfs(index):
+def get_dfs():
     return pd.read_csv(f'assets/results/{index}/left.csv'), pd.read_csv(f'assets/results/{index}/right.csv')
 
 
-def get_answers(index):
+def get_answers():
     with open(f'assets/results/{index}/answers.json', 'r') as ans_file:
         left_dict, right_dict = json.load(ans_file)
     left_ans = 'Left answer from {0} (computed in {1} {2}) and contains a total of {3} rows'.format(
@@ -82,17 +97,17 @@ def create_multiplechoice_widget(description, options, answer):
     return widgets.VBox([description_out, alternativ, check, output])
 
 
-def choose_answers_button(index):
+def choose_answers_button():
     with open(f'assets/results/{index}/answers.json', 'r') as ans_file:
         left_dict, right_dict = json.load(ans_file)
     correct_answer = 0 if left_dict['source'] == 'ASQP-RL' else 1  # 0 if first option, 1 is the second
     display(
-        create_multiplechoice_widget('Which is true',
+        create_multiplechoice_widget('Which is true:',
                                      ['Left: ASQP-RL, Right: DB', 'Left: DB, Right: ASQP-RL'],
                                      correct_answer))
 
 
-def reveal_answers_button(index):
+def reveal_answers_button():
     button = widgets.Button(description="Reveal answers")
     output = widgets.Output()
 
@@ -101,7 +116,7 @@ def reveal_answers_button(index):
     def on_button_clicked(b):
         with output:
             clear_output()
-            print(get_answers(index))
+            print(get_answers())
 
     button.on_click(on_button_clicked)
 
@@ -115,9 +130,13 @@ def reveal_results_button():
     def on_button_clicked(b):
         with output:
             clear_output()
-            print(f'You were correct in {get_results()} out of 10 questions')
+            print(f'You were correct in {get_results()} out of {len(queries)} questions')
 
     button.on_click(on_button_clicked)
+
+
+def reveal_results():
+    print(f'You were correct in {get_results()} out of {len(queries)} questions')
 
 
 def get_results():
@@ -127,3 +146,5 @@ def get_results():
 def clear():
     global score
     score = 0
+    global index
+    index = -1
