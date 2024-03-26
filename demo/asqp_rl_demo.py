@@ -12,9 +12,9 @@ with open('assets/queries.sql', 'r') as queries_file:
 
 
 class AsqpInstance:
-    def __init__(self):
+    def __init__(self, index=-1):
         self.score = 0
-        self.index = -1
+        self.index = index
 
     def get_sql(self):
         query = sqlparse.format(queries[self.index], reindent=True, keyword_case='upper')
@@ -78,7 +78,8 @@ class AsqpInstance:
         for df, title in zip(args, chain(titles, cycle(['</br>']))):
             html_str += '<th style="text-align:center"><td style="vertical-align:top">'
             html_str += f'<h2 style="text-align: center;">{title}</h2>'
-            html_str += df.sample(frac=1).to_html(max_rows=20, index=False).replace('table', 'table style="display:inline"')
+            html_str += df.sample(frac=1).to_html(max_rows=20, index=False).replace('table',
+                                                                                    'table style="display:inline"')
             html_str += '</td></th>'
         display_html(html_str, raw=True)
 

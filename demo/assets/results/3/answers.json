@@ -1,0 +1,14 @@
+[
+  {
+    "time": 27.6,
+    "timeUnits":  "Minutes",
+    "rowCount": "1451",
+    "source": "DB"
+  },
+  {
+    "time": 418,
+    "timeUnits":  "milliseconds",
+    "rowCount": 114,
+    "source": "ASQP-RL"
+  }
+]
