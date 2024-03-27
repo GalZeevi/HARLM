@@ -6,15 +6,18 @@ from IPython.display import clear_output
 from IPython.display import display
 from IPython.display import display_html
 import sqlparse
+from pathlib import Path
 
 with open('assets/queries.sql', 'r') as queries_file:
     queries = [q.strip() for q in queries_file.readlines()]
 
 
 class AsqpInstance:
-    def __init__(self, index=-1):
+    def __init__(self, index=-1, name='demo'):
         self.score = 0
+        self.answers = [0] * len(queries)
         self.index = index
+        self.name = name
 
     def get_sql(self):
         query = sqlparse.format(queries[self.index], reindent=True, keyword_case='upper')
@@ -70,7 +73,7 @@ class AsqpInstance:
         df1, df2 = self.get_dfs()
         AsqpInstance.display_side_by_side(df1, df2)
         self.choose_answers_button()
-        self.reveal_answers_button()
+        self.save_answers_button()
 
     @staticmethod
     def display_side_by_side(*args, titles=cycle([''])):
@@ -101,6 +104,9 @@ class AsqpInstance:
             a = int(alternativ.value)
             if a == answer:
                 self.score += 1
+                self.answers[self.index] = 1
+            else:
+                self.answers[self.index] = 0
             with output:
                 clear_output()
                 print('Answer saved.')
@@ -112,11 +118,43 @@ class AsqpInstance:
         return widgets.VBox([description_out, alternativ, check, output])
 
     def reveal_results(self):
-        print(f'You were correct in {self.score} out of {len(queries)} questions')
+        print(f'You were correct in {sum(self.answers)} out of {len(queries)} questions')
+
+    @staticmethod
+    def save_answers(name, answers, score):
+        my_file = Path(f"assets/scores/{name}.csv")
+        if my_file.is_file():
+            lines_to_write = []
+        else:
+            lines_to_write = [
+                ','.join([*[f'q{query_num}' for query_num in [i + 1 for i in range(len(queries))]], 'total'])]
+
+        lines_to_write.append(f'{",".join([str(ans) for ans in answers])},{score}')
+
+        with open(f"assets/scores/{name}.csv", 'a') as the_file:
+            for line in lines_to_write:
+                the_file.write(f'{line}\n')
+
+    def save_answers_button(self):
+        button = widgets.Button(description="Finish")
+        output = widgets.Output()
+
+        display(button, output)
+        name = self.name
+        answers = self.answers
+        score = self.score
+
+        def on_button_clicked(b):
+            with output:
+                clear_output()
+                AsqpInstance.save_answers(name, answers, sum(answers))
+                print('Done')
+
+        button.on_click(on_button_clicked)
 
 
 def demonstrate_asqp_rl(asqprl: AsqpInstance):
     df1, df2 = asqprl.get_dfs()
     AsqpInstance.display_side_by_side(df1, df2)
     asqprl.choose_answers_button()
-    asqprl.reveal_answers_button()
+    asqprl.save_answers_button()
