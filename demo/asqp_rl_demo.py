@@ -34,7 +34,8 @@ class AsqpInstance:
         display(
             self.create_multiplechoice_widget('Which is true:',
                                               ['Left: ASQP-RL, Right: DB', 'Left: DB, Right: ASQP-RL'],
-                                              correct_answer))
+                                              correct_answer,
+                                              self.index))
 
     @staticmethod
     def get_answers(index):
@@ -69,11 +70,11 @@ class AsqpInstance:
     def query_asqp(self, sql):
         self.index += 1
 
-    def demonstrate_asqp_rl(self):
-        df1, df2 = self.get_dfs()
-        AsqpInstance.display_side_by_side(df1, df2)
-        self.choose_answers_button()
-        self.save_answers_button()
+    # def demonstrate_asqp_rl(self):
+    #     df1, df2 = self.get_dfs()
+    #     AsqpInstance.display_side_by_side(df1, df2)
+    #     self.choose_answers_button()
+    #     self.save_answers_button()
 
     @staticmethod
     def display_side_by_side(*args, titles=cycle([''])):
@@ -86,7 +87,7 @@ class AsqpInstance:
             html_str += '</td></th>'
         display_html(html_str, raw=True)
 
-    def create_multiplechoice_widget(self, description, options, answer):
+    def create_multiplechoice_widget(self, description, options, answer, index):
         radio_options = [(words, i) for i, words in enumerate(options)]
         alternativ = widgets.RadioButtons(
             options=radio_options,
@@ -104,9 +105,9 @@ class AsqpInstance:
             a = int(alternativ.value)
             if a == answer:
                 self.score += 1
-                self.answers[self.index] = 1
+                self.answers[index] = 1
             else:
-                self.answers[self.index] = 0
+                self.answers[index] = 0
             with output:
                 clear_output()
                 print('Answer saved.')
