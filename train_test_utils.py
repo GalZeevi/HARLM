@@ -10,7 +10,7 @@ def get_test_queries(checkpoint_version=CheckpointManager.get_max_version()):
     results_read = 0
     results = []
     path = f'{CheckpointManager.basePath}/{checkpoint_version}'
-    results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'results' in f]
+    results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'results' in f and 'pkl' in f]
     results_files.sort(key=lambda name: int(re.findall(r'\d+', name)[0]))
 
     file_num = 0
@@ -27,7 +27,7 @@ def get_test_queries(checkpoint_version=CheckpointManager.get_max_version()):
 def get_train_queries(checkpoint_version=CheckpointManager.get_max_version(), validation_size=0):
     results = []
     path = f'{CheckpointManager.basePath}/{checkpoint_version}'
-    results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'results' in f]
+    results_files = [f for f in listdir(path) if isfile(join(path, f)) and 'results' in f and 'pkl' in f]
     results_files.sort(key=lambda name: int(re.findall(r'\d+', name)[0]))
 
     test_size = ConfigManager.get_config('samplerConfig.testSize')
