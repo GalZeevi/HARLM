@@ -1,0 +1,26 @@
+{
+  "dbConfig": {
+    "type": "mysql",
+    "host": "localhost",
+    "database": "tpch",
+    "user": "root",
+    "password": "root",
+    "port": 3306
+  },
+  "queryConfig": {
+    "schema": "tpch",
+    "table": "lineitem",
+    "pivot": "_id",
+    "batchSize": 60,
+    "numToGenerate": 60
+  },
+  "samplerConfig": {
+    "testSize": 20,
+    "validationSize": 0,
+    "viewSize": 50
+  },
+  "cpuConfig": {
+    "num_workers": 7,
+    "chunk_size": 100
+  }
+}

@@ -59,7 +59,8 @@ def itertive_reweighting(sample_data, marginals, full_data_len):
             .agg('size').rename(columns={'size': 'count'})
 
     all_diffs = []
-    max_iter = 5 * len(marginals)
+    # max_iter = 5 * len(marginals)
+    max_iter = 20
     mk_plot = True
     for itr in range(max_iter):
         sum_scaling_diff = 0
@@ -74,9 +75,6 @@ def itertive_reweighting(sample_data, marginals, full_data_len):
 
             scaling_diff = np.abs(joined['scale'] - 1.0).sum(skipna=True)
             sum_scaling_diff += scaling_diff
-
-            print(sample_data.iloc[0])
-            print(joined.iloc[0])
 
             # In the original paper this is an inner join but since the marginals have missing values
             # this removes tuples from the sample
@@ -108,7 +106,7 @@ def itertive_reweighting(sample_data, marginals, full_data_len):
 
     if np.any(sample_data["weight"] <= 0):
         print("A WEIGHT WAS ZERO OR NEGATIVE IN RESCALING")
-        print(sample_data)
+        # print(sample_data)
         sys.exit(0)
 
     data_with_unif_weights = sample_data.copy()
@@ -126,20 +124,20 @@ def itertive_reweighting(sample_data, marginals, full_data_len):
     return data_with_unif_weights, data_lin, data_lin_nm
 
 
-def main(marginals_idx, sample_df, full_data_len, marginal_rounding_num=1):
+def main(dataset, marginals_idx, sample_df, full_data_len, marginal_rounding_num=1):
     pd.set_option('expand_frame_repr', True)
     pd.set_option('max_colwidth', 200)
     pd.set_option('display.max_columns', None)
 
-    marginals = read_marginals('flights', marginals_idx)
+    marginals = read_marginals(dataset, marginals_idx)
     cols = [c for c in sample_df.columns]
     cols.append('weight')
     sample_df['_id'] = sample_df.index
     # sample_rounded = bucketize_sample(sample_df, marginal_rounding_num, ['_id'])
     sample_rounded = sample_df
     data_unif, data_lin, data_lin_nm = itertive_reweighting(sample_rounded.copy(), marginals, full_data_len)
-    # assert data_lin_nm.shape[0] == sample_df.shape[0]  # TODO: problem?
-    print(data_lin_nm)
+    assert data_lin_nm.shape[0] == sample_df.shape[0]
+    # print(data_lin_nm)
     sample_unif = sample_df.copy()
     sample_unif['weight'] = data_unif['weight'].astype('float64')
     sample_unif = sample_unif[cols]
@@ -147,11 +145,13 @@ def main(marginals_idx, sample_df, full_data_len, marginal_rounding_num=1):
     # sample_ipf_rounded gives us the index to sample_ipf
     sample_ipf = pd.merge(sample_ipf, data_lin_nm[['_id', 'weight']], how='inner')
     sample_ipf = sample_ipf[cols]
+    return sample_ipf
 
 
 if __name__ == '__main__':
     # TODO: I think next I should create the pipline itself and look at Suciu's gen_marginals
     full_data_df = pd.read_csv('datasets/flights2/sample.csv')
     sample_df = full_data_df.sample(10000)
-    marginals_idx = {7, 8, 10, 11, (7, 10), (8, 10), (10, 11)}
-    main(marginals_idx, sample_df, len(full_data_df.index))
+    marginals_idx = {7, 11, (8, 10), (10, 11)}
+    # marginals_idx = {7, 8, 10, 11, (7, 10), (8, 10), (10, 11)}
+    main('flights', marginals_idx, sample_df, len(full_data_df.index))
