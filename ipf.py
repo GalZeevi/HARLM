@@ -32,7 +32,7 @@ def bucketize_sample(sample_df, marginal_rounding_num, cols_to_ignore):
 
 
 # marginal_columns is a collection of tuples that specifiy which marginals to read
-# for example {(1,2),(1)} or {("YEAR","NAME")}
+# for example {(1,2),(1)}
 def read_marginals(relation, marginal_columns):
     marginals = {}
     for columns in marginal_columns:
