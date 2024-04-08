@@ -401,19 +401,19 @@ def plot_mas_initial_sample():
     y_max = np.zeros(range(len(ALG_NAMES)))
 
     # universal table
-    # checkpoint 27, 28, 29, 30
+    # checkpoint 26, 28, 29, 30
     y = np.append(y, np.average([0.6544, 0.75, 0.6893, 0.6804]))
     y_min = np.append(y_min, np.average([0.6475, 0.75, 0.6637, 0.6612]))
     y_max = np.append(y_max, np.average([0.6625, 0.75, 0.7147, 0.7003]))
 
     # verdict
-    # checkpoint 27, 28, 29, 30
+    # checkpoint 26, 28, 29, 30
     y = np.append(y, np.average([0.63, 0.5015, 0.39, 0.555]))
     y_min = np.append(y_min, np.average([0.617, 0.47, 0.375, 0.5128125]))
     y_max = np.append(y_max, np.average([0.66, 0.515, 0.41, 0.585]))
 
     # quickr # TODO: complete
-    # checkpoint 27, 28, 29, 30
+    # checkpoint 26, 28, 29, 30
     y = np.append(y, np.average([0, 0, 0, 0]))
     y_min = np.append(y_min, np.average([0, 0, 0, 0]))
     y_max = np.append(y_max, np.average([0, 0, 0, 0]))
@@ -1115,6 +1115,47 @@ def plot_imdb_k_array_results():
     yerr_15k = [[abs(a - b) for (a, b) in zip(min_max_15k[0], y_15k)],
                 [abs(a - b) for (a, b) in zip(min_max_15k[1], y_15k)]]
 
+
+    # y_30k = [
+    #     0.04,  # VAE
+    #     0.4492,  # caching
+    #     0.50164,  # random
+    #     0.525,  # quickr # ?
+    #     0.57,  # verdict # ?
+    #     0.574,  # skyline # ?
+    #     0.766,  # brute # ?
+    #     0.72,  # kmeans
+    #     0.666,  # topk
+    #     0.38,  # greedy # ?
+    #     0.972,  # ppo
+    # ]
+    # min_max_30k = [
+    #     [0,
+    #      0.284,
+    #      0.466,
+    #      0.515,  # quickr
+    #      0.567,  # verdict
+    #      0.574,
+    #      0.566,
+    #      0.492,
+    #      0.526,
+    #      0.38,
+    #      0.798],
+    #     [0.02,
+    #      0.208,
+    #      0.522,
+    #      0.515,  # quickr
+    #      0.58,  # verdict
+    #      0.574,
+    #      0.566,
+    #      0.492,
+    #      0.526,
+    #      0.38,
+    #      0.85]
+    # ]
+    # yerr_30k = [[abs(a - b) for (a, b) in zip(min_max_30k[0], y_30k)],
+    #             [abs(a - b) for (a, b) in zip(min_max_30k[1], y_30k)]]
+
     # plt.xticks(x, IMDB_ALG_SHORTCUTS, rotation=90, fontsize=18)
     # plt.yticks(np.arange(0, 0.6, 0.1), fontsize=18)
 
@@ -1669,32 +1710,6 @@ def plot_query_answer_time():
     plt.show()
 
 
-def plot_flights_aqp_results2():
-    # TODO: change this to show query categories in x-axis
-    # TODO: plot quality instead of error
-    # TODO: add plot showing miss rate
-    xticks = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Avg']
-
-    x_orig = [*range(len(xticks))]
-    x_vae = [x - 0.2 for x in x_orig]
-    x_ours = [x for x in x_orig]
-
-    y_vae = [0.96, 0.999, 0.91, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    y_vae.append(np.average(y_vae))
-    y_ours = [0.009, 0.068, 0.883, 0.639, 0.675, 0.903, 0.888, 0.714, 0.887, 0.746, 0.666]
-    y_ours.append(np.average(y_ours))
-
-    plt.bar(x_vae, y_vae, width=0.2, label='VAE')
-    plt.bar(x_ours, y_ours, width=0.2, label='RL')
-    plt.xticks(x_orig, xticks)
-
-    plt.xlabel("Query")
-    plt.ylabel("Relative Error")
-    plt.suptitle(f"AQP queries on Flights data on 1% sample")
-    plt.legend()
-    plt.show()
-
-
 def plot_flights_aqp_results3():
     xticks = ['SUM', 'AVG', 'CNT', 'G+SUM', 'G+AVG', 'G+CNT']
     fontsize = 25
@@ -1703,27 +1718,24 @@ def plot_flights_aqp_results3():
     x_orig = [*range(len(xticks))]
     x_gaqp = [x - 0.2 for x in x_orig]
     x_deepdb = [x for x in x_orig]
-    x_ours = [x + 0.2 for x in x_orig]
-
-    # y_gaqp = [0.002, 0.002, 0.07, 0.0001, 0.05, 0.02]
-    # std_gaqp = [0.005, 0.005, 0.09, 0, 0.2, 0.09]
-    # y_deepdb = [0.12, 0.03, 0.77, 0.11, 0.06, 0.41]
-    # std_deepdb = [0.2, 0.05, 0.29, 0.23, 0.08, 0.47]
-    # y_ours = [0.61, 0.91, 0.55, 0.002, 0.45, 0.001]
-    # std_ours = [0.41, 0.13, 0.45, 0.005, 0.41, 0.003]
+    x_ours_ipf = [x + 0.2 for x in x_orig]
+    # x_ours = [x + 0.4 for x in x_orig]
 
     y_gaqp = [0.994, 0.997, 0.91, 0.99, 0.93, 0.95]
     std_gaqp = [0.005, 0.005, 0.09, 0, 0.2, 0.09]
     y_deepdb = [0.87, 0.96, 0.22, 0.88, 0.93, 0.58]
     std_deepdb = [0.2, 0.05, 0.29, 0.23, 0.08, 0.47]
-    y_ours = [0.432, 0.084, 0.44, 0.99, 0.54, 0.99]
-    std_ours = [0.42, 0.13, 0.45, 0.005, 0.41, 0.003]
+    # y_ours = [0.432, 0.084, 0.44, 0.99, 0.54, 0.99]
+    # std_ours = [0.42, 0.13, 0.45, 0.005, 0.41, 0.003]
+    y_ours_ipf = [0.288, 0.06, 0.29, 0.89, 0.34, 0.78]
+    std_ours_ipf = [0.30, 0.03, 0.35, 0.005, 0.41, 0.003]
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
     plt.bar(x_gaqp, y_gaqp, yerr=[y_gaqp, std_gaqp], alpha=0.5, capsize=5, width=0.2, label='gAQP')
     plt.bar(x_deepdb, y_deepdb, yerr=[y_deepdb, std_deepdb], alpha=0.5, capsize=5, width=0.2, label='DeepDb')
-    plt.bar(x_ours, y_ours, yerr=[y_ours, std_ours], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
+    # plt.bar(x_ours, y_ours, yerr=[y_ours, std_ours], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
+    plt.bar(x_ours_ipf, y_ours_ipf, yerr=[y_ours_ipf, std_ours_ipf], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
 
     # plt.xlabel("Query")
     plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
@@ -1732,98 +1744,43 @@ def plot_flights_aqp_results3():
     plt.yticks(np.arange(0, 1.1, 0.2), fontsize=20)
     plt.legend()
     plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 23})
-    plt.savefig('plots/flights_aqp.pdf')
-    plt.savefig('plots/flights_aqp.png')
+    plt.savefig('plots/flights_aqp2.pdf')
+    plt.savefig('plots/flights_aqp2.png')
     plt.show()
 
 
-def plot_flights_aqp_results4():
-    xticks = ['SUM', 'CNT', 'AVG']
+def plot_tpch_aqp_results():
+    xticks = ['SUM', 'AVG', 'CNT', 'G+SUM', 'G+AVG', 'G+CNT']
     fontsize = 25
     plt.figure(figsize=(8, 6))
 
     x_orig = [*range(len(xticks))]
-    x_asqp_hist = [x - 0.2 for x in x_orig]
-    x_asqp_no_hist = [x for x in x_orig]
-    x_deepdb = [x + 0.2 for x in x_orig]
+    x_gaqp = [x - 0.2 for x in x_orig]
+    x_deepdb = [x for x in x_orig]
+    x_ours_ipf = [x + 0.2 for x in x_orig]
 
-    y_asqp_hist = [0.8498179403, 0.3947707937, 0.7934275]
-    y_asqp_hist_min = [0.001501, 0, 0.000146]
-    y_asqp_hist_max = [1.54, 1, 2.020912]
-    y_asqp_hist_err = [[y_asqp_hist[i] - y_asqp_hist_min[i] for i in range(len(y_asqp_hist))],
-                       [y_asqp_hist_max[i] - y_asqp_hist[i] for i in range(len(y_asqp_hist))]]
-
-    y_asqp_no_hist = [0.9999982836, 0.9999942857, 0.7934275]
-    y_asqp_no_hist_min = [0.999818, 0.999847, 0.000146]
-    y_asqp_no_hist_max = [1.000456, 1, 2.020912]
-    y_asqp_no_hist_err = [[y_asqp_no_hist[i] - y_asqp_no_hist_min[i] for i in range(len(y_asqp_no_hist))],
-                          [y_asqp_no_hist_max[i] - y_asqp_no_hist[i] for i in range(len(y_asqp_no_hist))]]
-
-    y_deepdb = [1.969731448, 4.58461747, 0.97192375]
-    y_deepdb_min = [0.178153, 0.000123, 0.2168]
-    y_deepdb_max = [9.3082, 9.24396, 2.214728]
-    y_deepdb_err = [[y_deepdb[i] - y_deepdb_min[i] for i in range(len(y_deepdb))],
-                    [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
+    y_gaqp = [0.9165, 0.932, 0.9552, 0.99, 0.947, 0.95]
+    std_gaqp = [0.007, 0.005, 0.09, 0, 0.2, 0.09]
+    y_deepdb = [0.78, 0.99, 0.57, 0.90, 0.99, 0.68]
+    std_deepdb = [0.32, 0.24, 0.2, 0.2, 0.16, 0.32]
+    y_ours_ipf = [0.244, 0.18, 0.45, 0.85, 0.22, 0.44]
+    std_ours_ipf = [0.27, 0.13, 0.18, 0.05, 0.34, 0.23]
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
-    plt.bar(x_asqp_hist, y_asqp_hist, yerr=y_asqp_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL+HIST')
-    plt.bar(x_asqp_no_hist, y_asqp_no_hist, yerr=y_asqp_no_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
-    plt.bar(x_deepdb, y_deepdb, yerr=y_deepdb_err, alpha=0.5, capsize=5, width=0.2, label='DeepDB')
+    plt.bar(x_gaqp, y_gaqp, yerr=[y_gaqp, std_gaqp], alpha=0.5, capsize=5, width=0.2, label='gAQP')
+    plt.bar(x_deepdb, y_deepdb, yerr=[y_deepdb, std_deepdb], alpha=0.5, capsize=5, width=0.2, label='DeepDb')
+    plt.bar(x_ours_ipf, y_ours_ipf, yerr=[y_ours_ipf, std_ours_ipf], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
 
+    # plt.xlabel("Query")
     plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
     plt.subplots_adjust(bottom=0.20, left=0.12, top=0.8)
     plt.ylabel("Average Relative Error", fontsize=20)
-    plt.yticks(np.arange(0, 10, 2), fontsize=20)
+    plt.yticks(np.arange(0, 1.1, 0.2), fontsize=20)
     plt.legend()
-    plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 18})
-    # plt.savefig('plots/flights_aqp.pdf')
-    # plt.savefig('plots/flights_aqp.png')
-    plt.show()
-
-
-def plot_flights_aqp_results5():
-    xticks = ['SUM', 'AVG', 'CNT', 'G-SUM', 'G-AVG', 'G-CNT']
-    fontsize = 25
-    plt.figure(figsize=(8, 6))
-
-    x_orig = [*range(len(xticks))]
-    x_asqp_hist = [x - 0.2 for x in x_orig]
-    x_asqp_no_hist = [x for x in x_orig]
-    x_deepdb = [x + 0.2 for x in x_orig]
-
-    y_asqp_hist = [0.668, 0.465, 0.129, 0.937, 0.006, 0.013]
-    y_asqp_hist_min = [0.31, 0.04, 0, 0.71, 0., 0.]
-    y_asqp_hist_max = [1, 0.88, 0.4, 1., 0.036, 0.043]
-    y_asqp_hist_err = [[y_asqp_hist[i] - y_asqp_hist_min[i] for i in range(len(y_asqp_hist))],
-                       [y_asqp_hist_max[i] - y_asqp_hist[i] for i in range(len(y_asqp_hist))]]
-
-    y_asqp_no_hist = [0.89, 0.22, 0.99, 0.99, 0.979, 0.99]
-    y_asqp_no_hist_min = [0.44, 0, 0., 0., 0.8, 0.]
-    y_asqp_no_hist_max = [1, 0.84, 2.1, 2.3, 1.14, 2.]
-    y_asqp_no_hist_err = [[y_asqp_no_hist[i] - y_asqp_no_hist_min[i] for i in range(len(y_asqp_no_hist))],
-                          [y_asqp_no_hist_max[i] - y_asqp_no_hist[i] for i in range(len(y_asqp_no_hist))]]
-
-    y_deepdb = [0.919, 0.94, 0.275, 0.9, 0.96, 0.1]
-    y_deepdb_min = [0.73, 0.88, 0., 0.77, 0.91, 0.]
-    y_deepdb_max = [1.06, 1., 0.65, 1.03, 1.01, 0.33]
-    y_deepdb_err = [[y_deepdb[i] - y_deepdb_min[i] for i in range(len(y_deepdb))],
-                    [y_deepdb_max[i] - y_deepdb[i] for i in range(len(y_deepdb))]]
-
-    plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
-    plt.minorticks_on()
-    plt.bar(x_asqp_hist, y_asqp_hist, yerr=y_asqp_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL+HIST')
-    plt.bar(x_asqp_no_hist, y_asqp_no_hist, yerr=y_asqp_no_hist_err, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
-    plt.bar(x_deepdb, y_deepdb, yerr=y_deepdb_err, alpha=0.5, capsize=5, width=0.2, label='DeepDB')
-
-    plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
-    plt.subplots_adjust(bottom=0.20, left=0.12, top=0.8)
-    plt.ylabel("Average Relative Error", fontsize=20)
-    plt.yticks(np.arange(0, 2.5, 0.5), fontsize=20)
-    plt.legend()
-    plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 18})
-    # plt.savefig('plots/flights_aqp.pdf')
-    # plt.savefig('plots/flights_aqp.png')
+    plt.legend(bbox_to_anchor=(0.48, 1.25), loc='upper center', ncol=3, prop={'size': 23})
+    plt.savefig('plots/tpch_aqp.pdf')
+    plt.savefig('plots/tpch_aqp.png')
     plt.show()
 
 
@@ -2693,12 +2650,11 @@ if __name__ == '__main__':
     # plot_view_size_array_results()
     # plot_imdb_rl_algos()
     # plot_mas_rl_algos()
-    # plot_flights_aqp_results3()
+    plot_flights_aqp_results3()
     # plot_query_answer_time()
     # plot_drop1_extended_results()
     # plot_param_tune_results()
     # plot_query_sampling()
-    # plot_flights_aqp_results5()
     # plot_initial_sample_exp1()
     # plot_imdb_initial_sample()
     # plot_mas_initial_sample()
@@ -2708,6 +2664,7 @@ if __name__ == '__main__':
     # imdb_answerable_queries_time()
     # imdb_answerable_queries2()
     # plot_imdb_confidence()
-    plot_imdb_estimator3()
+    # plot_imdb_estimator3()
     # plot_flights_generated_workload()
     # plot_imdb_finetune()
+    plot_tpch_aqp_results()

@@ -149,7 +149,7 @@ def run_sql_on_df(sql: str, df_name, conn):
     return pd.read_sql_query(new_sql, conn)
 
 
-def get_non_group_relative_error(i, query, use_weight, engine,  df_name):
+def get_non_group_relative_error(i, query, use_weight, engine, df_name):
     query_truth = DataAccess.select_one(query)
     if query_truth is not None:
         query_truth = float(query_truth)
@@ -161,11 +161,41 @@ def get_non_group_relative_error(i, query, use_weight, engine,  df_name):
         new_test_query = modify_sql_aggregate(test_query) if use_weight else test_query
 
         query_pred = run_sql_on_df(new_test_query, df_name, engine).iloc[0].item()
-        print(f'Predicted: {query_pred}, Actual: {query_truth}')
+        print(f'Query: {i}, Predicted: {query_pred}, Actual: {query_truth}')
         query_err = 5.
         if query_pred is not None:
             query_err = float(abs(query_pred - query_truth) / query_truth)
             query_err = abs(query_err)
+    return query_err
+
+
+def get_group_relative_error(i, query, use_weight, engine, df_name):
+    query_truth = DataAccess.select(query)
+    if query_truth is None or len(query_truth) == 0:
+        print(f'############# query no. {i} returned zero results #############')
+        query_err = np.nan
+    else:
+        new_test_query = modify_sql_aggregate(test_query) if use_weight else test_query
+
+        query_pred = run_sql_on_df(new_test_query, df_name, engine).to_dict('records')
+        truth_num_groups = len(query_truth)
+        pred_num_groups = len(query_pred)
+        print(f'Query: {i}, Predicted: {pred_num_groups} groups, Actual: {pred_num_groups} groups')
+
+        query_err = 0.
+        for pred_group in query_pred:
+            pred_col_value = pred_group['col']
+            pred_agg_value = float(pred_group['cnt'])
+            truth_agg_value = None
+            for truth_group in query_truth:
+                if pred_col_value == truth_group['col']:
+                    truth_agg_value = float(truth_group['cnt'])
+                    query_err += abs(pred_agg_value - truth_agg_value) / truth_agg_value
+                    break
+            if truth_agg_value is None:  # group from pred is not in truth
+                pred_num_groups -= 1
+
+        query_err /= truth_num_groups
     return query_err
 
 
@@ -239,8 +269,7 @@ if __name__ == "__main__":
                 new_test_query = modify_sql_aggregate(test_query)
                 query_truth = DataAccess.select_one(test_query)
                 if 'group by' in test_query.lower():  # Group By query
-                    err = np.nan
-                    print('GROUP BY is currently not supported for AQP')
+                    err = get_group_relative_error(i, test_query, args.use_ipf, engine, args.sample_path)
                 else:  # simple query
                     err = get_non_group_relative_error(i, test_query, args.use_ipf, engine, args.sample_path)
                 all_errs += [err]
