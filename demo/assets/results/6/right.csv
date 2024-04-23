@@ -1,0 +1,398 @@
+author,conference
+Pieter Abbeel,NIPS
+Pieter Abbeel,NIPS
+Pieter Abbeel,UAI
+Serge Abiteboul,ICDT
+Serge Abiteboul,SIGMOD
+Imran Ahmed,ICPR
+Francesc Alias,IWANN
+Daniel J. Amit,IJCNN
+Benny Applebaum,EUROCRYPT
+Suguru Arimoto,IROS
+Peter Auer,COLT
+Vineet Bafna,WABI
+Trevor C. Bailey,ICAISC
+Zhifeng Bao,ICDE
+Zhuowei Bao,SIGMOD
+Rakesh D. Barve,COLT
+Siddharth Batra,NIPS
+Serge J. Belongie,DAGM
+Shai Ben-David,COLT
+Shai Ben-David,COLT
+Shai Ben-David,COLT
+Michael Benedikt,PODS
+Vitoantonio Bevilacqua,ICIC
+Vitoantonio Bevilacqua,ICIC
+Basabdatta Sen Bhattacharya,ICANN
+David M. Blei,NIPS
+Rubi Boim,CIKM
+Rubi Boim,EDBT
+Rubi Boim,ICDE
+Rubi Boim,ICDE
+Rubi Boim,ICDE
+Flavio Bortolozzi,DAS
+Gary R. Bradski,NIPS
+Val Tannen,CIDR
+Val Tannen,CIDR
+Val Tannen,ICDE
+Val Tannen,ICDT
+Val Tannen,PODS
+Michael J. Cafarella,SIGMOD
+Shang Cai,ICNC
+Joan Claudi Socoro,IWANN
+Chad Carson,DAGM
+John N. Carter,ICPR
+John N. Carter,ICPR
+John N. Carter,ICPR
+John N. Carter,ICPR
+Joao Marques de Carvalho,CIARP
+Joao Marques de Carvalho,CIARP
+Joao Marques de Carvalho,DAS
+Joao Marques de Carvalho,ICDAR
+Joao Marques de Carvalho,ICPR
+Joao Marques de Carvalho,ICPR
+Andy D. Castellano-Smith,BILDMED
+Nicolo Cesa-Bianchi,COLT
+Yixiong Chen,IJCNN
+Long Cheng,IJCNN
+Long Cheng,IJCNN
+Cheng-Tao Chu,NIPS
+Dan C. Ciresan,IJCNN
+Adam Coates,ICML
+Adam Coates,ICPR
+Adam Coates,NIPS
+Timothy J. Coats,ICAISC
+Dominique Collard,IROS
+Suzete E. N. Correia,ICPR
+Marco Cortellino,ICIC
+Marco Cortellino,ICIC
+Damien Coyle,ICANN
+Damien Coyle,ICPR
+Damien Coyle,IJCNN
+Daniel Cremers,DAGM
+Susan B. Davidson,BIRTHDAY
+Susan B. Davidson,CIDR
+Susan B. Davidson,CIDR
+Susan B. Davidson,CIDR
+Susan B. Davidson,ICDE
+Susan B. Davidson,ICDT
+Susan B. Davidson,ICDT
+Susan B. Davidson,PODS
+Susan B. Davidson,SIGMOD
+Susan B. Davidson,SIGMOD
+Andreas Degenhard,BILDMED
+Daniel Deutch,CIDR
+Daniel Deutch,ICDE
+Daniel Deutch,ICDT
+Daniel Deutch,ICDT
+Daniel Deutch,PODS
+Daniel Deutch,PODS
+Daniel Deutch,SIGMOD
+Daniel Deutch,WEBDB
+Charles DuHadway,ICML
+Nadav Eiron,COLT
+Richard M. Everson,ICAISC
+Jacques Facon,DAS
+Jonathan E. Fieldsend,ICAISC
+Cinthia Obladen de Almendra Freitas,CIARP
+Richard Freyer,BILDMED
+Gabriel Fricout,ICONIP
+Gabriel Fricout,IJCNN
+Sven Friedl,BILDMED
+Si-Yao Fu,IJCNN
+Si-Yao Fu,IJCNN
+Hiroyuki Fujita,IROS
+Hiroyuki Fujita,IROS
+Hiroyuki Fujita,IROS
+Stefano Fusi,IJCNN
+Varun Ganapathi,NIPS
+Matthieu Geist,ICONIP
+Carme Torras,ICPR
+Paolo Del Giudice,IJCNN
+Kenneth Y. Goldberg,SIGMOD
+Herman Martins Gomes,CIARP
+Yann Le Gorrec,IROS
+Ohad Greenshpan,ICDE
+Ohad Greenshpan,ICDE
+Yi Gu,ICML
+Cuntai Guan,ICPR
+Dirk Van Gucht,PODS
+Yassine Haddab,IROS
+Uwe Hampel,BILDMED
+Daishi Harada,ICML
+David J. Hawkes,BILDMED
+David P. Helmbold,COLT
+Derek L. G. Hill,BILDMED
+D. Rodney Hose,BILDMED
+Zeng-Guang Hou,IJCNN
+Zeng-Guang Hou,IJCNN
+Zeng-Guang Hou,IJCNN
+Zeng-Guang Hou,IJCNN
+Jin Hu,IJCNN
+Sanqing Hu,IJCNN
+Koji Ikuta,IROS
+Zachary G. Ives,CIDR
+Marie Jacob,CIDR
+H. V. Jagadish,CIDR
+H. V. Jagadish,DASFAA
+H. V. Jagadish,DNIS
+H. V. Jagadish,ICDE
+H. V. Jagadish,ICDE
+H. V. Jagadish,ICDE
+H. V. Jagadish,SIGMOD
+H. V. Jagadish,SIGMOD
+H. V. Jagadish,SIGMOD
+H. V. Jagadish,SIGMOD
+H. V. Jagadish,SIGMOD
+H. V. Jagadish,SIGMOD
+Laurent Jalabert,IROS
+Phillis Jones,MCS
+Michael I. Jordan,NIPS
+Michael I. Jordan,NIPS
+Michael I. Jordan,NIPS
+Christian Jutten,ICA
+Sham M. Kakade,NIPS
+Takafumi Kanamori,NIPS
+Alexandre Karpenko,NIPS
+Nikola K. Kasabov,IJCNN
+Jens Keuchel,DAGM
+Sanjeev Khanna,BIRTHDAY
+Sanjeev Khanna,CIDR
+Sanjeev Khanna,ICDT
+Sanjeev Khanna,PODS
+Aditya Khosla,ICML
+Sang Kyun Kim,NIPS
+Klaus Kneupner,ECML
+Dai Kobayashi,IROS
+Daphne Koller,UAI
+J. Zico Kolter,ICML
+J. Zico Kolter,ICML
+J. Zico Kolter,NIPS
+J. Zico Kolter,NIPS
+Boris Kostenko,ICDE
+Paraschos Koutris,ICDT
+Tim Kraska,SIGMOD
+Wojtek J. Krzanowski,ICAISC
+Bernd Kuhlenkotter,ECML
+Momoko Kumemura,IROS
+Quoc V. Le,IROS
+Quoc V. Le,NIPS
+Martin O. Leach,BILDMED
+Honglak Lee,ICML
+Dayou Li,ICAISC
+Fei Li,SIGMOD
+Fei Li,SIGMOD
+Guoliang Li,ICDE
+Ta Li,ICNC
+Xi Li,ISNN
+Yi-An Lin,NIPS
+Tok Wang Ling,DASFAA
+Tok Wang Ling,ICDE
+Pingan Liu,ICNC
+Song Liu,NIPS
+Weixiang Liu,ISNN
+Zhangxun Liu,ICIC
+James Ting-Ho Lo,IJCNN
+James Ting-Ho Lo,IJCNN
+James Ting-Ho Lo,IJCNN
+Philip M. Long,COLT
+Philip M. Long,COLT
+Philip M. Long,COLT
+Philip M. Long,COLT
+Philip M. Long,COLT
+Philip M. Long,COLT
+Jiaheng Lu,DASFAA
+Wei Lu,SIGMOD
+Roland Morzinger,ICPR
+Wolfgang Maass,COLT
+Anand Madhavan,ICML
+Liam P. Maguire,ICANN
+Jitendra Malik,DAGM
+Christopher D. Manning,NIPS
+Christopher D. Manning,NIPS
+Yishay Mansour,COLT
+Elisa Martinez Marroquin,ICB
+Elisa Martinez Marroquin,ICPR
+Elisa Martinez Marroquin,ICPR
+Elisa Martinez Marroquin,IWANN
+Jonathan Masci,IJCNN
+Giuseppe Mastronardi,ICIC
+Giuseppe Mastronardi,ICIC
+Leonardo Nogueira Matos,CIARP
+Leonardo Nogueira Matos,ICPR
+T. Martin McGinnity,IJCNN
+Ueli Meier,IJCNN
+Hairong Mi,ICNC
+Tova Milo,BIRTHDAY
+Tova Milo,CIDR
+Tova Milo,CIDR
+Tova Milo,CIDR
+Tova Milo,CIDR
+Tova Milo,CIKM
+Tova Milo,DASFAA
+Tova Milo,DEXA
+Tova Milo,DNIS
+Tova Milo,EDBT
+Tova Milo,EDBT
+Tova Milo,EDBT
+Tova Milo,F-EGC
+Tova Milo,ICDE
+Tova Milo,ICDE
+Tova Milo,ICDE
+Tova Milo,ICDE
+Tova Milo,ICDE
+Tova Milo,ICDE
+Tova Milo,ICDT
+Tova Milo,ICDT
+Tova Milo,ICDT
+Tova Milo,ICDT
+Tova Milo,ICDT
+Tova Milo,ICDT
+Tova Milo,PODS
+Tova Milo,PODS
+Tova Milo,PODS
+Tova Milo,PODS
+Tova Milo,SIGMOD
+Tova Milo,SIGMOD
+Tova Milo,SIGMOD
+Tova Milo,SIGMOD
+Tova Milo,SIGMOD
+Tova Milo,SIGMOD
+Tova Milo,WEBDB
+Hossein Nejati,ICB
+Juhan Nam,ICML
+Arnab Nandi,DNIS
+Arnab Nandi,SIGMOD
+Luiz Antonio Pereira Neves,DAS
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICML
+Andrew Y. Ng,ICPR
+Andrew Y. Ng,IROS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,NIPS
+Andrew Y. Ng,UAI
+Jiquan Ngiam,ICML
+Jiquan Ngiam,ICML
+Jiquan Ngiam,NIPS
+Jiquan Ngiam,NIPS
+Mark S. Nixon,ICPR
+Mark S. Nixon,ICPR
+Mark S. Nixon,ICPR
+Slava Novgorodov,CIDR
+Slava Novgorodov,CIKM
+Slava Novgorodov,ICDE
+Slava Novgorodov,ICDE
+Slava Novgorodov,ICDE
+Slava Novgorodov,SIGMOD
+Frank Olken,CIDR
+Kunle Olukotun,NIPS
+Beng Chin Ooi,SIGMOD
+Jielin Pan,ICNC
+Debmalya Panigrahi,PODS
+Anisoara Paraschiv-Ionescu,ICA
+Derek Partridge,ICAISC
+Derek Partridge,MCS
+Yun Peng,IJCNN
+Eanes Torres Pereira,CIARP
+Herbert Peremans,IROS
+Son Pham,WABI
+Michele Piccinni,ICIC
+Olivier Pietquin,ICONIP
+Santiago Planet,IWANN
+Neoklis Polyzotis,ICDE
+Girijesh Prasad,ICPR
+Girijesh Prasad,IJCNN
+Hong Qin,ICML
+Hong Qin,ICML
+Louiqa Raschid,CIDR
+Bertrand Rivet,ICA
+Sudeepa Roy,CIDR
+Sudeepa Roy,ICDT
+Sudeepa Roy,ICDT
+Sudeepa Roy,ICDT
+Sudeepa Roy,ICDT
+Sudeepa Roy,PODS
+M. Rude,IROS
+Stuart J. Russell,ICML
+Stuart J. Russell,NIPS
+Ignasi Iriondo Sanz,IWANN
+Abdul Rehman Satti,ICPR
+Andrew M. Saxe,ICML
+Antonio Scarpa,ICIC
+Antonio Scarpa,ICIC
+Christian Schellewald,DAGM
+Vitaly Schetinin,ICAISC
+Filips Schillebeeckx,IROS
+Eckhard Schleicher,BILDMED
+Jurgen Schmidhuber,IJCNN
+Christoph Schnorr,DAGM
+Julia A. Schnabel,BILDMED
+Shai Shalev-Shwartz,ICML
+Terence Sim,ICB
+Terence Sim,ICPR
+Yoram Singer,ICML
+Richard Socher,NIPS
+Richard Socher,NIPS
+Jill Stewart,ICANN
+Julia Stoyanovich,CIDR
+Julia Stoyanovich,CIDR
+Julia Stoyanovich,EDBT
+Julia Stoyanovich,ICDE
+Dan Suciu,ICDT
+Masashi Sugiyama,NIPS
+Bipin Suresh,ICML
+Taiji Suzuki,NIPS
+Taiji Suzuki,NIPS
+Ichiro Takeuchi,NIPS
+Min Tan,IJCNN
+Min Tan,IJCNN
+Wang Chiew Tan,ICDE
+Christine Tanner,BILDMED
+Diego Taurino,ICIC
+Diego Taurino,ICIC
+Georg Thallinger,ICPR
+Ryota Tomioka,NIPS
+Luciana R. Veloso,ICDAR
+Vincent Vigneron,ICA
+Hua-Yan Wang,ICML
+Hua-Yan Wang,ICML
+Jiannan Wang,SIGMOD
+Tao Wang,ICPR
+Wenjia Wang,MCS
+Xiuqing Wang,IJCNN
+Yoko Watanabe,IROS
+Oliver Weiß,BILDMED
+Thomas Wittenberg,BILDMED
+Gerhard J. Woeginger,COLT
+Eric P. Xing,NIPS
+Chew-Yean Yam,ICPR
+Shinji Yamashita,IROS
+Ning Ye,ICPR
+YuanYuan Yu,NIPS
+Yong Zeng,ICDE
+Hongbin Zha,ICML
+Hongbin Zha,ICML
+Jing Zhang,ICDE
+Zhen Zhang,ICNC
+Tiejun Zhao,ICIC
+Zeng-Shun Zhao,IJCNN
+Conghui Zhu,ICIC
+Qiang Zhu,ICDE
+Jianfeng Zou,ICNC

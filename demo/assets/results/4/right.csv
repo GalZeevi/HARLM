@@ -1,0 +1,501 @@
+title
+An RL approach to common-interest continuous action games.
+Feature Extraction Using Clustering of Protein.
+Detection of Coding Regions in Large DNA Sequences Using the Short Time Fourier Transform with Reduced Computational Load.
+Coding Region Prediction in Genomic Sequences Using a Combination of Digital Signal Processing Approaches.
+A Correlation-Based Distance Function for Nearest Neighbor Classification.
+Fuzzy Case-Based System for Classification Tasks on Missing and Noisy Data.
+"Fuzzy Cognitive Maps for Modelling, Predicting and Interpreting HIV Drug Resistance."
+Improving k-NN by Using Fuzzy Similarity Functions.
+Learning Similarity Metrics from Case Solution Similarity.
+Predicting the Efficiency with Knowledge Discovery of a Budgeted Company: A Cuban University - Validation through Three Semesters.
+Continuous Action Reinforcement Learning Automata - Performance and Convergence.
+Improving a Fuzzy ANN Model Using Correlation Coefficients.
+Predicting Human Immunodeficiency Virus (HIV) Drug Resistance Using Recurrent Neural Networks.
+Boolean Algebraic Structures of the Genetic Code: Possibilities of Applications.
+Ensemble of Classifiers Based on Hard Instances.
+Comparing Distance Measures with Visual Methods.
+Building Fine Bayesian Networks Aided by PSO-Based Feature Selection.
+"Modelling, Aggregation and Simulation of a Dynamic Biological System through Fuzzy Cognitive Maps."
+Prediction of Pediatric Risk Using a Hybrid Model Based on Soft Computing Techniques.
+Rough Sets in Ortholog Gene Detection - Selection of Feature Subsets and Case Reduction Considering Imbalance.
+A Toolkit for the Evaluation of Spoken Dialogue Systems in Ambient Intelligence Domains.
+User-Adaptive Multimodal Dialogue System for House Control: Recognizing Who and Where.
+Design and development of a multimodal dialogue system to support university tutorship.
+Mayordomo: Ambient Intelligence in a Home Environment.
+The VoiceApp System: Speech Technologies to Facilitate Web Access.
+Acquisition and Evaluation of a Dialog Corpus by means of Real and Simulated Users.
+Using Ambient Intelligence Information in a Multimodal Dialogue System.
+Using Contextual Information in the Input Interface of a Spoken Dialogue System.
+A Multimodal Dialogue System for an Ambient Intelligent Application in Home Environments.
+A Methodology for Learning Optimal Dialog Strategies.
+Using Knowledge about Misunderstandings to Increase the Robustness of Spoken Dialogue Systems.
+Mayordomo and Octopus: A Case Study in Ambient Intelligence Environments.
+Fast Debugging of PRISM Models.
+Hierarchical Counterexamples for Discrete-Time Markov Chains.
+The COMICS Tool - Computing Minimal Counterexamples for DTMCs.
+A Compositional Operational Semantics for Java.
+A Symbiosis of Interval Constraint Propagation and Cylindrical Algebraic Decomposition.
+On Gröbner Bases in the Context of Satisfiability-Modulo-Theories Solving over the Real Numbers.
+I-RiSC: An SMT-Compliant Solver for the Existential Fragment of Real Algebra.
+A Timed CTL Model Checker for Real-Time Maude.
+Flow*: An Analyzer for Non-linear Hybrid Systems.
+Heap-Abstraction for an Object-Oriented Calculus with Thread Classes.
+Proof-Outlines for Threads in Java.
+On Variable Selection in SAT-LP-based Bounded Model Checking of Linear Hybrid Automata.
+Podcastproduktion als kollaborativer Zugang zur theoretischen Informatik.
+Assertion-Based Analysis of Hybrid Systems with PVS.
+Choice of Directions for the Approximation of Reachable Sets for Hybrid Systems.
+Symbolic Counterexample Generation for Discrete-Time Markov Chains.
+Formal Methods for Reflective System Specification.
+Virtual Substitution for SMT-Solving.
+Under-approximate flowpipes for non-linear continuous systems.
+A Tool-Supported Proof System for Multithreaded Java.
+"Observability, Connectivity, and Replay in a Sequential Calculus of Classes."
+A Fully Abstract Semantics for UML Components.
+Parallel SAT Solving in Bounded Model Checking.
+Inductive Proof Outlines for Monitors in Java.
+Abstract Interface Behavior of Object-Oriented Languages with Monitors.
+Counterexample Generation for Markov Chains Using SMT-Based Bounded Model Checking.
+Verification for Java's Reentrant Multithreading Concept.
+Counterexample Generation for Hybrid Automata.
+Optimisation of Concentrating Solar Thermal Power Plants with Neural Networks.
+From statistical model checking to statistical model inference: characterizing the effect of process variations in analog circuits.
+Verification of Hybrid Systems: Formalization and Proof Rules in PVS.
+Object Connectivity and Full Abstraction for a Concurrent Calculus of Classes.
+A CEGAR approach for the reachability analysis of PLC-controlled chemical plants.
+On collaboratively conveying computer science to pupils.
+Memory-aware Bounded Model Checking for Linear Hybrid Systems.
+Stochastic Bounded Model Checking: Bounded Rewards and Compositionality.
+SMT-based Counterexample Generation for Markov Chains.
+Exploiting Different Strategies for the Parallelization of an SMT Solver.
+Hybrid Sequential Function Charts.
+Minimal Critical Subsystems as Counterexamples for omega-Regular DTMC Properties.
+GiNaCRA: A C++ Library for Real Algebraic Computations.
+Lyapunov Function Synthesis Using Handelman Representations.
+Picoso - A Parallel Interval Constraint Solver.
+Usage of the SCALASCA toolset for scalable performance analysis of large-scale parallel applications.
+DTMC Model Checking by SCC Reduction.
+Accelerating Parametric Probabilistic Verification.
+High-Level Counterexamples for Probabilistic Automata.
+Efficient Bounded Reachability Computation for Rectangular Automata.
+Taylor Model Flowpipe Construction for Non-linear Hybrid Systems.
+SMT-RAT: An SMT-Compliant Nonlinear Real Arithmetic Toolbox - (Tool Presentation).
+Object-Oriented Formal Modeling and Analysis of Interacting Hybrid Systems in HI-Maude.
+Counterexample Generation for Discrete-Time Markov Models: An Introductory Survey.
+Minimal Critical Subsystems for Discrete-Time Markov Models.
+Optimizing Bounded Model Checking for Linear Hybrid Systems.
+Synthesis of behavioral controllers for DES: Increasing efficiency.
+Formal Modeling and Analysis of Human Body Exposure to Extreme Heat in HI-Maude.
+Timed CTL Model Checking in Real-Time Maude.
+Non-Shellable Drawings of K with Few Crossings.
+The 2-page crossing number of K.
+Matching Points with Circles and Squares.
+Contextual confidence measures for continuous speech recognition.
+Automatic set-up for speech recognition engines based on merit optimization.
+Dictionary refinements based on phonetic consensus and non-uniform pronunciation reduction.
+A memory efficient grapheme-to-phoneme conversion system for speech processing.
+Partial Classification in Speech Recognition Verification.
+The Pan-SHARP Project: An Interdisciplinary approach to Medication Reconciliation.
+Meandre: Semantic-Driven Data-Intensive Flows in the Clouds.
+Meandre Data-Intensive Application Infrastructure: Extreme Scalability for Cloud and/or Grid Computing.
+Differentially private sequential data publication via variable-length n-grams.
+Provable Security of On-Demand Distance Vector Routing in Wireless Ad Hoc Networks.
+Cache Privacy in Named-Data Networking.
+Differentially Private Histogram Publishing through Lossy Compression.
+I Have a DREAM! (DiffeRentially privatE smArt Metering).
+A case study: privacy preserving release of spatio-temporal density in paris.
+The Security Proof of a Link-state Routing Protocol for Wireless Sensor Networks.
+You are what you like! Information leakage through users' Interests.
+Modelling adversaries and security objectives for routing protocols in wireless sensor networks.
+Misbehaving router detection in link-state routing for wireless mesh networks.
+Protecting against physical resource monitoring.
+Pivot-based multilingual dictionary building using Wiktionary.
+Scientific Workflow Makespan Reduction through Cloud Augmented Desktop Grids.
+LAYSI: A Layered Approach for SLA-Violation Propagation in Self-Manageable Cloud Infrastructures.
+A Novel Approach for Performance Characterization of IaaS Clouds.
+Application repository based evaluation of the EDGI infrastructure.
+Combined Health Monitoring and Emergency Management through Android Based Mobile Device for Elderly People.
+Block Level Storage Support for Open Source IaaS Clouds.
+A novel cloud bursting technique.
+On some Properties of Automaton Mappings.
+Fuzzy modeling of the relation between components of thermoplastic composites and their mechanical properties.
+POSIX modeling in SystemC.
+Incoherent Ray Tracing without Acceleration Structures.
+Skeleton extraction from a mesh for easy skinning animation.
+Design of Modular Rendering Pipeline.
+Analysis of Nonlinear Switched Circuits with Different State Variables in Each Topology.
+A proof-of-concept superregenerative QPSK transceiver.
+Application of the superregenerative principle to UWB pulse generation and reception.
+Synchronization Analysis of a Switched Oscillator.
+The Nonlinear Class-E Amplifier: A Case Study of Harmonic Balance Applied to Switched Circuits.
+Analysis of the envelope and the instantaneous phase and frequency of superregenerative oscillators.
+A discrete-time technique for the steady state analysis of nonlinear switched circuits with inconsistent initial conditions.
+Effects of quench discretization on superregenerative oscillators.
+Exploiting circuit instability to achieve wideband linear amplification.
+A BPSK Superregenerative Receiver. Preliminary Results.
+A simple and robust super-regenerative oscillator for the 2.4 GHz ISM band.
+An Energy Efficient Flat Routing Protocol for Wireless Ad Hoc Networks.
+E2DSR: Preliminary Implementation Results and Performance Evaluation of an Energy Efficient Routing Protocol for Wireless Ad Hoc Networks.
+Polymeric Film Sensors based on PAH-PAZO Ionic Self-assembled Multi-nanolayers.
+On Capacity and Bounds for the Gaussian CZIC and CBZIC with Linear Coded Approximation.
+On the capacity of the cognitive interference channel with a relay.
+Olive Fly Infestation Prediction Using Machine Learning Techniques.
+Architecture for the Use of Synergies between Knowledge Engineering and Requirements Engineering.
+Metaheuristic Aided Software Features Assembly.
+An Intelligent System for Therapy Control in a Distributed Organization.
+A proposal for Projekt Management Using CommonKADS.
+A WEB-CASE Tool Prototype for Hybrid Software Development.
+Requirements interaction in the next release problem.
+INSCO Requisite - A Web-Based RM-Tool to support Hybrid Software Development.
+Seamless Software Development for Systems based on Bayesian Networks - An Agricultural Pest Control System Example.
+Knowledge Model of a Therapy Administration Task - Applied to an Agricultural Domain.
+Requirements Selection: Knowledge based optimization techniques for solving the Next Release Problem.
+Towards a Methodology for Hybrid Systems Software Development.
+Improvement of Image Compression using Wavelets and Quadtrees.
+The Intelligent Web.
+Didactic Networks and Exemplification.
+PRIPARE: A New Vision on Engineering Privacy and Security by Design.
+Evolving a Core Banking Enterprise Architecture - Leveraging Business Events Exploitation.
+User-Driven Service Lifecycle Management - Adopting Internet Paradigms in Telecom Services.
+Privacy and Data Protection in a User-Centric Business Model for Telecommunications Services.
+Self-service Privacy: User-Centric Privacy for Network-Centric Identity.
+Engineering privacy requirements valuable lessons from another realm.
+Personalized Service Creation and Provision for the Mobile Web.
+MISS: Medicine Information Support System in the Smart Home Environment.
+Using Web Services for Medication Management in a Smart Home Environment.
+Automatic Service Composition with Heterogeneous Service-Oriented Architectures.
+Mobile Personal Health Care System for Patients with Diabetes.
+Composition of Services for Notification in Smart Homes.
+A Multilingual Application for Automated Essay Scoring.
+PANGEA - Platform for Automatic coNstruction of orGanizations of intElligent Agents.
+Proximity Detection Prototype Adapted to a Work Environment.
+Sharing and navigating 360° videos and maps in sigh surfers.
+Introducing Time Horizons to Enterprise Networking Architecture.
+Ranging and Communications with Impulse Radio Ultrawideband.
+"Real life ranging measurements with low power, low data rate transceivers."
+Reducing Artifacts in TMS-Evoked EEG.
+A generic e-learning multiparadigm programming language system: IDEFIX project.
+A first approximation to estimate the usability of a software application task.
+Interactive Multimodal Platform for Digital Signage.
+High-Realistic and Flexible Virtual Presenters.
+Combining color descriptors for improved codebook modelbased image retrieval.
+Towards Customized Automatic Segmentation of Subtitles.
+Long audio alignment for automatic subtitling using different phone-relatedness measures.
+APyCA: Towards the Automatic Subtitling of Television Content in Spanish.
+"SAVAS: Collecting, Annotating and Sharing Audiovisual Language Resources for Automatic Subtitling."
+Phoneme Similarity Matrices to Improve Long Audio Alignment for Automatic Subtitling.
+Application of Feature Subset Selection Based on Evolutionary Algorithms for Automatic Emotion Recognition in Speech.
+Feature Subset Selection Based on Evolutionary Algorithms for Automatic Emotion Recognition in Spoken Spanish and Standard Basque Language.
+A Comparison Using Different Speech Parameters in the Automatic Emotion Recognition Using Feature Subset Selection Based on Evolutionary Algorithms.
+"Improving a Long Audio Aligner through Phone- Relatedness Matrices for English, Spanish and Basque."
+Realistic visual speech synthesis in WebGL.
+Computer Assisted Diagnosis of Microcalcifications in Mammograms: A Scale-Space Approach.
+Implementing Automatic Error Recovery Support for Rich Web Clients.
+A Light Reasoning Infrastructure to Enable Context-aware Mobile Applications.
+Instrumented Splint for the Diagnosis of Bruxism.
+Disc Motor: Conventional and Superconductor Simulated Results Analysis.
+Axial Disc Motor Experimental Analysis Based in Steinmetz Parameters.
+High Temperature Superconducting Fault Current Limiters as Enabling Technology in Electrical Grids with Increased Distributed Generation Penetration.
+Numerical Design Methodology for an All Superconducting Linear Synchronous Motor.
+A Tool for Managing Security Policies in Organisations.
+Analysis of Heating Systems in Buildings Using Self-Organizing Maps.
+Analysis of Electricity Consumption Profiles by Means of Dimensionality Reduction Techniques.
+Application of SOM-Based Visualization Maps for Time-Response Analysis of Industrial Processes.
+Two-Stage Approach for Electricity Consumption Forecasting in Public Buildings.
+Education on Automatic Control for Professionals through the LRA-ULE Remote Laboratory.
+Improving User Interaction in Remote Laboratories through HTML5/AJAX.
+Virtual and Remote Laboratory of a DC Motor.
+A Systematic Approach to Developing Safe Tele-operated Robots.
+StateML: From Graphical State Machine Models to Thread-Safe Ada Code.
+Automatic Ada Code Generation Using a Model-Driven Engineering Approach.
+Teaching Real-Time Systems Around a Digital Model Railroad Platform Using Ada.
+A Reference Control Architecture for Service Robots Implemented on a Climbing Vehicle.
+A Case Study in Performance Evaluation of Real-Time Teleoperation Software Architectures Using UML-MAST.
+Development of a Control System for Teleoperated Robots Using UML and Ada95.
+Towards the Definition of a Pattern Sequence for Real-Time Applications Using a Model-Driven Engineering Approach.
+Wireless Sensor Network Application Development: An Architecture-Centric MDE Approach.
+Experiences Using a Component-Oriented Architectural Framework for Robots and Its Improvement with a MDE Approach.
+A WSAN Solution for Irrigation Control from a Model Driven Perspective.
+Un lenguaje específico de dominio para aplicaciones domóticas.
+Diseño de robots de servicio: experiencias utilizando la Ingeniería del Software.
+MoteGen: Una herramienta para el desarrollo de aplicaciones para redes de sensores.
+Evaluación del rendimiento de arquitecturas mediante UML-MAST.
+Desarrollo de un Sistema de Teleoperación utilizando el enfoque PRISMA.
+Un marco integral para el desarrollo de sistemas domóticos.
+StateML: modelado gráfico de máquinas de estados y generación de código siguiendo un enfoque MDE.
+Real-Time Teaching with Java: JPR 3.
+Mesh simplification for 3D modeling using evolutionary multi-objective optimization.
+Web Application and Image Analysis Tool to Measure and Monitoring the Density in Bone Fractures with a Predictive Approach.
+Multi-chirp Signal Separation.
+Noise Reduction and Voice Separation Algorithms Applied to Wolf Population Counting.
+On a Chirplet Transform Based Method for Co-channel Voice Separation.
+Audio Signal Analysis: An Application to Wolf Population Counting.
+Path-Stamps: A Proposal for Enhancing Security of Location Tracking Applications.
+Providing Personalization and Automation to Spatial-Temporal Stamping Services.
+Survey on Location Authentication Protocols and Spatial-Temporal Attestation Services.
+Spatial-Temporal Certification Framework and Extension of X.509 Attribute Certificate Framework and SAML Standard to Support Spatial-Temporal Certificates.
+Teaching X.509/PKIX Based Digital Signatures While Enhancing Non-Repudiation of a Web Based Assessment System.
+Formal Validation of OFEPSP+ with AVISPA.
+Distinguishing TEA from a Random Permutation: Reduced Round Versions of TEA Do Not Have the SAC or Do Not Generate Random Numbers.
+A Legal Ontology to Support Privacy Preservation in Location-Based Services.
+On the Need to Divide the Signature Creation Environment.
+Extended electronic signature policies.
+Project WebOracle: Developing an advanced web server security assesment tool.
+Search Engines as a security thread.
+Cost effective memory disambiguation for multimedia codes.
+COPA: a GIS-based Tool for Land Consolidation Projects.
+On the potential of tolerant region reuse for multimedia applications.
+Knowing Software Engineer's Personality to Improve Software Development.
+Stroke Based Handwritten Character Recognition.
+Ubiquitous platform for vehicles of passengers' public transport.
+Prospective evaluation of logistic regression models from overnight oximetry to assist in sleep apnea diagnosis.
+A Domotic Control System Using Brain-Computer Interface (BCI).
+Naïve Algorithms for Keyphrase Extraction and Text Summarization from a Single Document Inspired by the Protein Biosynthesis Process.
+Application of Variable Length N-gram Vectors to Monolingual and Bilingual Information Retrieval.
+Application of Variable Length -Gram Vectors to Monolingual and Bilingual Information Retrieval.
+The Cooperative Web: A Complement to the Semantic Web.
+Object-Orientation and Operating Systems.
+4th Workshop on OO and Operating Systems.
+A Concept-Based Retrieval Tool: The Cooperative Web.
+The Cooperative Web: A Step towards Web Intelligence.
+BDOviedo3P: Data XML Storage and Management.
+WAB*: A Quantitative Metric Based on WAB.
+A Cooperative Paradigm for Fighting Information Overload.
+One Size Fits All? A Simple Technique to Perform Several NLP Tasks.
+Precision grasp planning with Gifu Hand III based on fast marching square.
+Kinesthetic teaching via Fast Marching Square.
+Improving Sampling-Based Path Planning Methods with Fast Marching.
+Learning-Based Floor Segmentation and Reconstruction.
+Interactive Cartoon Rendering and Sketching of Clouds and Smoke.
+An Approach to Measure Student Activity in Learning Management Systems.
+A decision support system to improve e-learning environments.
+Towards Virtual Course Evaluation Using Web Intelligence.
+MATEP: Monitoring and Analysis Tool for E-Learning Platforms.
+Midiendo el Impacto de las Teorías Gestalt en el Diseño de Interfaces Gráficas de Usuario.
+A Service-Oriented Integration Platform to Support a Joined-Up E-Government Approach: The Uruguayan Experience.
+DSAW - A Dynamic and Static Aspect Weaving Platform.
+Numerical Solution to a Stochastic Growth Model Based on Evolution of Radial Basis Networks.
+Sharing Epigraphic Information as Linked Data.
+From Relational Databases to Linked Data in Epigraphy: Hispania Epigraphica Online.
+Security Efficiency Analysis of a Biometric Fuzzy Extractor for Iris Templates.
+Biometric Fuzzy Extractor Scheme for Iris Templates.
+Graphic Multisecret Sharing Schemes with One-Dimensional Cellular Automata.
+A comparison of the standardized versions of ECIES.
+Swell effect in shallow underwater acoustic communications.
+Bearing estimation algorithm based on spectral analysis of the ultrasonic received echoes.
+Data Integration by considering spatial diversity in an IR barrier.
+Advanced sonar module for mapping applications.
+Efficient Hardware Implementation for Detecting CSS-based Loosely Synchronous Codes in a Local Positioning System.
+Detection Module in a Complementary Set of Sequences-Based Pulse Compression System.
+Acoustic local positioning system using an iOS device.
+New pseudo-orthogonal family of polyphase codes to improve Doppler resilience.
+Towards a Systematic Service-oriented Requirements Engineering Process (S-SoRE).
+"Semantic Relations: Modelling Issues, Proposals and Possible Applications."
+Learning Linguistic Concepts Through the Construction of Dictionaries with a Directed Acyclic Graph Shaped Taxonomy.
+Some Software Engineering and Knowledge Representation Principles for the Design and Construction of Ontology-Based Linguistic Resources.
+Bringing Forward Semantic Relations: Issues and Proposals.
+Thinking Precedes Action: Using Software Engineering for the Development of a Terminology Database to Improve Access to Biomedical Documentation.
+Conceptual Modeling of Ontology-based Linguistic Resources with a Focus on Semantic Relations.
+Conceptual Design for Domain and Task Specific Ontology-Based Linguistic Resources.
+Methodologically Designing a Hierarchically Organized Concept-Based Terminology Database to Improve Access to Biomedical Documentation.
+"A classification of security patterns for the transactions between a requester, an intermediary, and a web-service."
+Collaborative Learning Patterns: Assisting the Development of Component-Based CSCL Applications.
+A new self-adaptive PSO based on the identification of planar regions.
+Nonlinear Optimization in Landscapes with Planar Regions.
+Application of the Generic Feature Selection Measure in Detection of Web Attacks.
+A Self-learning Anomaly-Based Web Application Firewall.
+Labelling Clusters in an Intrusion Detection System Using a Combination of Clustering Evaluation Techniques.
+A Taxonomy of Web Attacks.
+Hierarchical Classifiers based on Neighbourhood Criteria with Adaptive Computational Cost.
+An Anomaly-based Web Application Firewall.
+Enhancing Social Network Analysis with a Concept-Based Text Mining Approach to Discover Key Members on a Virtual Community of Practice.
+Finding Inner Copy Communities Using Social Network Analysis.
+Adaptive Educational Hypermedia Proposal Based on Learning Styles and Quality Evaluation.
+Integrated Design of processes with infinity horizon Model Predictive Controllers.
+Context-Dependent Fuzzy Queries in SQLf.
+Security services provision for telematic services at the knowledge and information society.
+GFT: GPU Fast Triangulation of 3D Points.
+Providing guidance for maintenance operations using automatic markerless augmented reality system.
+"Real-time deformation, registration and tracking of solids based on physical simulation."
+Towards real time 3D tracking and reconstruction on a GPU using Monte Carlo simulations.
+A Novel Approach to Achieve Robustness Against Marker Occlusion.
+GPU Optimizer: A 3D Reconstruction on the GPU using Monte Carlo Simulations - How to Get Real Time without Sacrificing Precision.
+Stable Collision Response Method in Complex Interactions.
+Effective Diagnosis of Alzheimer's Disease by Means of Association Rules.
+Effective Diagnosis of Alzheimer's Disease by Means of Distance Metric Learning.
+Exploring Symmetry to Assist Alzheimer's Disease Diagnosis.
+NMF-Based Analysis of SPECT Brain Images for the Diagnosis of Alzheimer's Disease.
+Selecting Regions of Interest in SPECT Images Using Wilcoxon Test for the Diagnosis of Alzheimer's Disease.
+Partial Least Squares for Feature Extraction of SPECT Images.
+Skewness as feature for the diagnosis of Alzheimer's disease using SPECT images.
+Automatic Classification System for the Diagnosis of Alzheimer Disease Using Component-Based SVM Aggregations.
+Early Detection of the Alzheimer Disease Combining Feature Selection and Kernel Machines.
+Computer Aided Diagnosis of Alzheimer Disease Using Support Vector Machines and Classification Trees.
+Time-Frequency Analysis of Hot Rolling Using Manifold Learning.
+Early Alzheimer's disease diagnosis using partial least squares and random forests.
+Independent Component Analysis of SPECT Images to Assist the Alzheimer's Disease Diagnosis.
+Computer Aided Diagnosis of Alzheimer's Disease Using Principal Component Analysis and Bayesian Classifiers.
+Effective Detection of the Alzheimer Disease by Means of Coronal NMSE SVM Feature Classification.
+Selecting Regions of Interest for the Diagnosis of Alzheimer Using Brain SPECT Images.
+Alzheimer's Diagnosis Using Eigenbrains and Support Vector Machines.
+Automatic System for Alzheimer's Disease Diagnosis Using Eigenbrains and Bayesian Classification Rules.
+SPECT Image Classification Techniques for Computer Aided Diagnosis of the Alzheimer Disease.
+Selecting Regions of Interest for the Diagnosis of Alzheimer's Disease in Brain SPECT Images Using Welch's t-Test.
+PETRA: Multivariate analyses for neuroimaging data.
+Effective Diagnosis of Alzheimer's Disease by Means of Distance Metric Learning and Random Forest.
+Classification of SPECT Images Using Clustering Techniques Revisited.
+Automatic Orientation of Functional Brain Images for Multiplataform Software.
+Support Vector Machines and Neural Networks for the Alzheimer's Disease Diagnosis Using PCA.
+Texture Features Based Detection of Parkinson's Disease on DaTSCAN Images.
+Early Computer Aided Diagnosis of Parkinson's Disease Based on Nearest Neighbor Strategy and striatum Activation Threshold.
+Functional Brain Image Classification Techniques for Early Alzheimer Disease Diagnosis.
+Analysis of Brain SPECT Images for the Diagnosis of Alzheimer Disease Using First and Second Order Moments.
+SPECT Computer-Aided Diagnosis System based on the Empirical Mode Decomposition.
+Automatic differentiation between controls and Parkinson's disease DaTSCAN images using a Partial Least Squares scheme and the Fisher Discriminant Ratio.
+ReMo Green: Tools to facilitate the implementation of an Energy Management System in Small and Medium-sized Enterprises (SMEs).
+Hiding Short Secret Messages based on Linguistic Steganography and Manual Annotation.
+Measuring the Security of Linguistic Steganography in Spanish based on Synonymous Paraphrasing with WSD.
+Improving N-Gram Linguistic Steganography based on Templates.
+TELIAMADE ultrasonic indoor location system: Application as a teaching tool.
+Improving Feature Extraction in the Automatic Classification of Seismic Events. Application to Colima and Arenal Volcanoes.
+Evaluating Robustness of a HMM-based Classification System of Volcano-seismic Events at Colima and Popocatepetl Volcanoes.
+"Volcano-seismic Signal Detection and Classification Processing using Hidden Markov Models. Application to San Cristóbal Volcano, Nicaragua."
+Application of the HJ Biplot Methodology to Variation Greenhouse Gas Emissions in International Companies.
+RFID Performance in Localization Systems.
+A Tool for Time Management in the New European Higher Education System.
+Safe PLD-based Programmable Controllers.
+FPGA implementation of a fuzzy controller for automobile DC-DC converters.
+A Rule-based Approach for Infrastructure Providers' Interoperability.
+A Cloud-unaware Programming Model for Easy Development of Composite Services.
+PhyloFlow: A fully customizable and automatic workflow for phylogenetic reconstruction.
+PHYSER: An Algorithm to Detect Sequencing Errors from Phylogenetic Information.
+Workflows with Model Selection: A Multilocus Approach to Phylogenetic Analysis.
+Software Quality Requirements: A Systematic Mapping Study.
+Requirements Engineering to Audit Privacy Issues in Medical and Health Software.
+Model Transformations powered by Rewriting Logic.
+Una Propuesta de V&V en el Marco de MDA.
+Knowledge Clustering Using a Neural Network in a Course on Medical-Surgical Nursing.
+Integration and Transformation of UML Models.
+An Empirical Study of the Nesting Level of Composite States Within UML Statechart Diagrams.
+A Precise Approach for the Analysis of the UML Models Consistency.
+Toward Use Case and Conceptual Models through Business Modeling.
+REMM-Studio: Modeling Variability to Enable Requirements Reuse.
+A UML Profile for Modelling Measurable Requirements.
+Formally Modeling UML and its Evolution: A Holistic Approach.
+Evaluation and Neuronal Network-Based Classification of the PHRs Privacy Policies.
+Transforming the OOram Three-Model Architecture into a UML-based Process.
+COTSRE: A COmponenTs Selection Method Based on Requirements Engineering.
+Risks and Safeguards for the Requirements Engineering Process in Global Software Development.
+A Model-Driven Engineering Approach to Requirements Engineering - How These Disciplines May Benefit Each Other.
+Precise WIS development.
+A Systematic Review and Comparison of Security Ontologies.
+Usable Privacy and Security in Personal Health Records.
+Can Intuition Become Rigorous? Foundations for UML Model Verification Tools.
+Evaluating Software Product Quality: A Systematic Mapping Study.
+Rigorously Transforming UML Class Diagrams.
+ECAPRIS: Metodología ágil de medición de calidad y productividad en PyMEs .
+Soporte Automatizado a la reutilización de requisitos.
+Metamodelo y Perfil UML para el Modelado Orientado a Metas de Requisitos Medibles.
+De los Procesos del Negocio a los Casos de Uso.
+Una infraestructura común para la animación de modelos UML.
+REMM-Studio: Un entorno integrado para dar soporte a un enfoque de Ingeniería de Requisitos Dirigido por Modelos.
+Towards a Requirements-Aware Common Web Engineering Metamodel.
+Legal Requirements Reuse: A Critical Success Factor for Requirements Quality and Personal Data Protection.
+An Ontology-Based Framework for Modelling Security Requirements.
+An Audit Method of Personal Data Based on Requirements Engineering.
+A Model Driven Approach for Generating Code from Security Requirements.
+Workshops at the UML 2004 Conference.
+A Generic Approach to Improve Navigational Model Usability Based Upon Requirements and Metrics.
+Modelling Web-Based Systems Requirements Using WRM.
+Tomographic Image Reconstruction Using Abstractions.
+High Level Abstractions for Improving Parallel Image Reconstruction Algorithms.
+A Load Balancing Framework in Multithreaded Tomographic Reconstruction.
+Multithreaded Tomographic Reconstruction.
+Bumpless switching in control - A comparative study.
+A New Self-adaptative Crossover Operator for Real-Coded Evolutionary Algorithms.
+Applying One Class Classifier Techniques to Reduce Maintenance Costs of EAI.
+Annotator: Herramienta para la Anotación Semántica de Islas de Datos Amigables en la Web.
+A Roadmap on Integrating Applications and Data on the Web.
+"Integración de Aplicaciones e Información Empresarial (ZOCO, 7ª edición)."
+Optimizando el Funcionamiento del Algoritmo FOIL.
+Selección de Características para Mejorar los Modelos de Verificación de Información en EAI.
+Mining Web Pages Using Features of Rendering HTML Elements in the Web Browser.
+On Relational Learning for Information Extraction.
+An Action Semantics for MML.
+Mapping between Levels in the Metamodel Architecture.
+Expression-Invariant Age Estimation.
+Learning photometric invariance from diversified color model ensembles.
+3D Scene priors for road detection.
+Road Scene Segmentation from a Single Image.
+Semantic Road Segmentation via Multi-scale Ensembles of Learned Features.
+Understanding Road Scenes Using Visual Cues and GPS Information.
+Shadow Resistant Road Segmentation from a Mobile Monocular System.
+Synchronization of Video Sequences from Free-Moving Cameras.
+Alignment of videos recorded from moving vehicles.
+Automatic ground-truthing using video registration for on-board detection algorithms.
+Vision-based road detection using road models.
+Geographic information for vision-based road detection.
+Towards a Maude Formal Environment.
+Dynamic Validation of Maude Prototypes of UML Models.
+Tool Interoperability in the Maude Formal Environment.
+Deriving hard real-time embedded systems implementations directly from SDL specifications.
+Una Metodología de Desarrollo Orientada a Objtos para Sistemas Empotrados de Tiempo Real.
+SDL and hard real time systems: new design and analyze techniques.
+A Hybrid Robotic Control System Using Neuroblastoma Cultures.
+Learning in Biological Neuroprocessors using a Center of Area Method.
+Topological Maps for Robot's Navigation: A Conceptual Approach.
+DIAGEN-WebDB: A Connectionist Approach to Medical Knowledge Representation and Inference.
+The Knowledge Engineering Approach to Autonomous Robotics.
+A Multi-robot Surveillance System Simulated in Gazebo.
+Mathematical Foundations of the Center of Area Method for Robot Navigation.
+Neural Spike Activation in Hippocampal Cultures Using Hebbian Electrical Stimulation.
+Key Aspects of the Diagen Conceptual Model for Medical Diagnosis.
+Reactive Navigation and Online SLAM in Autonomous Frontier-Based Exploration.
+Partial Center of Area Method Used for Reactive Autonomous Robot Navigation.
+A Robotics Inspired Method of Modeling Accessible Open Space to Help Blind People in the Orientation and Traveling Tasks.
+Tools for Controlled Experiments and Calibration on Living Tissues Cultures.
+Improving Area Center Robot Navigation Using a Novel Range Scan Segmentation Method.
+Discretization of ISO-Learning and ICO-Learning to Be Included into Reactive Neural Networks for a Robotics Simulator.
+Fear Assessment: Why data center servers should be turned off.
+Concerns vs Components for Web Development.
+Delivery Improvement for Transport Companies.
+Extended Sensations on Interactive Telecommunication.
+¿Where Do We go? OnTheWay: A Prediction System for Spatial Locations.
+Tracking System Based on Accelerometry for Users with Restricted Physical Activity.
+Mobile Architecture for Communication and Development of Applications Based on Context.
+Interoperability for transport companies.
+Service-Oriented Device Integration for Ubiquitous Ambient Assisted Living Environments.
+Advertising Liking Recognition Technique Applied to Neuromarketing by Using Low-Cost EEG Headset.
+Combining Smart Tags and Body Fixed Sensors for Disabled People Assistance.
+Modeling Smart Homes for Prediction Algorithms.
+Smart Environment Vectorization.
+Event-Based Method for Detecting Trojan Horses in Mobile Devices.
+Smart Environment Software Reference Architecture.
+An Orientation Service for Dependent People Based on an Open Service Architecture.
+OnTheWay: A Prediction System for Spatial Locations.
+Notes on Agent-Oriented DBMS Toward a Robust KDBS.
+Toward a Generic MAS Test Bed.
+Multi-Agent System for Detecting Elderly People Falls through Mobile Devices.
+A New Adaptive Algorithm for Detecting Falls through Mobile Devices.
+Speech Enhancement in Noisy Environments in Hearing Aids Driven by a Tailored Gain Function Based on a Gaussian Mixture Model.
+Synchronizing Speech Mixtures in Speech Separation Problems under Reverberant Conditions.
+Automatic Sound Classification for Improving Speech Intelligibility in Hearing Aids Using a Layered Structure.
+Wide-Angle Lens Distortion Correction Using Division Models.
+Automatic Corner Matching in Highly Distorted Images of Zhang's Calibration Pattern.
+Automatic Camera Pose Recognition in Planar View Scenarios.
+Morphological snakes.
+Symmetrical Dense Optical Flow Estimation with Occlusions Detection.
+'Beowulf Cluster' for High-performance Computing Tasks at the University: A Very Profitable Investment. High performance computing at low price.
+3D Reconstruction from a Vascular Tree Model.
+3D Motion Estimation Using a Combination of Correlation and Variational Methods for PIV.
+Second Order Variational Optic Flow Estimation.
+Symmetric Optical Flow.
+Regularization of 3D Cylindrical Surfaces.
+Mathematical Models for the Calibration of Cameras Mounted on a Tripod Using Primitive Tracking.
+Recursivity and PDE's in Image Processing.
+Anisotropic Interpolation of DT-MRI.
+"AMILab Software: Medical Image Analysis, Processing and Visualization."
+Dense Disparity Map Estimation Respecting Image Discontinuities: A PDE and Scale-Space BasedApproach.
+A Variational Approach for 3D Motion Estimation of Incompressible PIV Flows.
+Web Accessibility Evaluation Tools: a survey and some improvements.
