@@ -1723,19 +1723,22 @@ def plot_flights_aqp_results3():
 
     y_gaqp = [0.994, 0.997, 0.91, 0.99, 0.93, 0.95]
     std_gaqp = [0.005, 0.005, 0.09, 0, 0.2, 0.09]
+    err_gaqp = [min(y_gaqp[i], std_gaqp[i]) for i in range(len(y_gaqp))]
     y_deepdb = [0.87, 0.96, 0.22, 0.88, 0.93, 0.58]
     std_deepdb = [0.2, 0.05, 0.29, 0.23, 0.08, 0.47]
+    err_deepdb = [min(y_deepdb[i], std_deepdb[i]) for i in range(len(y_deepdb))]
     # y_ours = [0.432, 0.084, 0.44, 0.99, 0.54, 0.99]
     # std_ours = [0.42, 0.13, 0.45, 0.005, 0.41, 0.003]
     y_ours_ipf = [0.288, 0.06, 0.29, 0.89, 0.34, 0.78]
     std_ours_ipf = [0.30, 0.03, 0.35, 0.005, 0.41, 0.003]
+    err_ours_ipf = [min(y_ours_ipf[i], std_ours_ipf[i]) for i in range(len(y_ours_ipf))]
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
-    plt.bar(x_gaqp, y_gaqp, yerr=[y_gaqp, std_gaqp], alpha=0.5, capsize=5, width=0.2, label='gAQP')
-    plt.bar(x_deepdb, y_deepdb, yerr=[y_deepdb, std_deepdb], alpha=0.5, capsize=5, width=0.2, label='DeepDb')
+    plt.bar(x_gaqp, y_gaqp, yerr=err_gaqp, alpha=0.5, capsize=5, width=0.2, label='gAQP')
+    plt.bar(x_deepdb, y_deepdb, yerr=err_deepdb, alpha=0.5, capsize=5, width=0.2, label='DeepDb')
     # plt.bar(x_ours, y_ours, yerr=[y_ours, std_ours], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
-    plt.bar(x_ours_ipf, y_ours_ipf, yerr=[y_ours_ipf, std_ours_ipf], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
+    plt.bar(x_ours_ipf, y_ours_ipf, yerr=err_ours_ipf, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
 
     # plt.xlabel("Query")
     plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
@@ -1761,16 +1764,19 @@ def plot_tpch_aqp_results():
 
     y_gaqp = [0.9165, 0.932, 0.9552, 0.99, 0.947, 0.95]
     std_gaqp = [0.007, 0.005, 0.09, 0, 0.2, 0.09]
+    err_gaqp = [min(y_gaqp[i], std_gaqp[i]) for i in range(len(y_gaqp))]
     y_deepdb = [0.78, 0.99, 0.57, 0.90, 0.99, 0.68]
     std_deepdb = [0.32, 0.24, 0.2, 0.2, 0.16, 0.32]
+    err_deepdb = [min(y_deepdb[i], std_deepdb[i]) for i in range(len(y_deepdb))]
     y_ours_ipf = [0.244, 0.18, 0.45, 0.85, 0.22, 0.44]
     std_ours_ipf = [0.27, 0.13, 0.18, 0.05, 0.34, 0.23]
+    err_ours_ipf = [min(y_ours_ipf[i], std_ours_ipf[i]) for i in range(len(y_ours_ipf))]
 
     plt.grid(which='major', color='#bfc1c7', linewidth=0.8)
     plt.minorticks_on()
-    plt.bar(x_gaqp, y_gaqp, yerr=[y_gaqp, std_gaqp], alpha=0.5, capsize=5, width=0.2, label='gAQP')
-    plt.bar(x_deepdb, y_deepdb, yerr=[y_deepdb, std_deepdb], alpha=0.5, capsize=5, width=0.2, label='DeepDb')
-    plt.bar(x_ours_ipf, y_ours_ipf, yerr=[y_ours_ipf, std_ours_ipf], alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
+    plt.bar(x_gaqp, y_gaqp, yerr=err_gaqp, alpha=0.5, capsize=5, width=0.2, label='gAQP')
+    plt.bar(x_deepdb, y_deepdb, yerr=err_deepdb, alpha=0.5, capsize=5, width=0.2, label='DeepDb')
+    plt.bar(x_ours_ipf, y_ours_ipf, yerr=err_ours_ipf, alpha=0.5, capsize=5, width=0.2, label='ASQP-RL')
 
     # plt.xlabel("Query")
     plt.xticks(x_orig, xticks, fontsize=20, rotation=90)
@@ -2650,7 +2656,7 @@ if __name__ == '__main__':
     # plot_view_size_array_results()
     # plot_imdb_rl_algos()
     # plot_mas_rl_algos()
-    plot_flights_aqp_results3()
+    # plot_flights_aqp_results3()
     # plot_query_answer_time()
     # plot_drop1_extended_results()
     # plot_param_tune_results()
