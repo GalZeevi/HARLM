@@ -225,7 +225,7 @@ if __name__ == "__main__":
         process1.join()
         process2.join()
 
-    # TODO: here you should go and use ray_sampler and measure the train time (for example) - for now it is manually
+    # TODO: here you should go and use ray_sampler - for now it is manually
 
     # Evaluate
     if args.evaluate and args.sample_path:
