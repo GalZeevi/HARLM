@@ -1,14 +1,14 @@
 [
   {
-    "time": 73.6,
-    "timeUnits": "Milliseconds",
-    "rowCount": "122",
-    "source": "ASQP-RL"
+    "time": 6,
+    "timeUnits": "Seconds",
+    "rowCount": 24,
+    "source": "DB"
   },
   {
-    "time": 32.4,
-    "timeUnits": "Minutes",
-    "rowCount": 1024,
-    "source": "DB"
+    "time": 473.6,
+    "timeUnits": "Milliseconds",
+    "rowCount": 24,
+    "source": "ASQP-RL"
   }
 ]

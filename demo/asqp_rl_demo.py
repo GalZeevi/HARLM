@@ -7,17 +7,20 @@ from IPython.display import display
 from IPython.display import display_html
 import sqlparse
 from pathlib import Path
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 with open('assets/queries.sql', 'r') as queries_file:
     queries = [q.strip() for q in queries_file.readlines()]
 
 
 class AsqpInstance:
-    def __init__(self, index=-1, name='demo'):
+    def __init__(self, index=-1, name='sigmod_demo', num_queries=5):
         self.score = 0
         self.answers = [0] * len(queries)
         self.index = index
         self.name = name
+        self.num_queries = num_queries
 
     def get_sql(self):
         query = sqlparse.format(queries[self.index], reindent=True, keyword_case='upper')
@@ -110,7 +113,7 @@ class AsqpInstance:
                 self.answers[index] = 0
             with output:
                 clear_output()
-                print('Answer saved.')
+                print(f'Answer {a} saved to index {index}.')
             return
 
         check = widgets.Button(description="submit")
@@ -119,43 +122,108 @@ class AsqpInstance:
         return widgets.VBox([description_out, alternativ, check, output])
 
     def reveal_results(self):
-        print(f'You were correct in {sum(self.answers)} out of {len(queries)} questions')
+        print(f'You were correct in {sum(self.answers)} out of {self.num_queries} questions')
 
     @staticmethod
-    def save_answers(name, answers, score):
+    def save_answers(user, name, answers, score, num_queries):
         my_file = Path(f"assets/scores/{name}.csv")
         if my_file.is_file():
             lines_to_write = []
         else:
             lines_to_write = [
-                ','.join([*[f'q{query_num}' for query_num in [i + 1 for i in range(len(queries))]], 'total'])]
+                ','.join([*[f'q{query_num}' for query_num in [i + 1 for i in range(num_queries)]], 'total', 'user'])]
 
-        lines_to_write.append(f'{",".join([str(ans) for ans in answers])},{score}')
+        lines_to_write.append(f'{",".join([str(ans) for ans in answers])},{score},{user}')
 
         with open(f"assets/scores/{name}.csv", 'a') as the_file:
             for line in lines_to_write:
                 the_file.write(f'{line}\n')
 
     def save_answers_button(self):
-        button = widgets.Button(description="Finish")
+        input = widgets.Text(value="state your name")
+
+        button = widgets.Button(description="Save answers", disabled=True)
         output = widgets.Output()
 
-        display(button, output)
+        display(input, button, output)
         name = self.name
         answers = self.answers
         score = self.score
+        num_queries = self.num_queries
 
         def on_button_clicked(b):
             with output:
-                clear_output()
-                AsqpInstance.save_answers(name, answers, sum(answers))
-                print('Done')
+                if not input.value:
+                    print('Please state your name first')
+                else:
+                    clear_output()
+                    AsqpInstance.save_answers(input.value, name, answers, sum(answers), num_queries)
+                    print('Done')
 
         button.on_click(on_button_clicked)
+
+        def value_changed(change):
+            button.disabled = not bool(change.new)
+
+        input.observe(value_changed, "value")
 
 
 def demonstrate_asqp_rl(asqprl: AsqpInstance):
     df1, df2 = asqprl.get_dfs()
     AsqpInstance.display_side_by_side(df1, df2)
     asqprl.choose_answers_button()
-    asqprl.save_answers_button()
+    # asqprl.save_answers_button()
+
+
+def show_scoreboard(asqprl: AsqpInstance):
+    button = widgets.Button(description="Show scoreboard")
+    output = widgets.Output()
+    display(button, output)
+
+    def _show_scoreboard(b):
+        clear_output()
+        with open(f"assets/scores/{asqprl.name}.csv", 'r') as file:
+            # Read all lines and strip newline characters
+            data_list = [line.strip() for line in file]
+
+        data_list = data_list[1:]  # remove header
+        # take only the user and total from each row
+        data_list = [[s.strip() for s in row.split(',')][-2:] for row in data_list]
+        df = pd.DataFrame(data_list, columns=['total', 'user'])
+        df['total'] = df['total'].astype(int)
+
+        # Set style and color palette
+        sns.set(style='whitegrid')
+        palette = sns.color_palette("crest")
+
+        # Create the bar chart
+        plt.figure(figsize=(8, 4))
+        df = df.groupby(['user']).sum().reset_index()
+        barplot = sns.barplot(x='user', y='total', data=df, palette=palette)
+
+        # Add titles and labels
+        plt.title('Scoreboard', fontsize=16)
+        plt.xlabel('User', fontsize=14)
+        plt.ylabel('Score', fontsize=14)
+
+        # Customize the appearance
+        barplot.set_yticks(range(0, 5, 1))
+        sns.despine(left=True, bottom=True)
+
+        # Show the plot
+        plt.show()
+        display(b)
+
+    button.on_click(_show_scoreboard)
+
+
+def reveal_results(asqprl: AsqpInstance):
+    button = widgets.Button(description="Reveal results")
+    output = widgets.Output()
+    display(button, output)
+
+    def onclick(b):
+        clear_output()
+        asqprl.reveal_results()
+
+    button.on_click(onclick)
