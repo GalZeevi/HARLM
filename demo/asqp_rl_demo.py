@@ -57,7 +57,7 @@ class AsqpInstance:
         return f'{left_ans}\n{right_ans}'
 
     def reveal_answers_button(self):
-        button = widgets.Button(description="Reveal answers")
+        button = widgets.Button(description="Show correct answer")
         output = widgets.Output()
 
         display(button, output)
@@ -113,7 +113,7 @@ class AsqpInstance:
                 self.answers[index] = 0
             with output:
                 clear_output()
-                print(f'Answer {a} saved to index {index}.')
+                print(f'Answer saved.')
             return
 
         check = widgets.Button(description="submit")
@@ -172,6 +172,7 @@ def demonstrate_asqp_rl(asqprl: AsqpInstance):
     df1, df2 = asqprl.get_dfs()
     AsqpInstance.display_side_by_side(df1, df2)
     asqprl.choose_answers_button()
+    asqprl.reveal_answers_button()
     # asqprl.save_answers_button()
 
 
