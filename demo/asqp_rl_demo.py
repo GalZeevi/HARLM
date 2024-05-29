@@ -224,7 +224,8 @@ def reveal_results(asqprl: AsqpInstance):
     display(button, output)
 
     def onclick(b):
-        clear_output()
-        asqprl.reveal_results()
+        with output:
+            clear_output()
+            asqprl.reveal_results()
 
     button.on_click(onclick)
