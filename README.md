@@ -1,5 +1,5 @@
 ## About The Project
-This is a repository implementing the ASQP-RL
+This is a repository implementing HARLM
 
 ### Setting up the datasets
 * Flights - the data can be downloaded from https://github.com/IDEBench/IDEBench-public/tree/master/data and queries from datasets/flights2/generated_queries
