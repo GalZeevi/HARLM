@@ -13,7 +13,7 @@ This is a repository implementing the ASQP-RL
 * For different train-test partitions permute the queries in your .sql file - ASQP-RL takes the first queries as the test set
 * You will see a new folder under checkpoints that contains the .pkl files - pass that as an argument when you want to run PPO over these queries
 
-### Running ASQP-RL:
+### Running the system:
 * First configure config.json
   * under `dbConfig` put the db connection details
   * under `queryConfig` put table details (pivot is the numeric PK col)
